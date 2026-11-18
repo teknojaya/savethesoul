@@ -1,0 +1,489 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import {
+  ArrowUp,
+  Bot,
+  BookmarkPlus,
+  History,
+  Home,
+  Info,
+  LifeBuoy,
+  Loader2,
+  Plus,
+  ShieldAlert,
+  Trash2,
+  X,
+  HeartHandshake,
+  Check,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge, Callout } from "@/components/ui/primitives";
+import { CrisisPanel } from "@/components/safety/crisis-panel";
+import { RichText } from "./rich-text";
+import { api } from "@/lib/api-client";
+import { cn, formatDateTime } from "@/lib/utils";
+
+type Role = "user" | "assistant" | "safety";
+interface Msg {
+  id: string;
+  role: Role;
+  content: string;
+  provider?: string | null;
+  pending?: boolean;
+}
+interface ConvoSummary {
+  id: string;
+  title: string;
+  updatedAt: string;
+  count: number;
+}
+type SafetyUi =
+  | { kind: "none" }
+  | { kind: "check"; afterId: string; safetyEventId: string | null }
+  | { kind: "crisis"; afterId: string; safetyEventId: string | null }
+  | { kind: "safe-but-struggling"; afterId: string };
+
+const SUGGESTIONS = [
+  "Work has been really stressful lately",
+  "I can't seem to switch off at night",
+  "I've been feeling lonely",
+  "Can you guide me through a grounding exercise?",
+];
+
+function mapRole(r: string): Role {
+  return r === "USER" ? "user" : r === "SAFETY" ? "safety" : "assistant";
+}
+
+export function CompanionChat(props: {
+  preferredName: string;
+  provider: { id: string; label: string; isGenerative: boolean };
+  memoryEnabled: boolean;
+  historyEnabled: boolean;
+  demoMode: boolean;
+  conversations: ConvoSummary[];
+  initial: { id: string; messages: { id: string; role: string; content: string; provider: string | null }[] } | null;
+}) {
+  const router = useRouter();
+  const [conversationId, setConversationId] = useState<string | null>(props.initial?.id ?? null);
+  const [messages, setMessages] = useState<Msg[]>(
+    props.initial?.messages.map((m) => ({ id: m.id, role: mapRole(m.role), content: m.content, provider: m.provider })) ?? [],
+  );
+  const [conversations, setConversations] = useState(props.conversations);
+  const [input, setInput] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [safety, setSafety] = useState<SafetyUi>({ kind: "none" });
+  const [showHistory, setShowHistory] = useState(false);
+  const [remembering, setRemembering] = useState<{ id: string; text: string } | null>(null);
+  const [remembered, setRemembered] = useState<Set<string>>(new Set());
+  const [notice, setNotice] = useState<string | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+  }, [messages, safety]);
+
+  async function ensureConversation(): Promise<string> {
+    if (conversationId) return conversationId;
+    const { conversation } = await api<{ conversation: { id: string } }>("/api/conversations", { method: "POST" });
+    setConversationId(conversation.id);
+    window.history.replaceState(null, "", `/patient/companion?c=${conversation.id}`);
+    return conversation.id;
+  }
+
+  async function send(text: string) {
+    const content = text.trim();
+    if (!content || busy) return;
+    setBusy(true);
+    setInput("");
+    setNotice(null);
+    const tempUser = `u-${Date.now()}`;
+    const tempAsst = `a-${Date.now()}`;
+    setMessages((m) => [...m, { id: tempUser, role: "user", content }, { id: tempAsst, role: "assistant", content: "", pending: true }]);
+
+    try {
+      const id = await ensureConversation();
+      const res = await fetch(`/api/conversations/${id}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content }),
+      });
+      if (!res.ok || !res.body) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error?.message ?? "The companion is unavailable right now.");
+      }
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let mode: "crisis" | "safety-check" | "normal" = "normal";
+      let assistantId = tempAsst;
+      for (;;) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          const ev = JSON.parse(line);
+          if (ev.type === "safety") {
+            mode = ev.mode;
+            if (mode === "crisis") {
+              setMessages((m) => m.map((x) => (x.id === tempAsst ? { ...x, role: "safety" } : x)));
+            }
+          } else if (ev.type === "delta") {
+            setMessages((m) => m.map((x) => (x.id === tempAsst ? { ...x, content: x.content + ev.text, pending: false } : x)));
+          } else if (ev.type === "replace") {
+            setMessages((m) => m.map((x) => (x.id === tempAsst ? { ...x, content: ev.text, pending: false } : x)));
+          } else if (ev.type === "done") {
+            setMessages((m) => m.map((x) => (x.id === tempAsst ? { ...x, content: ev.text, provider: ev.producedBy, pending: false } : x)));
+          } else if (ev.type === "saved") {
+            assistantId = ev.assistantMessageId;
+            setMessages((m) =>
+              m.map((x) => (x.id === tempUser ? { ...x, id: ev.userMessageId } : x.id === tempAsst ? { ...x, id: ev.assistantMessageId } : x)),
+            );
+            if (mode === "crisis") setSafety({ kind: "crisis", afterId: assistantId, safetyEventId: ev.safetyEventId });
+            else if (mode === "safety-check") setSafety({ kind: "check", afterId: assistantId, safetyEventId: ev.safetyEventId });
+          }
+        }
+      }
+      refreshConversations();
+    } catch (e) {
+      setMessages((m) =>
+        m.map((x) =>
+          x.id === tempAsst
+            ? {
+                ...x,
+                pending: false,
+                provider: "fallback",
+                content:
+                  "I'm sorry — I couldn't respond just now. If you need to talk to someone, **800-SAKINA (800 725462)** is available 24/7. In an emergency, call **998** or **999**.",
+              }
+            : x,
+        ),
+      );
+      setNotice(e instanceof Error ? e.message : "Something went wrong.");
+    } finally {
+      setBusy(false);
+      inputRef.current?.focus();
+    }
+  }
+
+  async function refreshConversations() {
+    try {
+      const { conversations } = await api<{ conversations: { id: string; title: string; updatedAt: string; _count: { messages: number } }[] }>("/api/conversations");
+      setConversations(conversations.map((c) => ({ id: c.id, title: c.title, updatedAt: c.updatedAt, count: c._count.messages })));
+    } catch {
+      /* non-critical */
+    }
+  }
+
+  async function reportSafety(level: "IMMEDIATE_DANGER" | "SAFE_BUT_STRUGGLING" | "OK", afterId: string) {
+    if (level === "IMMEDIATE_DANGER") {
+      try {
+        const { safetyEventId } = await api<{ safetyEventId: string }>("/api/safety/events", {
+          body: { level: "IMMEDIATE_DANGER", conversationId: conversationId ?? undefined },
+        });
+        setSafety({ kind: "crisis", afterId, safetyEventId });
+      } catch {
+        setSafety({ kind: "crisis", afterId, safetyEventId: null });
+      }
+    } else if (level === "SAFE_BUT_STRUGGLING") {
+      setSafety({ kind: "safe-but-struggling", afterId });
+    } else {
+      setSafety({ kind: "none" });
+      setNotice("Thank you for letting me know. I'm here whenever you want to keep talking.");
+    }
+  }
+
+  async function saveMemory() {
+    if (!remembering) return;
+    try {
+      await api("/api/memories", { body: { content: remembering.text.slice(0, 300) } });
+      setRemembered((s) => new Set(s).add(remembering.id));
+      setRemembering(null);
+    } catch (e) {
+      setNotice(e instanceof Error ? e.message : "Could not save memory");
+    }
+  }
+
+  async function deleteConversation(id: string) {
+    if (!confirm("Delete this conversation permanently?")) return;
+    await api(`/api/conversations/${id}`, { method: "DELETE" });
+    setConversations((c) => c.filter((x) => x.id !== id));
+    if (id === conversationId) newConversation();
+  }
+
+  function newConversation() {
+    setConversationId(null);
+    setMessages([]);
+    setSafety({ kind: "none" });
+    setShowHistory(false);
+    router.replace("/patient/companion");
+  }
+
+  const isDemoProvider = !props.provider.isGenerative;
+
+  return (
+    <div className="flex h-dvh">
+      {/* Conversation history */}
+      <aside
+        className={cn(
+          "fixed inset-y-0 start-0 z-40 w-80 max-w-[85vw] flex-col border-e border-line bg-surface transition-transform lg:static lg:z-auto lg:flex lg:w-72 lg:translate-x-0",
+          showHistory ? "flex translate-x-0" : "hidden -translate-x-full lg:flex",
+        )}
+        aria-label="Conversation history"
+      >
+        <div className="flex items-center justify-between border-b border-line/70 p-4">
+          <p className="font-semibold text-ink">Conversations</p>
+          <button className="rounded-lg p-1.5 text-muted hover:bg-sand lg:hidden" onClick={() => setShowHistory(false)} aria-label="Close history">
+            <X className="size-4" />
+          </button>
+        </div>
+        <div className="p-3">
+          <Button variant="soft" className="w-full" onClick={newConversation}>
+            <Plus aria-hidden /> New conversation
+          </Button>
+        </div>
+        <ul className="flex-1 space-y-1 overflow-y-auto px-3 pb-4">
+          {!props.historyEnabled && (
+            <li className="rounded-xl bg-sand/60 p-3 text-xs text-muted">History is off. Conversations are deleted within 24 hours. Change this in Profile & Privacy.</li>
+          )}
+          {conversations.map((c) => (
+            <li key={c.id} className="group flex items-center gap-1">
+              <Link
+                href={`/patient/companion?c=${c.id}`}
+                className={cn(
+                  "min-w-0 flex-1 rounded-xl px-3 py-2 text-sm",
+                  c.id === conversationId ? "bg-teal-50 text-teal-700" : "text-ink-soft hover:bg-sand/70",
+                )}
+                onClick={() => setShowHistory(false)}
+              >
+                <span className="block truncate font-medium">{c.title}</span>
+                <span className="block text-xs text-muted">{formatDateTime(c.updatedAt)} · {c.count} messages</span>
+              </Link>
+              <button
+                onClick={() => deleteConversation(c.id)}
+                className="rounded-lg p-1.5 text-muted opacity-60 hover:bg-safety-50 hover:text-safety-600 group-hover:opacity-100"
+                aria-label={`Delete ${c.title}`}
+              >
+                <Trash2 className="size-4" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      </aside>
+      {showHistory && <div className="fixed inset-0 z-30 bg-ink/20 lg:hidden" onClick={() => setShowHistory(false)} aria-hidden />}
+
+      {/* Chat */}
+      <section className="flex min-w-0 flex-1 flex-col">
+        <header className="flex items-center gap-2 border-b border-line/70 bg-surface/70 px-3 py-3 backdrop-blur sm:gap-3 sm:px-4">
+          <Link href="/patient" className="rounded-lg p-2 text-ink-soft hover:bg-sand lg:hidden" aria-label="Back to home">
+            <Home className="size-5" />
+          </Link>
+          <button className="rounded-lg p-2 text-ink-soft hover:bg-sand lg:hidden" onClick={() => setShowHistory(true)} aria-label="Show conversation history">
+            <History className="size-5" />
+          </button>
+          <span className="hidden size-9 items-center justify-center rounded-full bg-teal-600 text-white sm:flex">
+            <Bot className="size-5" aria-hidden />
+          </span>
+          <div className="min-w-0 flex-1 leading-tight">
+            <p className="font-semibold text-ink">Wellbeing companion</p>
+            <p className="truncate text-xs text-muted">AI · not a clinician · {isDemoProvider ? "offline demo responses" : props.provider.label}</p>
+          </div>
+          <Button variant="ghost" size="sm" onClick={newConversation} className="hidden sm:inline-flex">
+            <Plus aria-hidden /> New
+          </Button>
+          <Link href="/help" className="inline-flex h-9 items-center gap-1.5 rounded-full bg-safety-50 px-3 text-sm font-semibold text-safety-700 ring-1 ring-safety-100">
+            <LifeBuoy className="size-4" aria-hidden /> Help
+          </Link>
+        </header>
+
+        <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-6" aria-live="polite">
+          <div className="mx-auto flex max-w-2xl flex-col gap-4">
+            {isDemoProvider && (
+              <Callout tone="amber" icon={<Info />} className="text-xs">
+                <strong>Offline demo companion.</strong> No AI model is configured, so replies are pre-written supportive responses chosen by topic — not generated by AI. The safety system runs exactly as it would with a live model.
+              </Callout>
+            )}
+
+            {messages.length === 0 && (
+              <div className="py-6 text-center">
+                <p className="font-display text-2xl text-ink">Hi {props.preferredName}, what's on your mind?</p>
+                <p className="mx-auto mt-2 max-w-md text-sm text-muted">
+                  I'm an AI companion. I can listen and share general wellbeing ideas, but I'm not a doctor and can't diagnose or give medical advice.
+                </p>
+                <div className="mt-6 flex flex-wrap justify-center gap-2">
+                  {SUGGESTIONS.map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => send(s)}
+                      className="rounded-full border border-line bg-surface px-3.5 py-2 text-sm text-ink-soft shadow-soft hover:border-teal-200 hover:bg-teal-50"
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {messages.map((m) => (
+              <div key={m.id} className="flex flex-col gap-3">
+                <MessageBubble
+                  m={m}
+                  canRemember={props.memoryEnabled && m.role === "user" && !m.id.startsWith("u-")}
+                  remembered={remembered.has(m.id)}
+                  onRemember={() => setRemembering({ id: m.id, text: m.content })}
+                />
+                {remembering?.id === m.id && (
+                  <div className="ms-auto flex w-full max-w-md flex-col gap-2 rounded-2xl border border-teal-100 bg-teal-50 p-3 text-sm">
+                    <label htmlFor="mem" className="font-medium text-teal-900">Save to your wellbeing memory</label>
+                    <textarea
+                      id="mem"
+                      className="rounded-xl border border-line bg-surface p-2 text-sm"
+                      rows={2}
+                      maxLength={300}
+                      value={remembering.text}
+                      onChange={(e) => setRemembering({ ...remembering, text: e.target.value })}
+                    />
+                    <div className="flex justify-end gap-2">
+                      <Button size="sm" variant="ghost" onClick={() => setRemembering(null)}>Cancel</Button>
+                      <Button size="sm" onClick={saveMemory}>Save</Button>
+                    </div>
+                  </div>
+                )}
+                {safety.kind !== "none" && safety.afterId === m.id && (
+                  <>
+                    {safety.kind === "crisis" && <CrisisPanel safetyEventId={safety.safetyEventId} demoMode={props.demoMode} />}
+                    {safety.kind === "check" && <SafetyCheckCard onAnswer={(l) => reportSafety(l, m.id)} />}
+                    {safety.kind === "safe-but-struggling" && <StrugglingCard />}
+                  </>
+                )}
+              </div>
+            ))}
+            {notice && <p className="text-center text-xs text-muted">{notice}</p>}
+          </div>
+        </div>
+
+        <footer className="border-t border-line/70 bg-surface/80 px-4 pb-safe pt-3 backdrop-blur">
+          <form
+            className="mx-auto flex max-w-2xl items-end gap-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              send(input);
+            }}
+          >
+            <label htmlFor="composer" className="sr-only">Message the companion</label>
+            <textarea
+              id="composer"
+              ref={inputRef}
+              rows={1}
+              value={input}
+              maxLength={4000}
+              onChange={(e) => {
+                setInput(e.target.value);
+                e.target.style.height = "auto";
+                e.target.style.height = `${Math.min(e.target.scrollHeight, 160)}px`;
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+                  e.preventDefault();
+                  send(input);
+                }
+              }}
+              placeholder="Write how you're feeling…"
+              className="max-h-40 min-h-11 flex-1 resize-none rounded-2xl border border-line bg-surface px-4 py-2.5 text-[15px] focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100"
+            />
+            <Button type="submit" size="icon" disabled={busy || !input.trim()} aria-label="Send message" className="size-11 shrink-0">
+              {busy ? <Loader2 className="animate-spin" /> : <ArrowUp />}
+            </Button>
+          </form>
+          <p className="mx-auto mt-2 max-w-2xl pb-1 text-center text-[11px] text-muted">
+            AI wellbeing companion — general support, not medical advice. In an emergency call <a href="tel:999" className="font-semibold text-safety-700">999</a> or{" "}
+            <a href="tel:998" className="font-semibold text-safety-700">998</a>.
+          </p>
+        </footer>
+      </section>
+    </div>
+  );
+}
+
+function MessageBubble({ m, canRemember, remembered, onRemember }: { m: Msg; canRemember: boolean; remembered: boolean; onRemember: () => void }) {
+  if (m.role === "user") {
+    return (
+      <div className="group ms-auto flex max-w-[85%] flex-col items-end gap-1">
+        <div className="whitespace-pre-wrap rounded-2xl rounded-ee-md bg-teal-600 px-4 py-2.5 text-[15px] text-white shadow-soft">{m.content}</div>
+        {canRemember &&
+          (remembered ? (
+            <span className="flex items-center gap-1 text-xs text-teal-700"><Check className="size-3" aria-hidden /> Saved to memory</span>
+          ) : (
+            <button onClick={onRemember} className="flex items-center gap-1 text-xs text-muted opacity-70 hover:text-teal-700 group-hover:opacity-100">
+              <BookmarkPlus className="size-3" aria-hidden /> Remember this
+            </button>
+          ))}
+      </div>
+    );
+  }
+  const isSafety = m.role === "safety";
+  return (
+    <div className="flex max-w-[92%] gap-2.5">
+      <span className={cn("mt-1 flex size-7 shrink-0 items-center justify-center rounded-full", isSafety ? "bg-safety-500 text-white" : "bg-teal-50 text-teal-700")}>
+        {isSafety ? <ShieldAlert className="size-4" aria-hidden /> : <Bot className="size-4" aria-hidden />}
+      </span>
+      <div className="min-w-0">
+        <div
+          className={cn(
+            "rounded-2xl rounded-es-md px-4 py-2.5 text-[15px] leading-relaxed shadow-soft",
+            isSafety ? "border border-safety-100 bg-safety-50 text-ink" : "bg-surface text-ink",
+          )}
+        >
+          {m.pending ? (
+            <span className="flex items-center gap-1 py-1" aria-label="Companion is typing">
+              {[0, 1, 2].map((i) => (
+                <span key={i} className="size-1.5 animate-bounce rounded-full bg-muted/60" style={{ animationDelay: `${i * 120}ms` }} />
+              ))}
+            </span>
+          ) : (
+            <RichText text={m.content} />
+          )}
+        </div>
+        <div className="mt-1 flex flex-wrap items-center gap-1.5 ps-1">
+          {isSafety && <Badge tone="safety">Safety response · pre-written, not AI-generated</Badge>}
+          {m.provider === "fallback" && <Badge tone="neutral">Safe fallback response</Badge>}
+          {m.provider === "demo" && <Badge tone="amber">Pre-written demo response</Badge>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SafetyCheckCard({ onAnswer }: { onAnswer: (l: "IMMEDIATE_DANGER" | "SAFE_BUT_STRUGGLING" | "OK") => void }) {
+  return (
+    <div className="animate-fade-up rounded-3xl border border-sky-100 bg-sky-50 p-4 sm:p-5" data-testid="safety-check">
+      <p className="flex items-center gap-2 font-semibold text-sky-700"><HeartHandshake className="size-4" aria-hidden /> Checking in on you</p>
+      <p className="mt-1 text-sm text-ink-soft">Are you thinking about ending your life, or are you in danger right now? Whatever your answer, it's okay to say it.</p>
+      <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+        <Button variant="safety" size="sm" onClick={() => onAnswer("IMMEDIATE_DANGER")}>I'm in danger right now</Button>
+        <Button variant="secondary" size="sm" onClick={() => onAnswer("SAFE_BUT_STRUGGLING")}>I'm having thoughts, but I'm safe right now</Button>
+        <Button variant="ghost" size="sm" onClick={() => onAnswer("OK")}>No, I'm not</Button>
+      </div>
+    </div>
+  );
+}
+
+function StrugglingCard() {
+  return (
+    <div className="animate-fade-up rounded-3xl border border-teal-100 bg-surface p-4 shadow-soft sm:p-5">
+      <p className="font-semibold text-ink">Thank you for being honest. You deserve support with this.</p>
+      <ul className="mt-2 space-y-1.5 text-sm text-ink-soft">
+        <li>• Talk to someone trained, any time: <a href="tel:800725462" className="font-semibold text-teal-700">800-SAKINA (800 725462)</a> — free, confidential, 24/7.</li>
+        <li>• Look at your <Link href="/patient/circle#safety-plan" className="font-medium text-teal-700 underline-offset-2 hover:underline">safety plan</Link>, or make one now.</li>
+        <li>• Consider <Link href="/patient/support" className="font-medium text-teal-700 underline-offset-2 hover:underline">connecting with a professional</Link>.</li>
+        <li>• If things change and you feel in danger, call <a href="tel:998" className="font-semibold text-safety-700">998</a> or <a href="tel:999" className="font-semibold text-safety-700">999</a>.</li>
+      </ul>
+    </div>
+  );
+}

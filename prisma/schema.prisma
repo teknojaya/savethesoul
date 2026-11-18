@@ -1,0 +1,575 @@
+// SaveTheSoul — Prisma schema
+//
+// Conventions
+// - Fields ending in `Enc` hold AES-256-GCM ciphertext produced by src/lib/crypto.ts.
+//   They are never logged and never returned to a client without authorization.
+// - Wellbeing trends are DERIVED on read from assessments/check-ins rather than stored,
+//   so no model-generated interpretation is persisted as a clinical fact.
+// - All clinician identities and patient records in seed data are synthetic.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ───────────────────────────── Identity & access ─────────────────────────────
+
+enum UserRole {
+  PATIENT
+  CLINICIAN
+  ADMIN
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  displayName  String
+  role         UserRole  @default(PATIENT)
+  locale       String    @default("en")
+  isDemo       Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  sessions         Session[]
+  patientProfile   PatientProfile?
+  clinicianProfile ClinicianProfile?
+  auditLogs        AuditLog[]        @relation("AuditActor")
+
+  @@index([role])
+}
+
+model Session {
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model PatientProfile {
+  id                  String    @id @default(cuid())
+  userId              String    @unique
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  preferredName       String
+  // Data minimisation: only an optional coarse age band, no birth date.
+  ageBand             String?
+  preferredLanguage   String    @default("en")
+  region              String    @default("Abu Dhabi")
+  onboardingCompleted Boolean   @default(false)
+  // User-controlled preferences
+  chatHistoryEnabled  Boolean   @default(true)
+  memoryEnabled       Boolean   @default(false)
+  // Voluntarily supplied physical-health context (encrypted free text)
+  physicalHealthEnc   String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  conversations   Conversation[]
+  checkIns        WellbeingCheckIn[]
+  assessments     WellbeingAssessment[]
+  goals           WellbeingGoal[]
+  memories        WellbeingMemory[]
+  consents        ConsentRecord[]
+  trustedContacts TrustedContact[]
+  notifications   ContactNotification[]
+  referrals       CareReferral[]
+  summaries       ClinicalSummary[]
+  clinicianNotes  ClinicianNote[]
+  safetyEvents    SafetyEvent[]
+  safetyPlan      SafetyPlan?
+  assignments     CareAssignment[]
+  followUps       FollowUp[]
+}
+
+model ClinicianProfile {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title         String
+  specialty     String
+  organization  String
+  // Synthetic for the hackathon; real deployment requires DoH licence verification.
+  licenseNumber String
+  isSynthetic   Boolean  @default(true)
+  createdAt     DateTime @default(now())
+
+  assignments CareAssignment[]
+  referrals   CareReferral[]
+  summaries   ClinicalSummary[]
+  notes       ClinicianNote[]
+  followUps   FollowUp[]
+}
+
+enum AssignmentStatus {
+  ACTIVE
+  ENDED
+}
+
+/// A clinician may only see a patient they are assigned to AND for whom the patient
+/// has an active sharing consent naming that clinician.
+model CareAssignment {
+  id          String           @id @default(cuid())
+  patientId   String
+  patient     PatientProfile   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  clinicianId String
+  clinician   ClinicianProfile @relation(fields: [clinicianId], references: [id], onDelete: Cascade)
+  status      AssignmentStatus @default(ACTIVE)
+  createdAt   DateTime         @default(now())
+
+  @@unique([patientId, clinicianId])
+  @@index([clinicianId, status])
+}
+
+// ───────────────────────────── AI companion ─────────────────────────────
+
+model Conversation {
+  id        String         @id @default(cuid())
+  patientId String
+  patient   PatientProfile @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  title     String         @default("New conversation")
+  // When chat history is disabled the conversation is ephemeral and purged on close.
+  ephemeral Boolean        @default(false)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  messages     ChatMessage[]
+  safetyEvents SafetyEvent[]
+
+  @@index([patientId, updatedAt])
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SAFETY
+}
+
+model ChatMessage {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           MessageRole
+  contentEnc     String
+  // Which engine produced an assistant message: "anthropic", "demo", "safety-template", "fallback"
+  provider       String?
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId, createdAt])
+}
+
+/// Consent-controlled personal wellbeing memory. Only stored when the patient has
+/// enabled memory; individually viewable and deletable.
+model WellbeingMemory {
+  id         String         @id @default(cuid())
+  patientId  String
+  patient    PatientProfile @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  contentEnc String
+  createdAt  DateTime       @default(now())
+
+  @@index([patientId])
+}
+
+// ───────────────────────────── Wellbeing ─────────────────────────────
+
+model WellbeingCheckIn {
+  id            String         @id @default(cuid())
+  patientId     String
+  patient       PatientProfile @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  mood          Int // 1 (very low) – 5 (very good)
+  stress        Int? // 1 (none) – 5 (very high)
+  sleepQuality  Int? // 1 (very poor) – 5 (very good)
+  functioning   Int? // self-reported daily functioning 1–5
+  noteEnc       String?
+  createdAt     DateTime       @default(now())
+
+  @@index([patientId, createdAt])
+}
+
+enum AssessmentInstrument {
+  WHO5
+}
+
+model WellbeingAssessment {
+  id           String               @id @default(cuid())
+  patientId    String
+  patient      PatientProfile       @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  instrument   AssessmentInstrument @default(WHO5)
+  answers      Int[]
+  rawScore     Int // 0–25
+  percentScore Int // 0–100
+  completedAt  DateTime             @default(now())
+
+  @@index([patientId, completedAt])
+}
+
+enum GoalStatus {
+  ACTIVE
+  ACHIEVED
+  ARCHIVED
+}
+
+model WellbeingGoal {
+  id        String         @id @default(cuid())
+  patientId String
+  patient   PatientProfile @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  title     String
+  status    GoalStatus     @default(ACTIVE)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@index([patientId])
+}
+
+// ───────────────────────────── Consent ─────────────────────────────
+
+enum ConsentScope {
+  AI_PROCESSING
+  WELLBEING_MEMORY
+  SHARE_SUMMARY_WITH_CLINICIAN
+  TRUSTED_CONTACT_SHARING
+  AGGREGATE_ANALYTICS
+}
+
+enum GranteeType {
+  NONE
+  CLINICIAN
+  TRUSTED_CONTACT
+}
+
+/// Append-only consent ledger: revocation sets revokedAt, rows are never rewritten.
+model ConsentRecord {
+  id            String         @id @default(cuid())
+  patientId     String
+  patient       PatientProfile @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  scope         ConsentScope
+  granteeType   GranteeType    @default(NONE)
+  granteeId     String?
+  // Data categories covered, e.g. ["WHO5_HISTORY","MOOD_TRENDS","PATIENT_NOTE"]
+  categories    String[]
+  policyVersion String
+  grantedAt     DateTime       @default(now())
+  revokedAt     DateTime?
+
+  @@index([patientId, scope])
+  @@index([granteeType, granteeId])
+}
+
+// ───────────────────────────── Trusted circle ─────────────────────────────
+
+model TrustedContact {
+  id                     String         @id @default(cuid())
+  patientId              String
+  patient                PatientProfile @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  name                   String
+  relationship           String
+  phoneEnc               String?
+  emailEnc               String?
+  canReceiveUpdates      Boolean        @default(false)
+  canReceiveSafetyAlerts Boolean        @default(false)
+  sharedCategories       String[]
+  isSafetyPlanContact    Boolean        @default(false)
+  // Real delivery requires verified recipient details; always false in the prototype.
+  recipientVerified      Boolean        @default(false)
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
+  revokedAt              DateTime?
+
+  notifications ContactNotification[]
+
+  @@index([patientId])
+}
+
+enum NotificationKind {
+  ORDINARY_UPDATE
+  SAFETY_ALERT
+}
+
+enum NotificationStatus {
+  SIMULATED_SENT
+  BLOCKED
+}
+
+model ContactNotification {
+  id               String             @id @default(cuid())
+  patientId        String
+  patient          PatientProfile     @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  trustedContactId String
+  trustedContact   TrustedContact     @relation(fields: [trustedContactId], references: [id], onDelete: Cascade)
+  kind             NotificationKind
+  messageEnc       String
+  status           NotificationStatus
+  blockedReason    String?
+  simulated        Boolean            @default(true)
+  createdAt        DateTime           @default(now())
+
+  @@index([patientId, createdAt])
+}
+
+// ───────────────────────────── Care navigation ─────────────────────────────
+
+enum ResourceCategory {
+  EMERGENCY
+  CRISIS_LINE
+  SELF_HELP
+  COMMUNITY
+  PRIMARY_CARE
+  MENTAL_HEALTH_CONSULTATION
+  TELE_MENTAL_HEALTH
+  PSYCHIATRIC_SPECIALIST
+}
+
+enum VerificationStatus {
+  VERIFIED_OFFICIAL
+  VERIFIED_SECONDARY
+  NEEDS_VERIFICATION
+}
+
+model SupportResource {
+  id                 String             @id @default(cuid())
+  slug               String             @unique
+  name               String
+  category           ResourceCategory
+  description        String
+  phone              String?
+  website            String?
+  hours              String?
+  languages          String?
+  eligibility        String?
+  nextSteps          String
+  region             String             @default("Abu Dhabi")
+  verificationStatus VerificationStatus
+  verificationNote   String?
+  verifiedAt         DateTime?
+  sourceUrl          String?
+  sortOrder          Int                @default(100)
+
+  referrals CareReferral[]
+
+  @@index([category])
+}
+
+enum ReferralStatus {
+  REQUESTED
+  ACKNOWLEDGED
+  SCHEDULED
+  COMPLETED
+  DECLINED
+  CANCELLED
+  UNABLE_TO_CONTACT
+}
+
+enum ReferralUrgency {
+  ROUTINE
+  SOON
+  URGENT
+}
+
+model CareReferral {
+  id             String            @id @default(cuid())
+  patientId      String
+  patient        PatientProfile    @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  clinicianId    String?
+  clinician      ClinicianProfile? @relation(fields: [clinicianId], references: [id], onDelete: SetNull)
+  resourceId     String?
+  resource       SupportResource?  @relation(fields: [resourceId], references: [id], onDelete: SetNull)
+  urgency        ReferralUrgency   @default(ROUTINE)
+  status         ReferralStatus    @default(REQUESTED)
+  reasonEnc      String?
+  // Every referral in the prototype is simulated: no real provider receives it.
+  isSimulated    Boolean           @default(true)
+  requestedAt    DateTime          @default(now())
+  firstContactAt DateTime?
+  completedAt    DateTime?
+  updatedAt      DateTime          @updatedAt
+
+  events    ReferralEvent[]
+  followUps FollowUp[]
+
+  @@index([patientId])
+  @@index([clinicianId, status])
+}
+
+model ReferralEvent {
+  id          String          @id @default(cuid())
+  referralId  String
+  referral    CareReferral    @relation(fields: [referralId], references: [id], onDelete: Cascade)
+  fromStatus  ReferralStatus?
+  toStatus    ReferralStatus
+  actorUserId String?
+  actorRole   String
+  note        String?
+  simulated   Boolean         @default(true)
+  createdAt   DateTime        @default(now())
+
+  @@index([referralId, createdAt])
+}
+
+enum FollowUpStatus {
+  PLANNED
+  COMPLETED
+  MISSED
+  CANCELLED
+}
+
+model FollowUp {
+  id           String           @id @default(cuid())
+  patientId    String
+  patient      PatientProfile   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  clinicianId  String
+  clinician    ClinicianProfile @relation(fields: [clinicianId], references: [id], onDelete: Cascade)
+  referralId   String?
+  referral     CareReferral?    @relation(fields: [referralId], references: [id], onDelete: SetNull)
+  scheduledFor DateTime
+  status       FollowUpStatus   @default(PLANNED)
+  // Patient-reported functioning change at follow-up: -2 (much worse) … +2 (much better)
+  functioningChange Int?
+  createdAt    DateTime         @default(now())
+  completedAt  DateTime?
+
+  @@index([clinicianId, status])
+  @@index([patientId])
+}
+
+// ───────────────────────────── Clinical sharing ─────────────────────────────
+
+enum SummaryStatus {
+  SHARED
+  REVOKED
+}
+
+enum DraftReviewStatus {
+  UNVERIFIED
+  REVIEWED
+}
+
+/// A patient-approved snapshot shared with one clinician. The structured part is built
+/// deterministically from assessments/check-ins; the optional AI draft is labelled
+/// UNVERIFIED until a clinician reviews it.
+model ClinicalSummary {
+  id               String            @id @default(cuid())
+  patientId        String
+  patient          PatientProfile    @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  clinicianId      String
+  clinician        ClinicianProfile  @relation(fields: [clinicianId], references: [id], onDelete: Cascade)
+  consentId        String
+  contentEnc       String
+  aiDraftEnc       String?
+  aiDraftStatus    DraftReviewStatus @default(UNVERIFIED)
+  status           SummaryStatus     @default(SHARED)
+  reviewedAt       DateTime?
+  reviewedByUserId String?
+  sharedAt         DateTime          @default(now())
+  revokedAt        DateTime?
+
+  @@index([clinicianId, status])
+  @@index([patientId])
+}
+
+model ClinicianNote {
+  id          String           @id @default(cuid())
+  patientId   String
+  patient     PatientProfile   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  clinicianId String
+  clinician   ClinicianProfile @relation(fields: [clinicianId], references: [id], onDelete: Cascade)
+  contentEnc  String
+  createdAt   DateTime         @default(now())
+
+  @@index([patientId, clinicianId])
+}
+
+// ───────────────────────────── Safety ─────────────────────────────
+
+enum SafetyLevel {
+  IMMEDIATE_DANGER
+  ELEVATED_CONCERN
+}
+
+enum SafetySource {
+  CHAT_INPUT
+  CHAT_OUTPUT
+  HELP_BUTTON
+  CHECK_IN
+}
+
+enum SafetyWorkflowStatus {
+  OPEN
+  SIMULATED_ALERT_SENT
+  SIMULATED_ACKNOWLEDGED
+  CLOSED
+  HANDOFF_FAILED
+}
+
+/// Records THAT a safety pathway was triggered, never the message text itself.
+model SafetyEvent {
+  id                String               @id @default(cuid())
+  patientId         String
+  patient           PatientProfile       @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  conversationId    String?
+  conversation      Conversation?        @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  level             SafetyLevel
+  source            SafetySource
+  detector          String
+  categories        String[]
+  workflowStatus    SafetyWorkflowStatus @default(OPEN)
+  simulatedAlertAt  DateTime?
+  acknowledgedAt    DateTime?
+  acknowledgedById  String?
+  failureReason     String?
+  createdAt         DateTime             @default(now())
+
+  @@index([patientId, createdAt])
+  @@index([workflowStatus])
+}
+
+model SafetyPlan {
+  id         String         @id @default(cuid())
+  patientId  String         @unique
+  patient    PatientProfile @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  contentEnc String
+  updatedAt  DateTime       @updatedAt
+}
+
+// ───────────────────────────── Audit & operations ─────────────────────────────
+
+enum AuditOutcome {
+  ALLOWED
+  DENIED
+}
+
+/// Records who accessed what, never the content. `subjectPatientId` is a plain id
+/// (no FK) so audit history survives patient deletion as required for accountability.
+model AuditLog {
+  id               String       @id @default(cuid())
+  actorUserId      String?
+  actor            User?        @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  actorRole        String
+  action           String
+  resourceType     String
+  resourceId       String?
+  subjectPatientId String?
+  outcome          AuditOutcome @default(ALLOWED)
+  createdAt        DateTime     @default(now())
+
+  @@index([subjectPatientId, createdAt])
+  @@index([actorUserId, createdAt])
+  @@index([action])
+}
+
+/// Operational events (LLM timeouts, failed hand-offs) with codes only — no content.
+model SystemEvent {
+  id        String   @id @default(cuid())
+  kind      String
+  code      String
+  createdAt DateTime @default(now())
+
+  @@index([kind, createdAt])
+}

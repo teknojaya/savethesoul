@@ -1,0 +1,241 @@
+import { prisma } from "@/lib/db/prisma";
+import { decryptJson, decryptOptional, encrypt, encryptJson, decrypt } from "@/lib/crypto";
+import type { Actor } from "@/lib/auth/session";
+import { AppError, notFound } from "@/lib/errors";
+import { getEnv } from "@/lib/env";
+import { CLINICIAN_SHARE_CATEGORIES, POLICY_VERSION, type ClinicianShareCategory } from "@/features/consent/policy";
+import { computeWho5Trend, summariseCheckIns } from "@/features/assessments/trends";
+import { WHO5_LIMITATIONS } from "@/features/assessments/who5";
+import { getChatProvider } from "@/features/ai/provider-factory";
+import { CLINICIAN_SUMMARY_SYSTEM_PROMPT } from "@/features/ai/prompts";
+import { audit, recordSystemEvent } from "./audit.service";
+import { requireClinicianAccess } from "./access.service";
+import { listCheckIns } from "./wellbeing.service";
+
+export interface SummaryContent {
+  generatedAt: string;
+  categories: ClinicianShareCategory[];
+  patient: { preferredName: string; ageBand: string | null; region: string };
+  who5?: { date: string; percentScore: number }[];
+  who5TrendNotes?: string[];
+  mood?: { recentAvg: number | null; priorAvg: number | null; recentCount: number };
+  sleepStress?: { sleepRecent: number | null; sleepPrior: number | null; stressRecent: number | null; stressPrior: number | null };
+  functioning?: { recentAvg: number | null; priorAvg: number | null };
+  goals?: string[];
+  physicalHealthContext?: string | null;
+  patientNote?: string | null;
+  limitations: string[];
+  excluded: string[];
+}
+
+/** Lists clinicians a patient may choose to share with (synthetic directory in the prototype). */
+export async function listShareableClinicians() {
+  const rows = await prisma.clinicianProfile.findMany({
+    include: { user: { select: { displayName: true } } },
+    orderBy: { createdAt: "asc" },
+  });
+  return rows.map((c) => ({
+    id: c.id,
+    name: c.user.displayName,
+    title: c.title,
+    specialty: c.specialty,
+    organization: c.organization,
+    isSynthetic: c.isSynthetic,
+  }));
+}
+
+/** Deterministically builds the summary from structured data. No chat content, no AI. */
+export async function buildSummaryContent(
+  patientId: string,
+  categories: ClinicianShareCategory[],
+  patientNote?: string | null,
+): Promise<SummaryContent> {
+  const profile = await prisma.patientProfile.findUniqueOrThrow({ where: { id: patientId } });
+  const has = (c: ClinicianShareCategory) => categories.includes(c);
+  const content: SummaryContent = {
+    generatedAt: new Date().toISOString(),
+    categories,
+    patient: { preferredName: profile.preferredName, ageBand: profile.ageBand, region: profile.region },
+    limitations: [
+      "Self-reported data; not clinically verified.",
+      WHO5_LIMITATIONS[1],
+      WHO5_LIMITATIONS[2],
+    ],
+    excluded: [
+      "Private AI companion conversations are never included.",
+      ...Object.entries(CLINICIAN_SHARE_CATEGORIES)
+        .filter(([k]) => !has(k as ClinicianShareCategory))
+        .map(([, label]) => `Not shared: ${label}`),
+    ],
+  };
+
+  if (has("WHO5_HISTORY")) {
+    const a = await prisma.wellbeingAssessment.findMany({ where: { patientId }, orderBy: { completedAt: "asc" } });
+    content.who5 = a.map((x) => ({ date: x.completedAt.toISOString(), percentScore: x.percentScore }));
+    content.who5TrendNotes = computeWho5Trend(a).explanations;
+  }
+  if (has("MOOD_TRENDS") || has("SLEEP_STRESS") || has("FUNCTIONING")) {
+    const s = summariseCheckIns(await listCheckIns(patientId, 30));
+    if (has("MOOD_TRENDS")) content.mood = { recentAvg: s.mood.recent, priorAvg: s.mood.prior, recentCount: s.recentCount };
+    if (has("SLEEP_STRESS")) {
+      content.sleepStress = {
+        sleepRecent: s.sleepQuality.recent,
+        sleepPrior: s.sleepQuality.prior,
+        stressRecent: s.stress.recent,
+        stressPrior: s.stress.prior,
+      };
+    }
+    if (has("FUNCTIONING")) content.functioning = { recentAvg: s.functioning.recent, priorAvg: s.functioning.prior };
+  }
+  if (has("GOALS")) {
+    const goals = await prisma.wellbeingGoal.findMany({ where: { patientId, status: "ACTIVE" } });
+    content.goals = goals.map((g) => g.title);
+  }
+  if (has("PHYSICAL_HEALTH_CONTEXT")) content.physicalHealthContext = decryptOptional(profile.physicalHealthEnc);
+  if (has("PATIENT_NOTE")) content.patientNote = patientNote ?? null;
+  return content;
+}
+
+export async function previewSummary(patientId: string, clinicianId: string, categories: ClinicianShareCategory[], patientNote?: string | null) {
+  const clinician = await prisma.clinicianProfile.findUnique({ where: { id: clinicianId } });
+  if (!clinician) throw notFound("Clinician not found");
+  return buildSummaryContent(patientId, categories, patientNote);
+}
+
+/**
+ * Shares an approved summary with ONE clinician:
+ *  - records a category-scoped consent (superseding any earlier one for this clinician)
+ *  - connects the patient to the clinician's care list (assignment)
+ *  - stores the encrypted snapshot, plus an UNVERIFIED AI draft if available
+ */
+export async function shareSummary(patientId: string, clinicianId: string, categories: ClinicianShareCategory[], patientNote?: string | null) {
+  const clinician = await prisma.clinicianProfile.findUnique({ where: { id: clinicianId } });
+  if (!clinician) throw notFound("Clinician not found");
+  const content = await buildSummaryContent(patientId, categories, patientNote);
+
+  const summary = await prisma.$transaction(async (tx) => {
+    const now = new Date();
+    await tx.consentRecord.updateMany({
+      where: { patientId, scope: "SHARE_SUMMARY_WITH_CLINICIAN", granteeId: clinicianId, revokedAt: null },
+      data: { revokedAt: now },
+    });
+    // A new share supersedes earlier snapshots, so data the patient has since
+    // excluded never remains visible through an older summary.
+    await tx.clinicalSummary.updateMany({
+      where: { patientId, clinicianId, status: "SHARED" },
+      data: { status: "REVOKED", revokedAt: now },
+    });
+    const consent = await tx.consentRecord.create({
+      data: {
+        patientId,
+        scope: "SHARE_SUMMARY_WITH_CLINICIAN",
+        granteeType: "CLINICIAN",
+        granteeId: clinicianId,
+        categories,
+        policyVersion: POLICY_VERSION,
+      },
+    });
+    await tx.careAssignment.upsert({
+      where: { patientId_clinicianId: { patientId, clinicianId } },
+      create: { patientId, clinicianId, status: "ACTIVE" },
+      update: { status: "ACTIVE" },
+    });
+    return tx.clinicalSummary.create({
+      data: { patientId, clinicianId, consentId: consent.id, contentEnc: encryptJson(content) },
+    });
+  });
+
+  const draft = await generateAiDraft(content);
+  if (draft) {
+    await prisma.clinicalSummary.update({ where: { id: summary.id }, data: { aiDraftEnc: encrypt(draft.text) } });
+  }
+  return { id: summary.id, sharedAt: summary.sharedAt, aiDraft: draft ? { provider: draft.provider } : null };
+}
+
+async function generateAiDraft(content: SummaryContent): Promise<{ text: string; provider: string } | null> {
+  const provider = getChatProvider();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), getEnv().LLM_TIMEOUT_MS);
+  try {
+    // Only the structured, patient-approved snapshot is sent — never conversations.
+    const { patient, ...rest } = content;
+    const text = await provider.complete({
+      system: CLINICIAN_SUMMARY_SYSTEM_PROMPT,
+      messages: [{ role: "user", content: `Patient-approved structured data (JSON):\n${JSON.stringify({ ageBand: patient.ageBand, ...rest })}` }],
+      signal: controller.signal,
+      maxTokens: 4000,
+    });
+    return text.trim() ? { text: text.trim(), provider: provider.id } : null;
+  } catch {
+    await recordSystemEvent("LLM_ERROR", "SUMMARY_DRAFT_FAILED");
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** Patient stops sharing with a clinician: revokes all active consents and summaries for them. */
+export async function stopSharingWithClinician(patientId: string, summaryId: string) {
+  const s = await prisma.clinicalSummary.findFirst({ where: { id: summaryId, patientId } });
+  if (!s) throw notFound("Summary not found");
+  const now = new Date();
+  await prisma.$transaction([
+    prisma.consentRecord.updateMany({
+      where: { patientId, scope: "SHARE_SUMMARY_WITH_CLINICIAN", granteeId: s.clinicianId, revokedAt: null },
+      data: { revokedAt: now },
+    }),
+    prisma.clinicalSummary.updateMany({
+      where: { patientId, clinicianId: s.clinicianId, status: "SHARED" },
+      data: { status: "REVOKED", revokedAt: now },
+    }),
+  ]);
+}
+
+export async function listPatientSummaries(patientId: string) {
+  const rows = await prisma.clinicalSummary.findMany({
+    where: { patientId },
+    orderBy: { sharedAt: "desc" },
+    include: { clinician: { include: { user: { select: { displayName: true } } } } },
+  });
+  return rows.map((r) => ({
+    id: r.id,
+    clinicianName: r.clinician.user.displayName,
+    clinicianOrg: r.clinician.organization,
+    consentId: r.consentId,
+    status: r.status,
+    sharedAt: r.sharedAt,
+    revokedAt: r.revokedAt,
+    reviewedAt: r.reviewedAt,
+    categories: decryptJson<SummaryContent>(r.contentEnc).categories,
+  }));
+}
+
+/** Clinician view: only SHARED summaries addressed to this clinician, gated by live consent. */
+export async function listSummariesForClinician(actor: Actor, patientId: string) {
+  const { clinicianId } = await requireClinicianAccess(actor, patientId, "VIEW_CLINICAL_SUMMARIES");
+  const rows = await prisma.clinicalSummary.findMany({
+    where: { patientId, clinicianId, status: "SHARED" },
+    orderBy: { sharedAt: "desc" },
+  });
+  return rows.map((r) => ({
+    id: r.id,
+    sharedAt: r.sharedAt,
+    content: decryptJson<SummaryContent>(r.contentEnc),
+    aiDraft: r.aiDraftEnc ? decrypt(r.aiDraftEnc) : null,
+    aiDraftStatus: r.aiDraftStatus,
+    reviewedAt: r.reviewedAt,
+  }));
+}
+
+export async function markDraftReviewed(actor: Actor, summaryId: string) {
+  const s = await prisma.clinicalSummary.findUnique({ where: { id: summaryId } });
+  if (!s || s.status !== "SHARED") throw notFound("Summary not found");
+  const { clinicianId } = await requireClinicianAccess(actor, s.patientId, "REVIEW_AI_DRAFT");
+  if (s.clinicianId !== clinicianId) throw new AppError("FORBIDDEN", "This summary was not shared with you");
+  await audit(actor, { action: "REVIEW_AI_DRAFT", resourceType: "ClinicalSummary", resourceId: summaryId, subjectPatientId: s.patientId });
+  return prisma.clinicalSummary.update({
+    where: { id: summaryId },
+    data: { aiDraftStatus: "REVIEWED", reviewedAt: new Date(), reviewedByUserId: actor.userId },
+    select: { id: true, aiDraftStatus: true, reviewedAt: true },
+  });
+}
