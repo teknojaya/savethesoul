@@ -1,6 +1,8 @@
 # Deployment (Railway)
 
-The repository is Railway-ready: `railway.json` defines the build, pre-deploy migrations, start command and health check.
+`railway.json` documents the build, pre-deploy migrations, start command and health check. Railway no longer applies config-as-code to newly created services, so set the same values on the service (Settings, or `railway`/MCP `update-service`). The live demo was configured this way.
+
+**Live demo:** project `savethesoul` (separate from all other projects), services `savethesoul-web` and `Postgres`, URL https://savethesoul-web-production.up.railway.app. The database has no public TCP proxy; it is reachable only on Railway's private network.
 
 ## 1. Create services
 
@@ -18,7 +20,9 @@ The repository is Railway-ready: `railway.json` defines the build, pre-deploy mi
 | `LLM_MODEL` | `claude-opus-5-5` |
 | `LLM_TIMEOUT_MS` | `30000` |
 | `ANTHROPIC_API_KEY` | Optional. Without it the offline demo companion is used |
-| `NODE_ENV` | `production` (Railway sets this automatically for builds) |
+| `SEED_ALLOW_RESET` | `true` only on the dedicated synthetic demo deployment |
+
+Do **not** set `NODE_ENV` as a service variable: it would make the build skip devDependencies. `next start` runs in production mode on its own.
 
 Never commit `.env`. Only `.env.example` is tracked.
 
@@ -31,14 +35,13 @@ Never commit `.env`. Only `.env.example` is tracked.
 | Start | `pnpm start` (`next start -p $PORT`) |
 | Health check | `GET /api/health` returns 200 when the database is reachable, otherwise 503. Reports the AI provider id; never reveals secrets |
 
-## 4. Seed the demo (one time)
+## 4. Seed or reset the demo
 
 The seed **wipes all data**. It refuses to run in production unless explicitly allowed. Run it only on a dedicated demo deployment, using either option:
 
 ```bash
-# Option A: inside the running service container
-railway ssh --service <web-service>
-SEED_ALLOW_RESET=true pnpm db:seed
+# Option A (used for the live demo): inside the running service container
+railway ssh --service savethesoul-web -- pnpm db:seed
 
 # Option B: from your machine, against the database's public URL
 DATABASE_URL="<Postgres DATABASE_PUBLIC_URL>" DATA_ENCRYPTION_KEY="<same key as the service>" \

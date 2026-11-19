@@ -2,6 +2,8 @@
 
 **Your AI Companion. Your Mental Wellbeing. Your Connection to Real Care.**
 
+**Live demo:** https://savethesoul-web-production.up.railway.app (one-click synthetic demo accounts at `/login`). Judge guide: [docs/HACKATHON_SUBMISSION.md](docs/HACKATHON_SUBMISSION.md).
+
 SaveTheSoul is a working prototype of a mental wellbeing companion for Abu Dhabi, built for the **Future Health Digital Innovation Challenge 2026** (category: *Earlier, Safer Mental Wellbeing Support*). It connects four things that are usually separate:
 
 1. **Supportive AI conversation**: a private, warm companion for stress, loneliness, sleep, work and family difficulties.
