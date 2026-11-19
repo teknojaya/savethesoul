@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { expect, test, type Page, type Request } from "@playwright/test";
-import { deleteIsolatedPatient, registerIsolatedPatient } from "./support";
+import { deleteIsolatedPatient, deleteSharedPatient, registerIsolatedPatient } from "./support";
 
 /**
  * Sakinah Voice Mode in a real Chromium with a fake microphone (synthetic audio).
@@ -14,6 +14,7 @@ test.use({
 test.describe.configure({ mode: "serial" });
 // Each test uses a fresh synthetic patient, deleted afterwards (safe to run against production).
 test.afterEach(({ page }) => deleteIsolatedPatient(page));
+test.afterAll(({ browser }, testInfo) => deleteSharedPatient(browser, testInfo.project.use.baseURL));
 
 const WELCOME =
   "Hello, I'm Sakinah, your AI wellbeing companion. I'm here to listen, support you, and help you through whatever is on your mind or whatever you're going through. You can share anything you're comfortable with, at your own pace. How are you feeling today?";

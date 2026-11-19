@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
-import { deleteIsolatedPatient, registerIsolatedPatient } from "./support";
+import { deleteIsolatedPatient, deleteSharedPatient, registerIsolatedPatient } from "./support";
 
 /**
  * Microphone beside the message box (fake microphone, synthetic speech). The two OpenAI-backed
@@ -11,6 +11,7 @@ test.use({
   launchOptions: { args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream", "--autoplay-policy=no-user-gesture-required"] },
 });
 test.afterEach(({ page }) => deleteIsolatedPatient(page));
+test.afterAll(({ browser }, testInfo) => deleteSharedPatient(browser, testInfo.project.use.baseURL));
 
 const MP3 = readFileSync("public/audio/sakinah-welcome.mp3");
 

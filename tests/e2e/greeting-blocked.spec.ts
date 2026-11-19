@@ -1,9 +1,10 @@
 import { expect, test, type Page } from "@playwright/test";
-import { deleteIsolatedPatient, registerIsolatedPatient, WELCOME } from "./support";
+import { deleteIsolatedPatient, deleteSharedPatient, registerIsolatedPatient, WELCOME } from "./support";
 
 /** Greeting when the browser blocks autoplay until a tap (typical on phones). Isolated synthetic account. */
 test.use({ launchOptions: { args: ["--autoplay-policy=document-user-activation-required"] } });
 test.afterEach(({ page }) => deleteIsolatedPatient(page));
+test.afterAll(({ browser }, testInfo) => deleteSharedPatient(browser, testInfo.project.use.baseURL));
 
 /** Mobile-style policy, emulated deterministically: play() only within 1 s of a tap on this page. */
 async function blockAutoplay(page: Page) {

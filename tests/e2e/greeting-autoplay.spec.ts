@@ -1,9 +1,10 @@
 import { expect, test } from "@playwright/test";
-import { countGreetingPlays, deleteIsolatedPatient, draftId, greetingPlays, registerIsolatedPatient, WELCOME } from "./support";
+import { countGreetingPlays, deleteIsolatedPatient, deleteSharedPatient, draftId, greetingPlays, registerIsolatedPatient, WELCOME } from "./support";
 
 /** Greeting on every new chat when the browser allows autoplay. Isolated synthetic account. */
 test.use({ launchOptions: { args: ["--autoplay-policy=no-user-gesture-required"] } });
 test.afterEach(({ page }) => deleteIsolatedPatient(page));
+test.afterAll(({ browser }, testInfo) => deleteSharedPatient(browser, testInfo.project.use.baseURL));
 
 test("every new chat greets once (by conversation identity); refreshes and saved conversations do not", async ({ page }) => {
   await countGreetingPlays(page);
