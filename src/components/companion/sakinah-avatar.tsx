@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 
 /**
  * Sakinah's avatar: an original, simple illustration of a calm, friendly woman in the
- * SaveTheSoul teal/sage palette. Decorative (the name is always shown next to it), so it is
+ * SaveTheSoul blue palette. Decorative (the name is always shown next to it), so it is
  * hidden from screen readers unless a label is passed.
  */
 export function SakinahAvatar({ className, label }: { className?: string; label?: string }) {
@@ -19,8 +19,8 @@ export function SakinahAvatar({ className, label }: { className?: string; label?
     >
       <defs>
         <linearGradient id={`bg-${id}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#E6F2EE" />
-          <stop offset="1" stopColor="#BFDDD3" />
+          <stop offset="0" stopColor="#EAF3FF" />
+          <stop offset="1" stopColor="#C2DAFB" />
         </linearGradient>
         <linearGradient id={`top-${id}`} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#7DAE9A" />

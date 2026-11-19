@@ -26,7 +26,7 @@ const badgeVariants = cva("inline-flex items-center gap-1 rounded-full px-2.5 py
   variants: {
     tone: {
       neutral: "bg-sand text-ink-soft",
-      teal: "bg-teal-50 text-teal-700",
+      brand: "bg-brand-50 text-brand-700",
       sage: "bg-sage-50 text-sage-700",
       sky: "bg-sky-50 text-sky-700",
       amber: "bg-amber-50 text-amber-700",
@@ -54,7 +54,7 @@ export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputE
   <input
     ref={ref}
     className={cn(
-      "h-11 w-full rounded-xl border border-line bg-surface px-3.5 text-[15px] text-ink placeholder:text-muted/70 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100 disabled:opacity-60",
+      "h-11 w-full rounded-xl border border-line bg-surface px-3.5 text-[15px] text-ink placeholder:text-muted/70 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100 disabled:opacity-60",
       className,
     )}
     {...props}
@@ -66,7 +66,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<H
   <textarea
     ref={ref}
     className={cn(
-      "w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 text-[15px] text-ink placeholder:text-muted/70 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100",
+      "w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 text-[15px] text-ink placeholder:text-muted/70 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100",
       className,
     )}
     {...props}
@@ -93,7 +93,7 @@ const calloutVariants = cva("flex gap-3 rounded-2xl border p-4 text-sm", {
   variants: {
     tone: {
       info: "border-sky-100 bg-sky-50 text-sky-700",
-      teal: "border-teal-100 bg-teal-50 text-teal-900",
+      brand: "border-brand-100 bg-brand-50 text-brand-900",
       amber: "border-amber-500/20 bg-amber-50 text-amber-700",
       safety: "border-safety-100 bg-safety-50 text-safety-700",
       neutral: "border-line bg-sand/50 text-ink-soft",
@@ -115,7 +115,7 @@ export function PageHeader({ title, description, actions, eyebrow }: { title: st
   return (
     <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <div className="min-w-0">
-        {eyebrow && <p className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-teal-600">{eyebrow}</p>}
+        {eyebrow && <p className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-brand-600">{eyebrow}</p>}
         <h1 className="font-display text-[28px] leading-tight text-ink sm:text-[32px]">{title}</h1>
         {description && <p className="mt-1.5 max-w-2xl text-[15px] text-muted">{description}</p>}
       </div>
@@ -127,7 +127,7 @@ export function PageHeader({ title, description, actions, eyebrow }: { title: st
 export function EmptyState({ icon, title, description, action }: { icon?: ReactNode; title: string; description?: string; action?: ReactNode }) {
   return (
     <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-line bg-surface/60 px-6 py-10 text-center">
-      {icon && <div className="mb-1 text-teal-500 [&_svg]:size-7">{icon}</div>}
+      {icon && <div className="mb-1 text-brand-500 [&_svg]:size-7">{icon}</div>}
       <p className="font-medium text-ink">{title}</p>
       {description && <p className="max-w-sm text-sm text-muted">{description}</p>}
       {action && <div className="mt-2">{action}</div>}

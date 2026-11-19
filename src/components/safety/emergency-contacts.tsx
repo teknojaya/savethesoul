@@ -39,14 +39,14 @@ export function EmergencyContacts({ compact = false, className }: { compact?: bo
       </div>
       <div className="flex flex-col gap-3">
         {lines.map((r) => (
-          <CallTile key={r.slug} r={r} tone="teal" compact={compact} wide />
+          <CallTile key={r.slug} r={r} tone="brand" compact={compact} wide />
         ))}
       </div>
     </div>
   );
 }
 
-function CallTile({ r, tone, compact, wide }: { r: SupportResourceData; tone: "safety" | "teal"; compact?: boolean; wide?: boolean }) {
+function CallTile({ r, tone, compact, wide }: { r: SupportResourceData; tone: "safety" | "brand"; compact?: boolean; wide?: boolean }) {
   const Icon = tone === "safety" ? ShieldAlert : HeartHandshake;
   return (
     <a
@@ -56,20 +56,20 @@ function CallTile({ r, tone, compact, wide }: { r: SupportResourceData; tone: "s
         "group flex items-center gap-3 rounded-2xl border p-4 transition-colors",
         tone === "safety"
           ? "border-safety-100 bg-safety-50 hover:bg-safety-100"
-          : "border-teal-100 bg-teal-50 hover:bg-teal-100",
+          : "border-brand-100 bg-brand-50 hover:bg-brand-100",
         wide ? "" : "flex-col items-start sm:flex-row sm:items-center",
       )}
     >
       <span
         className={cn(
           "flex size-10 shrink-0 items-center justify-center rounded-full text-white",
-          tone === "safety" ? "bg-safety-500" : "bg-teal-600",
+          tone === "safety" ? "bg-safety-500" : "bg-brand-600",
         )}
       >
         <Icon className="size-5" aria-hidden />
       </span>
       <span className="min-w-0 flex-1">
-        <span className={cn("block font-semibold", tone === "safety" ? "text-safety-700" : "text-teal-900")}>
+        <span className={cn("block font-semibold", tone === "safety" ? "text-safety-700" : "text-brand-900")}>
           {wide ? r.name : r.name.split(" (")[0]}
         </span>
         <span className="block text-lg font-semibold tabular-nums text-ink">{r.phone}</span>

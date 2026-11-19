@@ -41,7 +41,7 @@ interface Concerns {
 
 /** Patient-reported concerns: the patient chooses every answer; nothing is inferred. */
 function ConcernsForm({ value, onChange }: { value: Concerns; onChange: (v: Concerns) => void }) {
-  const chip = (active: boolean) => cn("rounded-full border px-3 py-1.5 text-sm", active ? "border-teal-500 bg-teal-50 text-teal-800" : "border-line text-ink-soft");
+  const chip = (active: boolean) => cn("rounded-full border px-3 py-1.5 text-sm", active ? "border-brand-500 bg-brand-50 text-brand-800" : "border-line text-ink-soft");
   const single = <K extends "duration" | "frequency" | "dailyLifeImpact" | "helpWanted">(key: K, options: Record<string, string>, legend: string) => (
     <fieldset>
       <legend className="text-xs font-medium text-ink-soft">{legend}</legend>
@@ -141,7 +141,7 @@ export function ShareFlow({ clinicians, summaries }: { clinicians: Clinician[]; 
     <div className="grid gap-6 lg:grid-cols-5">
       <div className="space-y-5 lg:col-span-3">
         {shared && (
-          <Callout tone="teal" icon={<CheckCircle2 />} data-testid="share-success">
+          <Callout tone="brand" icon={<CheckCircle2 />} data-testid="share-success">
             Your summary was shared with <strong>{shared}</strong> (a synthetic demo clinician). You can see it below and stop sharing at any time.
           </Callout>
         )}
@@ -153,10 +153,10 @@ export function ShareFlow({ clinicians, summaries }: { clinicians: Clinician[]; 
             {clinicians.map((c) => (
               <label
                 key={c.id}
-                className={cn("flex cursor-pointer items-center gap-3 rounded-2xl border p-3", clinicianId === c.id ? "border-teal-500 bg-teal-50/60" : "border-line")}
+                className={cn("flex cursor-pointer items-center gap-3 rounded-2xl border p-3", clinicianId === c.id ? "border-brand-500 bg-brand-50/60" : "border-line")}
               >
-                <input type="radio" name="clinician" className="accent-teal-600" checked={clinicianId === c.id} onChange={() => { setClinicianId(c.id); setPreview(null); }} />
-                <Stethoscope className="size-5 text-teal-600" aria-hidden />
+                <input type="radio" name="clinician" className="accent-brand-600" checked={clinicianId === c.id} onChange={() => { setClinicianId(c.id); setPreview(null); }} />
+                <Stethoscope className="size-5 text-brand-600" aria-hidden />
                 <span className="min-w-0 flex-1">
                   <span className="block font-medium text-ink">{c.name}</span>
                   <span className="block text-xs text-muted">{c.title} · {c.organization}</span>
@@ -174,8 +174,8 @@ export function ShareFlow({ clinicians, summaries }: { clinicians: Clinician[]; 
           <CardContent className="space-y-3">
             <div className="grid gap-2 sm:grid-cols-2">
               {(Object.keys(CLINICIAN_SHARE_CATEGORIES) as ClinicianShareCategory[]).map((c) => (
-                <label key={c} className={cn("flex cursor-pointer items-start gap-2.5 rounded-xl border p-3 text-sm", cats.includes(c) ? "border-teal-200 bg-teal-50/60" : "border-line")}>
-                  <input type="checkbox" className="mt-0.5 accent-teal-600" checked={cats.includes(c)} onChange={() => toggle(c)} />
+                <label key={c} className={cn("flex cursor-pointer items-start gap-2.5 rounded-xl border p-3 text-sm", cats.includes(c) ? "border-brand-200 bg-brand-50/60" : "border-line")}>
+                  <input type="checkbox" className="mt-0.5 accent-brand-600" checked={cats.includes(c)} onChange={() => toggle(c)} />
                   {CLINICIAN_SHARE_CATEGORIES[c]}
                 </label>
               ))}
@@ -203,7 +203,7 @@ export function ShareFlow({ clinicians, summaries }: { clinicians: Clinician[]; 
         </Button>
 
         {preview && (
-          <Card className="border-teal-200" data-testid="summary-preview">
+          <Card className="border-brand-200" data-testid="summary-preview">
             <CardHeader>
               <CardTitle>Preview</CardTitle>
             </CardHeader>
@@ -213,7 +213,7 @@ export function ShareFlow({ clinicians, summaries }: { clinicians: Clinician[]; 
                 After sharing, an AI may draft a short summary of this structured data for the clinician. It is labelled <strong>unverified</strong> until they review it, and never uses your conversations.
               </Callout>
               <label className="flex items-start gap-2.5 text-sm text-ink-soft">
-                <input type="checkbox" className="mt-0.5 accent-teal-600" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} />
+                <input type="checkbox" className="mt-0.5 accent-brand-600" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} />
                 I've reviewed this summary and agree to share it with this clinician. I can revoke access at any time.
               </label>
               <Button size="lg" onClick={doShare} disabled={!confirmed || !!pending} data-testid="confirm-share">
@@ -238,7 +238,7 @@ export function ShareFlow({ clinicians, summaries }: { clinicians: Clinician[]; 
                     <p className="font-medium text-ink">{s.clinicianName}</p>
                     <p className="text-xs text-muted">Shared {formatDate(s.sharedAt)} · {s.categories.length} categories</p>
                   </div>
-                  <Badge tone={s.status === "SHARED" ? "teal" : "neutral"}>{s.status === "SHARED" ? "Active" : "Revoked"}</Badge>
+                  <Badge tone={s.status === "SHARED" ? "brand" : "neutral"}>{s.status === "SHARED" ? "Active" : "Revoked"}</Badge>
                 </div>
                 {s.reviewedAt && <p className="mt-1 text-xs text-sage-700">Reviewed by clinician {formatDate(s.reviewedAt)}</p>}
                 {s.status === "SHARED" && (

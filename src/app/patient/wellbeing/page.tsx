@@ -132,7 +132,7 @@ export default async function WellbeingPage() {
             )}
             <ul className="space-y-2">
               {o.trend.explanations.map((e) => (
-                <li key={e} className="flex gap-2"><span className="mt-2 size-1.5 shrink-0 rounded-full bg-teal-500" aria-hidden /> {e}</li>
+                <li key={e} className="flex gap-2"><span className="mt-2 size-1.5 shrink-0 rounded-full bg-brand-500" aria-hidden /> {e}</li>
               ))}
             </ul>
           </CardContent>

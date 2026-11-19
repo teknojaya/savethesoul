@@ -158,7 +158,7 @@ export function ComposerMic({
             )}
             {transcribing && (
               <>
-                <Loader2 className="size-4 animate-spin text-teal-700" aria-hidden /> <span>Transcribing…</span>
+                <Loader2 className="size-4 animate-spin text-brand-700" aria-hidden /> <span>Transcribing…</span>
                 <span className="flex-1" />
                 <Button size="sm" variant="ghost" onClick={cancel} data-testid="composer-mic-cancel">
                   <X aria-hidden /> Cancel
@@ -168,7 +168,7 @@ export function ComposerMic({
             {state === "consent" && (
               <div className="flex w-full flex-col gap-2" data-testid="composer-mic-consent">
                 <label className="flex items-start gap-2 text-xs text-ink-soft">
-                  <input type="checkbox" className="mt-0.5 size-4 accent-teal-600" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
+                  <input type="checkbox" className="mt-0.5 size-4 accent-brand-600" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
                   <span>
                     I agree that my voice recordings are sent from SaveTheSoul&apos;s server to OpenAI to be transcribed, and that Sakinah&apos;s replies may be read aloud using OpenAI
                     text-to-speech. Recordings aren&apos;t stored. I can turn this off in Profile &amp; Privacy.

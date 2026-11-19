@@ -27,7 +27,7 @@ export function ClinicianShell({ name, title, isDemo, children }: { name: string
   }
 
   return (
-    <div className="flex min-h-dvh bg-[#f4f3ef]">
+    <div className="flex min-h-dvh bg-canvas">
       <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-e border-line/70 bg-surface px-4 py-5 lg:flex">
         <Logo href="/clinician" subtitle="Clinician portal" />
         <nav className="mt-8 flex flex-col gap-1" aria-label="Clinician">
@@ -38,7 +38,7 @@ export function ClinicianShell({ name, title, isDemo, children }: { name: string
               aria-current={active(i.href, i.exact) ? "page" : undefined}
               className={cn(
                 "flex items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] font-medium",
-                active(i.href, i.exact) ? "bg-sky-50 text-sky-700" : "text-ink-soft hover:bg-sand/70",
+                active(i.href, i.exact) ? "bg-brand-50 text-brand-700" : "text-ink-soft hover:bg-sand/70",
               )}
             >
               <i.icon className="size-[18px]" aria-hidden />
@@ -66,7 +66,7 @@ export function ClinicianShell({ name, title, isDemo, children }: { name: string
               <Link
                 key={i.href}
                 href={i.href}
-                className={cn("shrink-0 rounded-full px-3 py-1.5 text-sm", active(i.href, i.exact) ? "bg-sky-50 font-medium text-sky-700" : "text-ink-soft")}
+                className={cn("shrink-0 rounded-full px-3 py-1.5 text-sm", active(i.href, i.exact) ? "bg-brand-50 font-medium text-brand-700" : "text-ink-soft")}
               >
                 {i.label}
               </Link>

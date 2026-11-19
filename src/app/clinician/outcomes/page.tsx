@@ -39,7 +39,7 @@ export default async function OutcomesPage() {
                 <li key={row.month} className="grid grid-cols-[5rem_1fr_4.5rem] items-center gap-3 text-sm">
                   <span className="text-muted tabular-nums">{row.month}</span>
                   <span className="h-3 overflow-hidden rounded-full bg-sand/60">
-                    {row.average !== null && <span className="block h-full rounded-e-[4px] bg-[#00897b]" style={{ width: `${(row.average / maxWho5) * 100}%` }} />}
+                    {row.average !== null && <span className="block h-full rounded-e-[4px] bg-brand-600" style={{ width: `${(row.average / maxWho5) * 100}%` }} />}
                   </span>
                   <span className="text-end tabular-nums text-ink">{row.average === null ? `n<${MIN_CELL_SIZE}` : row.average}<span className="text-xs text-muted"> · n={row.n}</span></span>
                 </li>

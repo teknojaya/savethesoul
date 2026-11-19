@@ -24,15 +24,15 @@ export function ReferralTimeline({
               <span
                 className={cn(
                   "flex size-6 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold",
-                  done ? "bg-teal-600 text-white" : "bg-sand text-muted",
-                  current && "ring-4 ring-teal-100",
+                  done ? "bg-brand-600 text-white" : "bg-sand text-muted",
+                  current && "ring-4 ring-brand-100",
                 )}
                 aria-current={current ? "step" : undefined}
               >
                 {done ? <Check className="size-3.5" aria-hidden /> : i + 1}
               </span>
               <span className={cn("hidden text-xs sm:inline", done ? "text-ink" : "text-muted")}>{STATUS_LABEL[s]}</span>
-              {i < HAPPY_PATH.length - 1 && <span className={cn("h-0.5 flex-1 rounded", done ? "bg-teal-200" : "bg-line")} aria-hidden />}
+              {i < HAPPY_PATH.length - 1 && <span className={cn("h-0.5 flex-1 rounded", done ? "bg-brand-200" : "bg-line")} aria-hidden />}
             </li>
           );
         })}

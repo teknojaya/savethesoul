@@ -44,7 +44,7 @@ export default function HelpPage() {
 
       <Callout tone="neutral" icon={<Info />} className="mt-8">
         SaveTheSoul is an AI wellbeing companion. It cannot call emergency services, detect every crisis, or guarantee anyone's safety. In the prototype, alerts to clinicians or family are <strong>simulated</strong> — please use the numbers above to reach real people.{" "}
-        <Link href="/patient/circle" className="font-medium text-teal-700 underline-offset-2 hover:underline">
+        <Link href="/patient/circle" className="font-medium text-brand-700 underline-offset-2 hover:underline">
           Your safety plan
         </Link>
       </Callout>

@@ -42,7 +42,7 @@ export function PatientShell({ name, isDemo, children }: { name: string; isDemo:
               aria-current={active(i.href, i.exact) ? "page" : undefined}
               className={cn(
                 "flex items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] font-medium transition-colors",
-                active(i.href, i.exact) ? "bg-teal-50 text-teal-700" : "text-ink-soft hover:bg-sand/70",
+                active(i.href, i.exact) ? "bg-brand-50 text-brand-700" : "text-ink-soft hover:bg-sand/70",
               )}
             >
               <i.icon className="size-[18px]" aria-hidden />
@@ -83,7 +83,7 @@ export function PatientShell({ name, isDemo, children }: { name: string; isDemo:
             <Link
               href="/patient/privacy"
               aria-label="Profile and privacy"
-              className={cn("rounded-full p-2", active("/patient/privacy") ? "bg-teal-50 text-teal-700" : "text-ink-soft")}
+              className={cn("rounded-full p-2", active("/patient/privacy") ? "bg-brand-50 text-brand-700" : "text-ink-soft")}
             >
               <UserRound className="size-5" />
             </Link>
@@ -109,7 +109,7 @@ export function PatientShell({ name, isDemo, children }: { name: string; isDemo:
               aria-current={active(i.href, i.exact) ? "page" : undefined}
               className={cn(
                 "flex flex-col items-center gap-0.5 rounded-xl py-1.5 text-[10.5px] font-medium",
-                active(i.href, i.exact) ? "text-teal-700" : "text-muted",
+                active(i.href, i.exact) ? "text-brand-700" : "text-muted",
               )}
             >
               <i.icon className={cn("size-[22px]", active(i.href, i.exact) && "stroke-[2.25]")} aria-hidden />

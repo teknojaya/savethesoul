@@ -48,13 +48,13 @@ export default function RegisterPage() {
         <label className="flex items-start gap-3 text-sm text-ink-soft">
           <input
             type="checkbox"
-            className="mt-0.5 size-4 accent-teal-600"
+            className="mt-0.5 size-4 accent-brand-600"
             checked={form.acceptTerms}
             onChange={(e) => setForm({ ...form, acceptTerms: e.target.checked })}
           />
           <span>
-            I understand SaveTheSoul is an AI wellbeing companion, not a medical or emergency service, and I've read the{" "}
-            <Link href="/privacy-notice" className="font-medium text-teal-700 underline-offset-2 hover:underline" target="_blank">
+            I understand SaveTheSoul offers AI-assisted wellbeing support and preliminary insights, not a substitute for professional diagnosis or treatment or an emergency service, and I've read the{" "}
+            <Link href="/privacy-notice" className="font-medium text-brand-700 underline-offset-2 hover:underline" target="_blank">
               privacy & AI notice
             </Link>
             .
@@ -68,7 +68,7 @@ export default function RegisterPage() {
           {pending && <Loader2 className="animate-spin" aria-hidden />} Create account
         </Button>
       </form>
-      <Callout tone="teal" icon={<ShieldCheck />} className="mt-6">
+      <Callout tone="brand" icon={<ShieldCheck />} className="mt-6">
         Clinician accounts are created by the care organisation after licence verification — they can't be self-registered.
       </Callout>
     </div>

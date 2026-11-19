@@ -13,7 +13,7 @@ const AGE_BANDS = ["18-24", "25-34", "35-44", "45-54", "55-64", "65+"] as const;
 
 function Toggle({ checked, onChange, label, description, locked }: { checked: boolean; onChange?: (v: boolean) => void; label: string; description: string; locked?: boolean }) {
   return (
-    <label className={cn("flex cursor-pointer items-start gap-4 rounded-2xl border p-4 transition-colors", checked ? "border-teal-200 bg-teal-50/60" : "border-line bg-surface")}>
+    <label className={cn("flex cursor-pointer items-start gap-4 rounded-2xl border p-4 transition-colors", checked ? "border-brand-200 bg-brand-50/60" : "border-line bg-surface")}>
       <span className="min-w-0 flex-1">
         <span className="block font-medium text-ink">{label}</span>
         <span className="mt-0.5 block text-sm text-muted">{description}</span>
@@ -29,8 +29,8 @@ function Toggle({ checked, onChange, label, description, locked }: { checked: bo
       <span
         aria-hidden
         className={cn(
-          "relative mt-1 h-6 w-11 shrink-0 rounded-full transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-teal-500",
-          checked ? "bg-teal-600" : "bg-line",
+          "relative mt-1 h-6 w-11 shrink-0 rounded-full transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500",
+          checked ? "bg-brand-600" : "bg-line",
           locked && "opacity-70",
         )}
       >
@@ -64,7 +64,7 @@ export function OnboardingWizard({ name }: { name: string }) {
     <div className="animate-fade-up">
       <div className="mb-6 flex gap-1.5" aria-label={`Step ${step + 1} of 3`}>
         {[0, 1, 2].map((i) => (
-          <span key={i} className={cn("h-1.5 flex-1 rounded-full", i <= step ? "bg-teal-500" : "bg-line")} />
+          <span key={i} className={cn("h-1.5 flex-1 rounded-full", i <= step ? "bg-brand-500" : "bg-line")} />
         ))}
       </div>
 
@@ -82,7 +82,7 @@ export function OnboardingWizard({ name }: { name: string }) {
             ].map((x) => (
               <Card key={x.title} className="flex gap-4 p-4">
                 {x.icon ? (
-                  <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-700">
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
                     <x.icon className="size-5" aria-hidden />
                   </span>
                 ) : (
@@ -143,7 +143,7 @@ export function OnboardingWizard({ name }: { name: string }) {
                   onClick={() => setPrefs({ ...prefs, ageBand: prefs.ageBand === b ? null : b })}
                   className={cn(
                     "rounded-full border px-3.5 py-1.5 text-sm",
-                    prefs.ageBand === b ? "border-teal-500 bg-teal-50 text-teal-700" : "border-line bg-surface text-ink-soft",
+                    prefs.ageBand === b ? "border-brand-500 bg-brand-50 text-brand-700" : "border-line bg-surface text-ink-soft",
                   )}
                   aria-pressed={prefs.ageBand === b}
                 >
@@ -175,12 +175,12 @@ export function OnboardingWizard({ name }: { name: string }) {
               "You can export or delete your data at any time.",
             ].map((t) => (
               <li key={t} className="flex gap-3">
-                <Check className="mt-0.5 size-5 shrink-0 text-teal-600" aria-hidden />
+                <Check className="mt-0.5 size-5 shrink-0 text-brand-600" aria-hidden />
                 {t}
               </li>
             ))}
           </ul>
-          <Callout tone="teal" icon={<ShieldCheck />} className="mt-6">
+          <Callout tone="brand" icon={<ShieldCheck />} className="mt-6">
             This is a prototype. Clinicians in the demo are synthetic and any alerts or referrals are simulated.
           </Callout>
           {error && <p role="alert" className="mt-4 rounded-xl bg-safety-50 px-3 py-2 text-sm text-safety-700">{error}</p>}

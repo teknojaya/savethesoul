@@ -44,12 +44,12 @@ export default function Who5Page() {
     const r = result;
     return (
       <div className="mx-auto max-w-2xl animate-fade-up space-y-5" data-testid="who5-result">
-        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-teal-600">Your WHO-5 result</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-brand-600">Your WHO-5 result</p>
         <Card className="p-6 text-center">
           <p className="font-display text-6xl text-ink tabular-nums">{r.assessment.percentScore}</p>
           <p className="text-sm text-muted">out of 100 · raw score {r.assessment.rawScore}/25</p>
           <div className="mx-auto mt-4 h-2 max-w-sm overflow-hidden rounded-full bg-sand" aria-hidden>
-            <div className="h-full rounded-full bg-teal-500" style={{ width: `${r.assessment.percentScore}%` }} />
+            <div className="h-full rounded-full bg-brand-500" style={{ width: `${r.assessment.percentScore}%` }} />
           </div>
           <h1 className="mt-5 font-display text-2xl text-ink">{r.interpretation.headline}</h1>
           <p className="mx-auto mt-2 max-w-lg text-ink-soft">{r.interpretation.explanation}</p>
@@ -98,7 +98,7 @@ export default function Who5Page() {
             <fieldset className={cn("rounded-2xl border bg-surface p-4 shadow-soft sm:p-5", missing.includes(i + 1) ? "border-safety-500" : "border-line/70")}>
               <legend className="sr-only">{`Question ${i + 1}: ${item}`}</legend>
               <p className="font-medium text-ink" aria-hidden>
-                <span className="me-2 text-teal-600">{i + 1}.</span>
+                <span className="me-2 text-brand-600">{i + 1}.</span>
                 {item}
               </p>
               <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -107,7 +107,7 @@ export default function Who5Page() {
                     key={o.value}
                     className={cn(
                       "flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2.5 text-sm transition-colors",
-                      answers[i] === o.value ? "border-teal-500 bg-teal-50 text-teal-900" : "border-line text-ink-soft hover:bg-sand/50",
+                      answers[i] === o.value ? "border-brand-500 bg-brand-50 text-brand-900" : "border-line text-ink-soft hover:bg-sand/50",
                     )}
                   >
                     <input
@@ -121,7 +121,7 @@ export default function Who5Page() {
                         setAnswers(next);
                         setMissing((m) => m.filter((x) => x !== i + 1));
                       }}
-                      className="accent-teal-600"
+                      className="accent-brand-600"
                     />
                     {o.label}
                   </label>

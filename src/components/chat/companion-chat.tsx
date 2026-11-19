@@ -379,7 +379,7 @@ export function CompanionChat(props: {
                 href={`/patient/companion?c=${c.id}`}
                 className={cn(
                   "min-w-0 flex-1 rounded-xl px-3 py-2 text-sm",
-                  c.id === conversationId ? "bg-teal-50 text-teal-700" : "text-ink-soft hover:bg-sand/70",
+                  c.id === conversationId ? "bg-brand-50 text-brand-700" : "text-ink-soft hover:bg-sand/70",
                 )}
                 onClick={() => setShowHistory(false)}
               >
@@ -408,7 +408,7 @@ export function CompanionChat(props: {
           <button className="rounded-lg p-2 text-ink-soft hover:bg-sand lg:hidden" onClick={() => setShowHistory(true)} aria-label="Show conversation history">
             <History className="size-5" />
           </button>
-          <SakinahAvatar className="size-9 ring-2 ring-teal-100" />
+          <SakinahAvatar className="size-9 ring-2 ring-brand-100" />
           <div className="min-w-0 flex-1 leading-tight">
             <p className="truncate font-semibold text-ink">
               {SAKINAH_NAME}
@@ -458,7 +458,7 @@ export function CompanionChat(props: {
                     <button
                       key={s}
                       onClick={() => send(s)}
-                      className="rounded-full border border-line bg-surface px-3.5 py-2 text-sm text-ink-soft shadow-soft hover:border-teal-200 hover:bg-teal-50"
+                      className="rounded-full border border-line bg-surface px-3.5 py-2 text-sm text-ink-soft shadow-soft hover:border-brand-200 hover:bg-brand-50"
                     >
                       {s}
                     </button>
@@ -491,8 +491,8 @@ export function CompanionChat(props: {
                   />
                 )}
                 {remembering?.id === m.id && (
-                  <div className="ms-auto flex w-full max-w-md flex-col gap-2 rounded-2xl border border-teal-100 bg-teal-50 p-3 text-sm">
-                    <label htmlFor="mem" className="font-medium text-teal-900">Save to your wellbeing memory</label>
+                  <div className="ms-auto flex w-full max-w-md flex-col gap-2 rounded-2xl border border-brand-100 bg-brand-50 p-3 text-sm">
+                    <label htmlFor="mem" className="font-medium text-brand-900">Save to your wellbeing memory</label>
                     <textarea
                       id="mem"
                       className="rounded-xl border border-line bg-surface p-2 text-sm"
@@ -564,7 +564,7 @@ export function CompanionChat(props: {
                 }
               }}
               placeholder="Write how you're feeling…"
-              className="max-h-40 min-h-11 flex-1 resize-none rounded-2xl border border-line bg-surface px-4 py-2.5 text-[15px] focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100"
+              className="max-h-40 min-h-11 flex-1 resize-none rounded-2xl border border-line bg-surface px-4 py-2.5 text-[15px] focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100"
             />
             <ComposerMic
               disabled={busy}
@@ -581,7 +581,7 @@ export function CompanionChat(props: {
             </Button>
           </form>
           {pendingVoice && input.trim() && (
-            <p className="mx-auto mt-1.5 max-w-2xl text-center text-xs text-teal-800" data-testid="transcript-review-hint">
+            <p className="mx-auto mt-1.5 max-w-2xl text-center text-xs text-brand-800" data-testid="transcript-review-hint">
               Check what I heard and edit it if needed, then tap Send.
             </p>
           )}
@@ -613,12 +613,12 @@ function MessageBubble({
   if (m.role === "user") {
     return (
       <div className="group ms-auto flex max-w-[85%] flex-col items-end gap-1">
-        <div className="whitespace-pre-wrap rounded-2xl rounded-ee-md bg-teal-600 px-4 py-2.5 text-[15px] text-white shadow-soft">{m.content}</div>
+        <div className="whitespace-pre-wrap rounded-2xl rounded-ee-md bg-brand-600 px-4 py-2.5 text-[15px] text-white shadow-soft">{m.content}</div>
         {canRemember &&
           (remembered ? (
-            <span className="flex items-center gap-1 text-xs text-teal-700"><Check className="size-3" aria-hidden /> Saved to memory</span>
+            <span className="flex items-center gap-1 text-xs text-brand-700"><Check className="size-3" aria-hidden /> Saved to memory</span>
           ) : (
-            <button onClick={onRemember} className="flex items-center gap-1 text-xs text-muted opacity-70 hover:text-teal-700 group-hover:opacity-100">
+            <button onClick={onRemember} className="flex items-center gap-1 text-xs text-muted opacity-70 hover:text-brand-700 group-hover:opacity-100">
               <BookmarkPlus className="size-3" aria-hidden /> Remember this
             </button>
           ))}
@@ -662,7 +662,7 @@ function MessageBubble({
             <button
               type="button"
               onClick={listen.speaking ? listen.onStop : listen.onListen}
-              className="inline-flex h-7 items-center gap-1 rounded-full px-2 text-xs font-medium text-teal-700 hover:bg-teal-50"
+              className="inline-flex h-7 items-center gap-1 rounded-full px-2 text-xs font-medium text-brand-700 hover:bg-brand-50"
               aria-label={listen.speaking ? "Stop reading aloud" : "Listen to this reply"}
               data-testid="reply-listen"
             >
@@ -691,12 +691,12 @@ function SafetyCheckCard({ onAnswer }: { onAnswer: (l: "IMMEDIATE_DANGER" | "SAF
 
 function StrugglingCard() {
   return (
-    <div className="animate-fade-up rounded-3xl border border-teal-100 bg-surface p-4 shadow-soft sm:p-5">
+    <div className="animate-fade-up rounded-3xl border border-brand-100 bg-surface p-4 shadow-soft sm:p-5">
       <p className="font-semibold text-ink">Thank you for being honest. You deserve support with this.</p>
       <ul className="mt-2 space-y-1.5 text-sm text-ink-soft">
-        <li>• Talk to someone trained, any time: <a href="tel:800725462" className="font-semibold text-teal-700">800-SAKINA (800 725462)</a> — free, confidential, 24/7.</li>
-        <li>• Look at your <Link href="/patient/circle#safety-plan" className="font-medium text-teal-700 underline-offset-2 hover:underline">safety plan</Link>, or make one now.</li>
-        <li>• Consider <Link href="/patient/support" className="font-medium text-teal-700 underline-offset-2 hover:underline">connecting with a professional</Link>.</li>
+        <li>• Talk to someone trained, any time: <a href="tel:800725462" className="font-semibold text-brand-700">800-SAKINA (800 725462)</a> — free, confidential, 24/7.</li>
+        <li>• Look at your <Link href="/patient/circle#safety-plan" className="font-medium text-brand-700 underline-offset-2 hover:underline">safety plan</Link>, or make one now.</li>
+        <li>• Consider <Link href="/patient/support" className="font-medium text-brand-700 underline-offset-2 hover:underline">connecting with a professional</Link>.</li>
         <li>• If things change and you feel in danger, call <a href="tel:998" className="font-semibold text-safety-700">998</a> or <a href="tel:999" className="font-semibold text-safety-700">999</a>.</li>
       </ul>
     </div>
@@ -724,10 +724,10 @@ function GreetingControls({
       <div className="flex flex-wrap items-center gap-2" aria-live="polite">
         {state === "playing" ? (
           <>
-            <span className="inline-flex items-center gap-2 rounded-full bg-teal-50 px-3 py-1.5 text-xs font-medium text-teal-800">
+            <span className="inline-flex items-center gap-2 rounded-full bg-brand-50 px-3 py-1.5 text-xs font-medium text-brand-800">
               <span className="flex h-3 items-end gap-[2px]" aria-hidden>
                 {[0, 1, 2, 3].map((i) => (
-                  <span key={i} className="h-3 w-[2px] rounded-full bg-teal-600 motion-safe:animate-[sts-wave_0.9s_ease-in-out_infinite]" style={{ animationDelay: `${i * 0.12}s` }} />
+                  <span key={i} className="h-3 w-[2px] rounded-full bg-brand-600 motion-safe:animate-[sts-wave_0.9s_ease-in-out_infinite]" style={{ animationDelay: `${i * 0.12}s` }} />
                 ))}
               </span>
               Sakinah is speaking…
@@ -746,7 +746,7 @@ function GreetingControls({
           </Button>
         )}
       </div>
-      <p className="flex items-start gap-2 rounded-2xl bg-teal-50/70 px-3 py-2 text-sm text-teal-900" data-testid="voice-hint">
+      <p className="flex items-start gap-2 rounded-2xl bg-brand-50/70 px-3 py-2 text-sm text-brand-900" data-testid="voice-hint">
         <Mic className="mt-0.5 size-4 shrink-0" aria-hidden />
         <span>Prefer talking instead of typing? Just tap the microphone beside the message box. I&apos;m here to listen.</span>
       </p>
@@ -758,7 +758,7 @@ function GreetingControls({
               <button
                 key={t}
                 onClick={() => onSuggestion(t)}
-                className="rounded-full border border-line bg-surface px-3.5 py-2 text-sm text-ink-soft shadow-soft hover:border-teal-200 hover:bg-teal-50"
+                className="rounded-full border border-line bg-surface px-3.5 py-2 text-sm text-ink-soft shadow-soft hover:border-brand-200 hover:bg-brand-50"
               >
                 {t}
               </button>

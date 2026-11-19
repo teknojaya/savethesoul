@@ -52,10 +52,10 @@ export default async function PatientDashboard() {
       )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Link href="/patient/companion" className="group rounded-2xl bg-teal-600 p-5 text-white shadow-soft transition hover:bg-teal-700">
+        <Link href="/patient/companion" className="group rounded-2xl bg-brand-600 p-5 text-white shadow-soft transition hover:bg-brand-700">
           <MessageCircleHeart className="size-6" aria-hidden />
           <p className="mt-4 font-display text-xl">Talk to your companion</p>
-          <p className="mt-1 text-sm text-teal-50/90">A private space to think out loud. AI — not a clinician.</p>
+          <p className="mt-1 text-sm text-brand-50/90">A private space to think out loud. AI — not a clinician.</p>
           <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium">
             {extras.lastConversation ? "Continue" : "Start a conversation"} <ArrowRight className="size-4 transition group-hover:translate-x-0.5" aria-hidden />
           </span>
@@ -67,7 +67,7 @@ export default async function PatientDashboard() {
           <p className="mt-1 text-sm text-muted">
             {checkedInToday ? "Done for today — nice work." : extras.lastCheckIn ? `Last check-in ${relativeDays(extras.lastCheckIn.createdAt)}.` : "Takes 30 seconds."}
           </p>
-          <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-teal-700">
+          <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-brand-700">
             {checkedInToday ? "Check in again" : "Check in now"} <ArrowRight className="size-4" aria-hidden />
           </span>
         </Link>
@@ -97,8 +97,8 @@ export default async function PatientDashboard() {
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader className="flex-row items-center justify-between">
-            <CardTitle className="flex items-center gap-2"><Target className="size-4 text-teal-600" aria-hidden /> Your goals</CardTitle>
-            <Link href="/patient/wellbeing#goals" className="text-sm font-medium text-teal-700 hover:underline">Manage</Link>
+            <CardTitle className="flex items-center gap-2"><Target className="size-4 text-brand-600" aria-hidden /> Your goals</CardTitle>
+            <Link href="/patient/wellbeing#goals" className="text-sm font-medium text-brand-700 hover:underline">Manage</Link>
           </CardHeader>
           <CardContent>
             {goals.filter((g) => g.status === "ACTIVE").length ? (
@@ -117,8 +117,8 @@ export default async function PatientDashboard() {
 
         <Card>
           <CardHeader className="flex-row items-center justify-between">
-            <CardTitle className="flex items-center gap-2"><Compass className="size-4 text-teal-600" aria-hidden /> Care & support</CardTitle>
-            <Link href="/patient/support" className="text-sm font-medium text-teal-700 hover:underline">Open</Link>
+            <CardTitle className="flex items-center gap-2"><Compass className="size-4 text-brand-600" aria-hidden /> Care & support</CardTitle>
+            <Link href="/patient/support" className="text-sm font-medium text-brand-700 hover:underline">Open</Link>
           </CardHeader>
           <CardContent className="space-y-3">
             {extras.openReferrals.length ? (

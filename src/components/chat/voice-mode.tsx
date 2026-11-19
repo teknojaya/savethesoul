@@ -290,7 +290,7 @@ export function VoiceMode({ onSend, onWelcome, onExit, welcomeAlreadyHeard = fal
   const busy = state.status === "TRANSCRIBING" || state.status === "GENERATING_RESPONSE";
 
   return (
-    <section aria-label="Voice conversation with Sakinah" data-testid="voice-mode" className="border-t border-line/70 bg-gradient-to-b from-surface/80 to-teal-50/40 px-4 pb-[max(env(safe-area-inset-bottom),1rem)] pt-4">
+    <section aria-label="Voice conversation with Sakinah" data-testid="voice-mode" className="border-t border-line/70 bg-gradient-to-b from-surface/80 to-brand-50/40 px-4 pb-[max(env(safe-area-inset-bottom),1rem)] pt-4">
       <div className="mx-auto flex max-w-2xl flex-col items-center gap-3">
         <div className="flex items-center gap-3">
           <VoiceOrb status={state.status} level={level} />
@@ -300,7 +300,7 @@ export function VoiceMode({ onSend, onWelcome, onExit, welcomeAlreadyHeard = fal
           </div>
         </div>
 
-        <p role="status" aria-live="polite" data-testid="voice-status" className={cn("text-sm font-medium", state.status === "ERROR" ? "text-safety-700" : "text-teal-800")}>
+        <p role="status" aria-live="polite" data-testid="voice-status" className={cn("text-sm font-medium", state.status === "ERROR" ? "text-safety-700" : "text-brand-800")}>
           {state.started || state.status !== "IDLE" ? STATUS_LABEL[state.status] : "Talk with Sakinah instead of typing"}
           {state.status === "LISTENING" && <span className="ms-1 tabular-nums text-muted">{seconds}s / {MAX_RECORDING_SECONDS}s</span>}
         </p>
@@ -333,7 +333,7 @@ export function VoiceMode({ onSend, onWelcome, onExit, welcomeAlreadyHeard = fal
           <div className="flex w-full flex-col items-center gap-3">
             {needsConsent && (
               <label data-testid="voice-consent" className="flex max-w-md items-start gap-2 rounded-2xl border border-line bg-surface p-3 text-xs text-ink-soft">
-                <input type="checkbox" className="mt-0.5 size-4 accent-teal-600" checked={consentTicked} onChange={(e) => setConsentTicked(e.target.checked)} />
+                <input type="checkbox" className="mt-0.5 size-4 accent-brand-600" checked={consentTicked} onChange={(e) => setConsentTicked(e.target.checked)} />
                 <span>
                   I agree that my voice recordings are sent from SaveTheSoul&apos;s server to OpenAI to be transcribed, and that Sakinah&apos;s replies are turned into speech by OpenAI. SaveTheSoul doesn&apos;t
                   store the recordings. I can turn this off in Profile &amp; Privacy.
@@ -359,7 +359,7 @@ export function VoiceMode({ onSend, onWelcome, onExit, welcomeAlreadyHeard = fal
                   onChange={(e) => act({ type: "EDIT", text: e.target.value })}
                   rows={3}
                   maxLength={4000}
-                  className="w-full resize-none rounded-2xl border border-line bg-surface px-4 py-3 text-[15px] text-ink outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100"
+                  className="w-full resize-none rounded-2xl border border-line bg-surface px-4 py-3 text-[15px] text-ink outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
                 />
                 <div className="flex flex-wrap justify-center gap-2">
                   <Button size="lg" onClick={send} disabled={!state.transcript.trim()} data-testid="voice-send" className="rounded-full">
@@ -448,8 +448,8 @@ function BigButton({ label, onClick, disabled, testId, tone, children }: { label
         aria-label={label}
         data-testid={testId}
         className={cn(
-          "flex size-20 items-center justify-center rounded-full text-white shadow-lg transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-teal-200 disabled:opacity-70",
-          tone === "stop" ? "bg-safety-600 hover:bg-safety-700" : "bg-teal-600 hover:bg-teal-700",
+          "flex size-20 items-center justify-center rounded-full text-white shadow-lg transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-200 disabled:opacity-70",
+          tone === "stop" ? "bg-safety-600 hover:bg-safety-700" : "bg-brand-600 hover:bg-brand-700",
         )}
       >
         {children}
@@ -466,12 +466,12 @@ function VoiceOrb({ status, level }: { status: VoiceStatus; level: number }) {
   return (
     <div className="relative flex size-16 items-center justify-center" aria-hidden data-state={status}>
       <span
-        className={cn("absolute inset-0 rounded-full bg-teal-300/50 blur-md transition-transform duration-150", (speaking || status === "GENERATING_RESPONSE") && "motion-safe:animate-pulse")}
+        className={cn("absolute inset-0 rounded-full bg-brand-300/50 blur-md transition-transform duration-150", (speaking || status === "GENERATING_RESPONSE") && "motion-safe:animate-pulse")}
         style={{ transform: `scale(${1 + (listening ? level * 0.6 : speaking ? 0.25 : 0)})` }}
       />
       <SakinahAvatar className="relative size-14 ring-2 ring-white" />
       {(speaking || listening) && (
-        <span className="absolute -bottom-1 flex h-4 items-end gap-[2px] rounded-full bg-teal-700 px-1.5 py-0.5">
+        <span className="absolute -bottom-1 flex h-4 items-end gap-[2px] rounded-full bg-brand-700 px-1.5 py-0.5">
           {[0, 1, 2, 3, 4].map((i) => (
             <span
               key={i}

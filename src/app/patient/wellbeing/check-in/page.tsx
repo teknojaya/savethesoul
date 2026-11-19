@@ -28,7 +28,7 @@ function Scale({ label, value, onChange, low, high }: { label: string; value: nu
             type="button"
             aria-pressed={value === n}
             onClick={() => onChange(value === n ? null : n)}
-            className={cn("h-10 flex-1 rounded-xl border text-sm font-medium tabular-nums", value === n ? "border-teal-500 bg-teal-50 text-teal-700" : "border-line bg-surface text-ink-soft")}
+            className={cn("h-10 flex-1 rounded-xl border text-sm font-medium tabular-nums", value === n ? "border-brand-500 bg-brand-50 text-brand-700" : "border-line bg-surface text-ink-soft")}
           >
             {n}
           </button>
@@ -105,7 +105,7 @@ export default function CheckInPage() {
                 type="button"
                 aria-pressed={mood === m.v}
                 onClick={() => setMood(m.v)}
-                className={cn("flex flex-col items-center gap-1 rounded-2xl border px-1 py-3 text-xs", mood === m.v ? "border-teal-500 bg-teal-50 text-teal-700" : "border-line bg-surface text-muted")}
+                className={cn("flex flex-col items-center gap-1 rounded-2xl border px-1 py-3 text-xs", mood === m.v ? "border-brand-500 bg-brand-50 text-brand-700" : "border-line bg-surface text-muted")}
               >
                 <span className="text-2xl" aria-hidden>{m.face}</span>
                 {m.label}

@@ -19,7 +19,7 @@ const PILLARS = [
     icon: MessageCircleHeart,
     title: "Talk it through",
     body: "A warm, private AI companion for stress, worry, loneliness and everyday difficulties — with grounding exercises and gentle reflection when you need them.",
-    tone: "bg-teal-50 text-teal-700",
+    tone: "bg-brand-50 text-brand-700",
   },
   {
     icon: LineChart,
@@ -47,17 +47,17 @@ export default function LandingPage() {
     <div>
       {/* Hero */}
       <section className="relative overflow-hidden">
-        <div aria-hidden className="pointer-events-none absolute -end-32 -top-32 size-[28rem] rounded-full bg-teal-100/60 blur-3xl" />
+        <div aria-hidden className="pointer-events-none absolute -end-32 -top-32 size-[28rem] rounded-full bg-brand-100/60 blur-3xl" />
         <div aria-hidden className="pointer-events-none absolute -start-24 top-40 size-72 rounded-full bg-sage-100/70 blur-3xl" />
         <div className="relative mx-auto grid max-w-6xl gap-12 px-4 pb-16 pt-12 sm:px-6 md:grid-cols-[1.1fr_0.9fr] md:items-center md:pt-20">
           <div className="animate-fade-up">
-            <p className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-teal-100 bg-surface px-3 py-1 text-xs font-medium text-teal-700">
+            <p className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-brand-100 bg-surface px-3 py-1 text-xs font-medium text-brand-700">
               <Sparkles className="size-3.5" aria-hidden /> Earlier, safer mental wellbeing support · Abu Dhabi
             </p>
             <h1 className="font-display text-[40px] leading-[1.05] text-ink sm:text-[56px]">
               Your AI companion.
               <br />
-              <span className="text-teal-600">Your wellbeing.</span>
+              <span className="text-brand-600">Your wellbeing.</span>
               <br />
               Your connection to real care.
             </h1>
@@ -73,7 +73,7 @@ export default function LandingPage() {
               </Link>
             </div>
             <p className="mt-4 text-sm text-muted">
-              An AI wellbeing companion — not a doctor, not a diagnosis, not a replacement for care.
+              AI-assisted wellbeing support and preliminary insights. Not a substitute for professional diagnosis or treatment.
             </p>
           </div>
 
@@ -91,7 +91,7 @@ export default function LandingPage() {
                 <span className="rounded-full bg-safety-50 px-2 py-0.5 text-[11px] font-semibold text-safety-700">Get help</span>
               </div>
               <div className="space-y-3 py-4 text-sm">
-                <div className="ms-auto max-w-[85%] rounded-2xl rounded-ee-md bg-teal-600 px-3.5 py-2.5 text-white">
+                <div className="ms-auto max-w-[85%] rounded-2xl rounded-ee-md bg-brand-600 px-3.5 py-2.5 text-white">
                   Work has been non-stop and I can't switch off at night.
                 </div>
                 <div className="max-w-[90%] rounded-2xl rounded-es-md bg-sand/70 px-3.5 py-2.5 text-ink">
@@ -129,9 +129,9 @@ export default function LandingPage() {
 
       {/* Principles */}
       <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
-        <div className="rounded-3xl bg-teal-900 px-6 py-10 text-teal-50 sm:px-10">
+        <div className="rounded-3xl bg-brand-900 px-6 py-10 text-brand-50 sm:px-10">
           <h2 className="font-display text-3xl">Built around safety, consent and human care</h2>
-          <p className="mt-2 max-w-2xl text-teal-100/80">
+          <p className="mt-2 max-w-2xl text-brand-100/80">
             Technology can make support more accessible. Decisions about diagnosis, treatment and emergencies stay with qualified people.
           </p>
           <div className="mt-8 grid gap-6 sm:grid-cols-2">
@@ -140,7 +140,7 @@ export default function LandingPage() {
                 <p.icon className="mt-0.5 size-5 shrink-0 text-sage-300" aria-hidden />
                 <div>
                   <h3 className="font-semibold text-white">{p.title}</h3>
-                  <p className="mt-1 text-sm leading-relaxed text-teal-100/80">{p.body}</p>
+                  <p className="mt-1 text-sm leading-relaxed text-brand-100/80">{p.body}</p>
                 </div>
               </div>
             ))}

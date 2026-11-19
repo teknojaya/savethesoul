@@ -33,7 +33,7 @@ function Switch({ checked, onChange, label, disabled }: { checked: boolean; onCh
       aria-label={label}
       disabled={disabled}
       onClick={() => onChange(!checked)}
-      className={cn("relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-50", checked ? "bg-teal-600" : "bg-line")}
+      className={cn("relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-50", checked ? "bg-brand-600" : "bg-line")}
     >
       <span className={cn("absolute top-0.5 size-5 rounded-full bg-white shadow transition-all", checked ? "start-[22px]" : "start-0.5")} />
     </button>
@@ -69,7 +69,7 @@ export function PrivacyControls({ profile, memories, consents, access }: Props) 
 
   return (
     <div className="space-y-6">
-      {message && <p role="status" className="rounded-xl bg-teal-50 px-3 py-2 text-sm text-teal-900">{message}</p>}
+      {message && <p role="status" className="rounded-xl bg-brand-50 px-3 py-2 text-sm text-brand-900">{message}</p>}
 
       <Card>
         <CardHeader>
@@ -77,7 +77,7 @@ export function PrivacyControls({ profile, memories, consents, access }: Props) 
         </CardHeader>
         <CardContent className="divide-y divide-line">
           <div className="flex items-start gap-4 py-3">
-            <MessageSquare className="mt-0.5 size-5 text-teal-600" aria-hidden />
+            <MessageSquare className="mt-0.5 size-5 text-brand-600" aria-hidden />
             <div className="flex-1">
               <p className="font-medium text-ink">Keep conversation history</p>
               <p className="text-sm text-muted">Turning this off permanently deletes all saved conversations.</p>
@@ -90,7 +90,7 @@ export function PrivacyControls({ profile, memories, consents, access }: Props) 
             />
           </div>
           <div className="flex items-start gap-4 py-3">
-            <Brain className="mt-0.5 size-5 text-teal-600" aria-hidden />
+            <Brain className="mt-0.5 size-5 text-brand-600" aria-hidden />
             <div className="flex-1">
               <p className="font-medium text-ink">Personal wellbeing memory</p>
               <p className="text-sm text-muted">Short notes you choose to save so the companion can remember them. Turning off deletes them all.</p>
@@ -146,7 +146,7 @@ export function PrivacyControls({ profile, memories, consents, access }: Props) 
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2"><HeartPulse className="size-4 text-teal-600" aria-hidden /> Physical health context (optional)</CardTitle>
+          <CardTitle className="flex items-center gap-2"><HeartPulse className="size-4 text-brand-600" aria-hidden /> Physical health context (optional)</CardTitle>
           <CardDescription>Anything you'd like a clinician to know if you choose to share it, such as long-term conditions. Encrypted; never shared unless you include it in a summary.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">
@@ -179,7 +179,7 @@ export function PrivacyControls({ profile, memories, consents, access }: Props) 
                   <Badge tone="neutral">Revoked</Badge>
                 ) : (
                   <>
-                    <Badge tone="teal">Active</Badge>
+                    <Badge tone="brand">Active</Badge>
                     {c.scope !== "AI_PROCESSING" && (
                       <Button
                         size="sm"
@@ -203,7 +203,7 @@ export function PrivacyControls({ profile, memories, consents, access }: Props) 
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2"><Eye className="size-4 text-teal-600" aria-hidden /> Who accessed my information</CardTitle>
+          <CardTitle className="flex items-center gap-2"><Eye className="size-4 text-brand-600" aria-hidden /> Who accessed my information</CardTitle>
           <CardDescription>Clinician access to your shared information is logged. Logs never include content.</CardDescription>
         </CardHeader>
         <CardContent>

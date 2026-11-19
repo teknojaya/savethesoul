@@ -94,7 +94,7 @@ export function TrustedCircle({ contacts, notifications }: { contacts: Contact[]
         </div>
 
         {editing && f && (
-          <Card className="border-teal-200">
+          <Card className="border-brand-200">
             <CardHeader><CardTitle>{editing.id ? "Edit contact" : "Add a trusted person"}</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-3 sm:grid-cols-2">
@@ -116,15 +116,15 @@ export function TrustedCircle({ contacts, notifications }: { contacts: Contact[]
               <fieldset className="space-y-2">
                 <legend className="text-sm font-medium text-ink-soft">Permissions</legend>
                 <label className="flex items-center gap-2.5 text-sm">
-                  <input type="checkbox" className="accent-teal-600" checked={f.canReceiveUpdates} onChange={(e) => set({ canReceiveUpdates: e.target.checked })} />
+                  <input type="checkbox" className="accent-brand-600" checked={f.canReceiveUpdates} onChange={(e) => set({ canReceiveUpdates: e.target.checked })} />
                   May receive ordinary updates I choose to send
                 </label>
                 <label className="flex items-center gap-2.5 text-sm">
-                  <input type="checkbox" className="accent-teal-600" checked={f.canReceiveSafetyAlerts} onChange={(e) => set({ canReceiveSafetyAlerts: e.target.checked })} />
+                  <input type="checkbox" className="accent-brand-600" checked={f.canReceiveSafetyAlerts} onChange={(e) => set({ canReceiveSafetyAlerts: e.target.checked })} />
                   May receive a safety message I choose to send
                 </label>
                 <label className="flex items-center gap-2.5 text-sm">
-                  <input type="checkbox" className="accent-teal-600" checked={f.isSafetyPlanContact} onChange={(e) => set({ isSafetyPlanContact: e.target.checked })} />
+                  <input type="checkbox" className="accent-brand-600" checked={f.isSafetyPlanContact} onChange={(e) => set({ isSafetyPlanContact: e.target.checked })} />
                   Include in my safety plan
                 </label>
               </fieldset>
@@ -132,10 +132,10 @@ export function TrustedCircle({ contacts, notifications }: { contacts: Contact[]
                 <legend className="text-sm font-medium text-ink-soft">What they may be told</legend>
                 <div className="grid gap-2 sm:grid-cols-2">
                   {CATS.map((c) => (
-                    <label key={c} className={cn("flex items-start gap-2.5 rounded-xl border p-2.5 text-sm", f.sharedCategories.includes(c) ? "border-teal-200 bg-teal-50/60" : "border-line")}>
+                    <label key={c} className={cn("flex items-start gap-2.5 rounded-xl border p-2.5 text-sm", f.sharedCategories.includes(c) ? "border-brand-200 bg-brand-50/60" : "border-line")}>
                       <input
                         type="checkbox"
-                        className="mt-0.5 accent-teal-600"
+                        className="mt-0.5 accent-brand-600"
                         checked={f.sharedCategories.includes(c)}
                         onChange={(e) => set({ sharedCategories: e.target.checked ? [...f.sharedCategories, c] : f.sharedCategories.filter((x) => x !== c) })}
                       />
@@ -181,7 +181,7 @@ export function TrustedCircle({ contacts, notifications }: { contacts: Contact[]
               </div>
             </div>
             <div className="mt-3 flex flex-wrap gap-1.5">
-              {c.canReceiveUpdates && <Badge tone="teal">Updates allowed</Badge>}
+              {c.canReceiveUpdates && <Badge tone="brand">Updates allowed</Badge>}
               {c.canReceiveSafetyAlerts && <Badge tone="safety">Safety messages allowed</Badge>}
               {c.isSafetyPlanContact && <Badge tone="sage">In safety plan</Badge>}
               {c.sharedCategories.length === 0 && <Badge tone="neutral">No sharing permitted</Badge>}
@@ -254,7 +254,7 @@ function NotifyPanel({ contact, onClose }: { contact: Contact; onClose: () => vo
   }
 
   return (
-    <div className="mt-4 space-y-3 rounded-2xl border border-teal-100 bg-teal-50/50 p-4" data-testid="notify-panel">
+    <div className="mt-4 space-y-3 rounded-2xl border border-brand-100 bg-brand-50/50 p-4" data-testid="notify-panel">
       <div className="flex items-center justify-between">
         <p className="font-medium text-ink">Send a message to {contact.name}</p>
         <SimulatedBadge />

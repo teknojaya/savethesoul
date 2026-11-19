@@ -165,7 +165,7 @@ export function RequestReferral({
                 setCareType(t);
                 setTarget("");
               }}
-              className={`rounded-2xl border p-3 text-start text-sm ${careType === t ? "border-teal-500 bg-teal-50" : "border-line bg-surface"}`}
+              className={`rounded-2xl border p-3 text-start text-sm ${careType === t ? "border-brand-500 bg-brand-50" : "border-line bg-surface"}`}
             >
               <span className="block font-medium text-ink">{CARE_TYPES[t].label}</span>
               <span className="block text-xs text-muted">{CARE_TYPES[t].description}</span>
@@ -196,14 +196,14 @@ export function RequestReferral({
       )}
       <p className="rounded-xl bg-sand/60 px-3 py-2 text-xs text-ink-soft">
         A clinician only sees information you choose to share.{" "}
-        <a href="/patient/support/share" className="font-medium text-teal-700 underline">Review and choose what to share</a>. This request is simulated: no real provider receives it, and
+        <a href="/patient/support/share" className="font-medium text-brand-700 underline">Review and choose what to share</a>. This request is simulated: no real provider receives it, and
         any acknowledgement shown is labelled simulated.
       </p>
       <fieldset>
         <legend className="text-sm font-medium text-ink-soft">How soon?</legend>
         <div className="mt-2 flex gap-2">
           {(["ROUTINE", "SOON", "URGENT"] as const).map((u) => (
-            <button key={u} type="button" aria-pressed={urgency === u} onClick={() => setUrgency(u)} className={`rounded-full border px-3.5 py-1.5 text-sm ${urgency === u ? "border-teal-500 bg-teal-50 text-teal-700" : "border-line text-ink-soft"}`}>
+            <button key={u} type="button" aria-pressed={urgency === u} onClick={() => setUrgency(u)} className={`rounded-full border px-3.5 py-1.5 text-sm ${urgency === u ? "border-brand-500 bg-brand-50 text-brand-700" : "border-line text-ink-soft"}`}>
               {u === "ROUTINE" ? "Routine" : u === "SOON" ? "Within a week" : "As soon as possible"}
             </button>
           ))}

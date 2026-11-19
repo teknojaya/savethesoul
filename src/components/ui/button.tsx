@@ -7,13 +7,13 @@ export const buttonVariants = cva(
   {
     variants: {
       variant: {
-        primary: "bg-teal-600 text-white shadow-soft hover:bg-teal-700",
+        primary: "bg-brand-600 text-white shadow-soft hover:bg-brand-700",
         secondary: "bg-surface text-ink border border-line hover:bg-sand/60",
-        soft: "bg-teal-50 text-teal-700 hover:bg-teal-100",
+        soft: "bg-brand-50 text-brand-700 hover:bg-brand-100",
         ghost: "text-ink-soft hover:bg-sand/70",
         safety: "bg-safety-500 text-white shadow-soft hover:bg-safety-600",
         "safety-soft": "bg-safety-50 text-safety-700 border border-safety-100 hover:bg-safety-100",
-        link: "text-teal-700 underline-offset-4 hover:underline rounded-none px-0",
+        link: "text-brand-700 underline-offset-4 hover:underline rounded-none px-0",
       },
       size: {
         sm: "h-9 px-3.5 text-sm",

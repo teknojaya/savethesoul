@@ -17,9 +17,9 @@ import { Table2, LineChart as LineIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /** Validated categorical palette (dataviz validator: all checks pass on light surface). */
-export const SERIES = { mood: "#00897b", sleep: "#5a5fd8", stress: "#b8691b" } as const;
-const AXIS = { fontSize: 12, fill: "#5f6f74" };
-const GRID = "#ebe7de";
+export const SERIES = { mood: "#1868db", sleep: "#7a4fd6", stress: "#b8691b" } as const;
+const AXIS = { fontSize: 12, fill: "#64748b" };
+const GRID = "#dfe7f2";
 
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "Asia/Dubai" });
 
@@ -91,9 +91,9 @@ export function Who5TrendChart({ data, height = 220 }: { data: { date: string; p
               <CartesianGrid stroke={GRID} vertical={false} />
               <XAxis dataKey="label" tick={AXIS} tickLine={false} axisLine={{ stroke: GRID }} />
               <YAxis domain={[0, 100]} ticks={[0, 25, 50, 75, 100]} tick={AXIS} tickLine={false} axisLine={false} />
-              <ReferenceLine y={50} stroke="#9aa6a9" strokeDasharray="4 4" />
+              <ReferenceLine y={50} stroke="#94a3b8" strokeDasharray="4 4" />
               <Tooltip
-                cursor={{ stroke: "#9aa6a9", strokeWidth: 1 }}
+                cursor={{ stroke: "#94a3b8", strokeWidth: 1 }}
                 content={({ active, payload }) =>
                   active && payload?.length ? (
                     <TooltipBox title={String(payload[0].payload.label)} rows={[{ label: "WHO-5", value: String(payload[0].value), color: SERIES.mood }]} />
@@ -173,7 +173,7 @@ export function CheckInChart({ data, height = 220 }: { data: CheckInRow[]; heigh
               <XAxis dataKey="label" tick={AXIS} tickLine={false} axisLine={{ stroke: GRID }} minTickGap={24} />
               <YAxis domain={[1, 5]} ticks={[1, 2, 3, 4, 5]} tick={AXIS} tickLine={false} axisLine={false} />
               <Tooltip
-                cursor={{ stroke: "#9aa6a9", strokeWidth: 1 }}
+                cursor={{ stroke: "#94a3b8", strokeWidth: 1 }}
                 content={({ active, payload }) =>
                   active && payload?.length ? (
                     <TooltipBox

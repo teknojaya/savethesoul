@@ -57,7 +57,7 @@ const SECTIONS: { title: string; body: string[] }[] = [
 export default function PrivacyNoticePage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6 sm:py-14">
-      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-teal-600">Plain-language notice</p>
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-brand-600">Plain-language notice</p>
       <h1 className="mt-1 font-display text-[34px] text-ink">Privacy & AI notice</h1>
       <div className="mt-8 space-y-8">
         {SECTIONS.map((s) => (
@@ -65,7 +65,7 @@ export default function PrivacyNoticePage() {
             <h2 className="font-display text-xl text-ink">{s.title}</h2>
             <ul className="mt-3 space-y-2 text-[15px] leading-relaxed text-ink-soft">
               {s.body.map((b) => (
-                <li key={b} className="ps-4 [text-indent:-1rem] before:me-2 before:text-teal-500 before:content-['•']">
+                <li key={b} className="ps-4 [text-indent:-1rem] before:me-2 before:text-brand-500 before:content-['•']">
                   {b}
                 </li>
               ))}
