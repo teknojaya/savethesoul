@@ -4,6 +4,7 @@ import { getEnv } from "@/lib/env";
 import { notFound } from "@/lib/errors";
 import { runCompanionTurn, type PipelineEvent } from "@/features/ai/companion-pipeline";
 import { getChatProvider } from "@/features/ai/provider-factory";
+import { SafetyOnlyProvider } from "@/features/ai/safety-only-provider";
 import type { ChatTurn } from "@/features/ai/types";
 import * as repo from "../repositories/conversation.repo";
 import { recordSystemEvent } from "./audit.service";
@@ -62,6 +63,7 @@ export async function* sendMessage(
   patientId: string,
   conversationId: string,
   content: string,
+  opts: { aiAllowed?: boolean } = {},
 ): AsyncGenerator<StreamEvent> {
   const convo = await repo.findOwnedConversation(patientId, conversationId);
   if (!convo) throw notFound("Conversation not found");
@@ -87,7 +89,8 @@ export async function* sendMessage(
   }
 
   const env = getEnv();
-  const provider = getChatProvider();
+  // Without AI permission (rate limit or consent) only deterministic safety responses are possible.
+  const provider = opts.aiAllowed === false ? new SafetyOnlyProvider() : getChatProvider();
   let safetyEventId: string | null = null;
   let finalText = "";
   let producedBy = provider.id;

@@ -47,3 +47,9 @@ export async function revokeConsent(patientId: string, consentId: string) {
     return updated;
   });
 }
+
+/** Whether the patient has an active consent for their messages to be processed by the AI provider. */
+export async function hasAiProcessingConsent(patientId: string): Promise<boolean> {
+  const c = await prisma.consentRecord.findFirst({ where: { patientId, scope: "AI_PROCESSING", revokedAt: null }, select: { id: true } });
+  return c !== null;
+}
