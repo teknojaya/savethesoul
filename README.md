@@ -81,6 +81,13 @@ Controls: stop speaking, replay (cached, with no new paid call), mute, cancel, r
 
 Privacy: voice needs a separate, revocable **Voice processing** consent. Audio is sent from the server to OpenAI and is never stored by SaveTheSoul, and transcripts are saved only if you send them. The speech endpoint accepts only the ID of one of your own saved replies, never free text. **Sakinah is SaveTheSoul's independent AI companion and is not affiliated with the official 800-SAKINA support line**, a separate service in Abu Dhabi that is answered by trained people. The app labels that line as separate wherever emergency help is shown.
 
+## Microphone and clinical support
+
+- **Speak instead of typing:** a 44 px microphone sits beside the message box. Tap it (with voice consent), speak, review or edit the transcript, then Send. The reply to a spoken message is read aloud, and every reply has **Listen**. Same conversation, same Safety Guardian.
+- **Sakinah's support:** a structured, psychologically informed approach: explore, summarise, explain common patterns, then one small step. General information is kept separate from her tentative interpretation, she never invents references, never diagnoses or advises on medication, and supports any existing treatment.
+- **Wellbeing summary (My Wellbeing):** deterministic and non-diagnostic, with routes to Sakinah, history, professional support, and a summary for a clinician.
+- **Clinician hand-off:** patient-reported concerns plus measured data, and an AI case summary labelled *"AI-generated clinical support summary — requires professional review. Not a confirmed diagnosis."* that the clinician can **Approve / Correct / Reject**. Diagnoses and care plans live only in separate **clinician-confirmed findings**. See [docs/CLINICAL_COORDINATION.md](docs/CLINICAL_COORDINATION.md).
+
 ## Scripts
 
 | Command | Purpose |
@@ -99,6 +106,7 @@ Privacy: voice needs a separate, revocable **Voice processing** consent. Audio i
 - [AI safety](docs/AI_SAFETY.md)
 - [Privacy & consent](docs/PRIVACY_AND_CONSENT.md)
 - [Clinical limitations](docs/CLINICAL_LIMITATIONS.md)
+- [Clinical coordination and escalation](docs/CLINICAL_COORDINATION.md)
 - [Deployment (Railway)](docs/DEPLOYMENT.md)
 - [Hackathon submission & judge guide](docs/HACKATHON_SUBMISSION.md)
 

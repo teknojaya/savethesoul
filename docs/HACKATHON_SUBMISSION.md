@@ -128,7 +128,9 @@ See [PRIVACY_AND_CONSENT.md](PRIVACY_AND_CONSENT.md).
 ## 10. Human clinician oversight
 
 - Clinicians see only the patients assigned to them, and only the categories each patient has approved.
-- AI-drafted summaries are labelled **Unverified** until a clinician marks them reviewed. Patients always see what they shared.
+- AI-drafted case summaries carry the label **"AI-generated clinical support summary — requires professional review. Not a confirmed diagnosis."** Clinicians **Approve, Correct (the original is kept) or Reject** them, with an audited note. With the offline demo provider, no AI draft is produced.
+- Patient-reported data, AI observations and **clinician-confirmed findings** (diagnosis or care plan, append-only, audited) are shown and stored separately. Patients always see what they shared, and their export includes findings about them.
+- Patients choose the kind of help (psychologist, psychiatrist, primary care, verified service) and what to share. See [CLINICAL_COORDINATION.md](CLINICAL_COORDINATION.md).
 - Referrals follow a strict state machine (Requested → Acknowledged → Scheduled → Completed, or Declined or Cancelled). Every transition is audited.
 - Safety alerts need a human to acknowledge them, and the response time is measured.
 

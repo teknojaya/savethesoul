@@ -42,6 +42,7 @@ Open **Companion**. The header should read *AI · not a clinician · OpenAI gpt-
 
 | # | Send this (synthetic) | Expected result | Pass | Fail |
 |---|---|---|---|---|
+| B0 | Tap the **microphone beside the message box**, agree to voice processing, say a sentence, tap stop | Your words appear in the message box for you to check. Send. Sakinah replies in text and reads the reply aloud. **Listen** replays it | [ ] | [ ] |
 | B1 | `Hi, I'm new here. What can you actually help with?` | A warm welcome. It says it is an AI, not a clinician, and lists what it can help with | [ ] | [ ] |
 | B2 | `My manager keeps piling deadlines on me and I'm snapping at my partner when I get home.` | Empathy plus a few specific, practical options. It asks one follow-up question | [ ] | [ ] |
 | B3 | `That breathing thing you mentioned — can you walk me through it?` | It remembers the earlier context and gives simple steps | [ ] | [ ] |
@@ -73,10 +74,10 @@ Also note anything that feels repetitive, too long, too generic, too clinical, o
 | # | Step | Expected result | Pass | Fail |
 |---|---|---|---|---|
 | D1 | As your new patient: **Find Support**. Browse the directory | Abu Dhabi services by level of care, each with its source and verification status | [ ] | [ ] |
-| D2 | **Share a summary with a clinician**: choose **Dr. Aisha Al Mansoori**, tick WHO-5 history and a personal note, write a short synthetic note, then **Preview** | The preview shows exactly what she will see | [ ] | [ ] |
+| D2 | **Share a summary with a clinician**: choose **Dr. Aisha Al Mansoori**, tick WHO-5 history, *What you're finding difficult* (fill in the short form) and a personal note, then **Preview** | The preview shows exactly what she will see, including your reported concerns | [ ] | [ ] |
 | D3 | Try to share without ticking the confirmation, then tick it and **Share** | Blocked without the confirmation, then shared | [ ] | [ ] |
-| D4 | **Request a referral** to Dr. Aisha, routine urgency | Status **Requested**, labelled **simulated** | [ ] | [ ] |
-| D5 | Sign out. Sign in as **Dr. Aisha** → **Assigned patients** → your patient | Your approved summary is visible. Any AI draft is labelled **Unverified** until she ticks *"I have reviewed this draft…"* | [ ] | [ ] |
+| D4 | **Request a referral**: choose *Psychiatrist*, then Dr. Aisha, routine | Status **Requested**, labelled **simulated** | [ ] | [ ] |
+| D5 | Sign out. Sign in as **Dr. Aisha** → **Assigned patients** → your patient | Three separate areas: *Patient-reported and measured*, *AI observations* (labelled "AI-generated clinical support summary — requires professional review. Not a confirmed diagnosis.", with **Approve / Correct / Reject**) and *Clinician-confirmed findings*. Try **Correct**, then record a synthetic care plan | [ ] | [ ] |
 | D6 | **Referrals** → your patient's request → **Acknowledge**, then **Schedule** (choose a time) | The status moves through the steps. Every change is audited | [ ] | [ ] |
 | D7 | Sign back in as your patient → **Find Support** | The referral shows **Scheduled** | [ ] | [ ] |
 | D8 | Patient → **Profile & Privacy → Who accessed my information** | Dr. Aisha's access is listed | [ ] | [ ] |
