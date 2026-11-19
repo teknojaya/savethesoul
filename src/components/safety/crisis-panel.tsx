@@ -23,6 +23,7 @@ type AlertState =
  */
 export function CrisisPanel({ safetyEventId, demoMode }: { safetyEventId: string | null; demoMode: boolean }) {
   const [alert, setAlert] = useState<AlertState>({ phase: "idle" });
+  const [hospitalCaseRef, setHospitalCaseRef] = useState<string | null>(null);
   const [breathing, setBreathing] = useState(false);
 
   // Poll for a (simulated) clinician acknowledgement once an alert is sent.
@@ -43,7 +44,8 @@ export function CrisisPanel({ safetyEventId, demoMode }: { safetyEventId: string
     if (!safetyEventId) return;
     setAlert({ phase: "sending" });
     try {
-      const res = await api<{ status: string; recipients?: string[]; reason?: string }>(`/api/safety/events/${safetyEventId}/alert`, { method: "POST" });
+      const res = await api<{ status: string; recipients?: string[]; reason?: string; hospitalCaseRef?: string }>(`/api/safety/events/${safetyEventId}/alert`, { method: "POST" });
+      if (res.hospitalCaseRef) setHospitalCaseRef(res.hospitalCaseRef);
       if (res.status === "HANDOFF_FAILED") setAlert({ phase: "failed", reason: res.reason ?? "No care team connected." });
       else if (res.status === "SIMULATED_ACKNOWLEDGED") setAlert({ phase: "acknowledged" });
       else setAlert({ phase: "sent", recipients: res.recipients ?? [] });
@@ -77,7 +79,7 @@ export function CrisisPanel({ safetyEventId, demoMode }: { safetyEventId: string
       <div className="mt-5 grid gap-3 sm:grid-cols-2">
         <div className="rounded-2xl border border-line p-4">
           <div className="flex items-center justify-between gap-2">
-            <p className="flex items-center gap-2 font-medium text-ink"><BellRing className="size-4 text-teal-600" aria-hidden /> Alert my care team</p>
+            <p className="flex items-center gap-2 font-medium text-ink"><BellRing className="size-4 text-brand-600" aria-hidden /> Alert my care team</p>
             <SimulatedBadge />
           </div>
           <p className="mt-1 text-xs text-muted">
@@ -108,6 +110,11 @@ export function CrisisPanel({ safetyEventId, demoMode }: { safetyEventId: string
                 Simulated acknowledgement received. In a real service, this would mean a clinician has seen the alert — it would not replace emergency services.
               </p>
             )}
+            {hospitalCaseRef && (
+              <p className="mt-2 rounded-xl bg-sand px-3 py-2 text-xs text-ink-soft" data-testid="hospital-demo-case">
+                <strong>Demo only:</strong> a simulated case ({hospitalCaseRef}) was opened in the synthetic hospital dashboard. No real hospital or emergency responder has been notified.
+              </p>
+            )}
             {alert.phase === "failed" && (
               <p className="flex items-start gap-2 text-sm text-safety-700" data-testid="handoff-failed">
                 <XCircle className="mt-0.5 size-4 shrink-0" aria-hidden />
@@ -117,9 +124,9 @@ export function CrisisPanel({ safetyEventId, demoMode }: { safetyEventId: string
           </div>
         </div>
         <div className="rounded-2xl border border-line p-4">
-          <p className="flex items-center gap-2 font-medium text-ink"><Users className="size-4 text-teal-600" aria-hidden /> Someone you trust</p>
+          <p className="flex items-center gap-2 font-medium text-ink"><Users className="size-4 text-brand-600" aria-hidden /> Someone you trust</p>
           <p className="mt-1 text-xs text-muted">Call a family member or friend, or send a simulated message from your Trusted Circle.</p>
-          <Link href="/patient/circle" className="mt-3 inline-flex text-sm font-medium text-teal-700 hover:underline">Open Trusted Circle & safety plan</Link>
+          <Link href="/patient/circle" className="mt-3 inline-flex text-sm font-medium text-brand-700 hover:underline">Open Trusted Circle & safety plan</Link>
         </div>
       </div>
 

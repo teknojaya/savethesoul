@@ -16,6 +16,8 @@ export interface Actor {
   isDemo: boolean;
   patientId: string | null;
   clinicianId: string | null;
+  /** Hospital emergency coordinator profile (synthetic demo portal). */
+  hospitalId?: string | null;
 }
 
 /** Creates a DB-backed session. Only the SHA-256 hash of the token is stored. */
@@ -42,6 +44,7 @@ export async function resolveSession(token: string | undefined | null): Promise<
         include: {
           patientProfile: { select: { id: true } },
           clinicianProfile: { select: { id: true } },
+          hospitalProfile: { select: { id: true } },
         },
       },
     },
@@ -55,5 +58,6 @@ export async function resolveSession(token: string | undefined | null): Promise<
     isDemo: user.isDemo,
     patientId: user.patientProfile?.id ?? null,
     clinicianId: user.clinicianProfile?.id ?? null,
+    hospitalId: user.hospitalProfile?.id ?? null,
   };
 }

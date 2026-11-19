@@ -1,3 +1,4 @@
+import { openDemoCaseForAlert } from "./emergency.service";
 import { prisma } from "@/lib/db/prisma";
 import { decryptJson, encryptJson } from "@/lib/crypto";
 import type { Actor } from "@/lib/auth/session";
@@ -49,13 +50,17 @@ export async function sendSimulatedCareTeamAlert(patientId: string, safetyEventI
     include: { clinician: { include: { user: { select: { displayName: true } } } } },
   });
 
+  // Demo only: also open a SIMULATED case in the synthetic hospital dashboard (demo accounts only).
+  const hospitalCase = await openDemoCaseForAlert(patientId, event.id);
+  const hospital = hospitalCase ? { hospitalCaseRef: hospitalCase.caseRef } : {};
+
   if (!team.length) {
     await prisma.safetyEvent.update({
       where: { id: event.id },
       data: { workflowStatus: "HANDOFF_FAILED", failureReason: "NO_CARE_TEAM_CONNECTED" },
     });
     await recordSystemEvent("HANDOFF_FAILED", "NO_CARE_TEAM_CONNECTED");
-    return { status: "HANDOFF_FAILED" as const, simulated: true as const, reason: "No care team is connected to your account yet." };
+    return { status: "HANDOFF_FAILED" as const, simulated: true as const, reason: "No care team is connected to your account yet.", ...hospital };
   }
 
   await prisma.safetyEvent.update({
@@ -67,6 +72,7 @@ export async function sendSimulatedCareTeamAlert(patientId: string, safetyEventI
     status: "SIMULATED_ALERT_SENT" as const,
     simulated: true as const,
     recipients: team.map((t) => t.clinician.user.displayName),
+    ...hospital,
   };
 }
 

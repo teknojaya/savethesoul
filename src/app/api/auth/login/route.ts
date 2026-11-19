@@ -14,7 +14,7 @@ export const POST = route({ public: true }, async ({ req }) => {
     throw new AppError("RATE_LIMITED", "Too many sign-in attempts. Please wait a few minutes.");
   }
   const session = await login(input);
-  let redirectTo = "/clinician";
+  let redirectTo = session.role === "HOSPITAL_COORDINATOR" ? "/hospital" : "/clinician";
   if (session.role === "PATIENT") {
     const profile = await prisma.patientProfile.findFirst({
       where: { user: { email: input.email } },
