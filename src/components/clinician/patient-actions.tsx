@@ -9,11 +9,11 @@ import { api } from "@/lib/api-client";
 import { AI_SUMMARY_LABEL } from "@/features/ai/prompts";
 import { formatDate, formatDateTime } from "@/lib/utils";
 
-const DECISION_BADGE: Record<string, { tone: "sage" | "amber" | "teal" | "safety"; label: string }> = {
+const DECISION_BADGE: Record<string, { tone: "sage" | "amber" | "brand" | "safety"; label: string }> = {
   UNVERIFIED: { tone: "amber", label: "Unverified" },
   REVIEWED: { tone: "sage", label: "Reviewed" },
-  APPROVED: { tone: "sage", label: "Approved by clinician" },
-  CORRECTED: { tone: "teal", label: "Corrected by clinician" },
+  APPROVED: { tone: "sage", label: "Approved as reviewed (not a diagnosis)" },
+  CORRECTED: { tone: "brand", label: "Corrected by clinician" },
   REJECTED: { tone: "safety", label: "Rejected by clinician" },
 };
 
@@ -63,14 +63,14 @@ export function AiDraftCard({
     <Card className={status === "UNVERIFIED" ? "border-amber-500/30" : ""} data-testid="ai-draft">
       <CardHeader>
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <CardTitle className="flex items-center gap-2"><Sparkles className="size-4 text-amber-700" aria-hidden /> AI observations</CardTitle>
+          <CardTitle className="flex items-center gap-2"><Sparkles className="size-4 text-amber-700" aria-hidden /> B · AI preliminary assessment</CardTitle>
           <Badge tone={badge.tone}>
             {status === "UNVERIFIED" ? <AlertTriangle className="size-3" aria-hidden /> : <CheckCircle2 className="size-3" aria-hidden />} {badge.label}
             {reviewedAt && status !== "UNVERIFIED" ? ` ${formatDate(reviewedAt)}` : ""}
           </Badge>
         </div>
         <p className="rounded-lg bg-amber-50 px-2.5 py-1.5 text-xs font-medium text-amber-900" data-testid="ai-summary-label">{AI_SUMMARY_LABEL}</p>
-        <CardDescription>Drafted by AI from the patient-approved structured data only (never conversations). It may contain errors.</CardDescription>
+        <CardDescription>Drafted by AI from the patient-approved structured data only (never conversations). It may contain errors. Approving it records your review; it never becomes a diagnosis.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         {!draft ? (
@@ -79,8 +79,8 @@ export function AiDraftCard({
           <>
             {correctedDraft && (
               <div>
-                <p className="mb-1 text-xs font-semibold text-teal-800">Clinician-corrected version</p>
-                <pre className="whitespace-pre-wrap rounded-xl bg-teal-50/60 p-3 font-sans text-sm text-ink-soft" data-testid="corrected-draft">{correctedDraft}</pre>
+                <p className="mb-1 text-xs font-semibold text-brand-800">Clinician-corrected version</p>
+                <pre className="whitespace-pre-wrap rounded-xl bg-brand-50/60 p-3 font-sans text-sm text-ink-soft" data-testid="corrected-draft">{correctedDraft}</pre>
               </div>
             )}
             <details open={!correctedDraft}>
@@ -168,7 +168,7 @@ export function FindingsPanel({
       >
         <div className="flex gap-2">
           {(["DIAGNOSIS", "CARE_PLAN"] as const).map((k) => (
-            <button key={k} type="button" aria-pressed={kind === k} onClick={() => setKind(k)} className={`rounded-full border px-3 py-1 text-xs ${kind === k ? "border-teal-500 bg-teal-50 text-teal-800" : "border-line text-ink-soft"}`}>
+            <button key={k} type="button" aria-pressed={kind === k} onClick={() => setKind(k)} className={`rounded-full border px-3 py-1 text-xs ${kind === k ? "border-brand-500 bg-brand-50 text-brand-800" : "border-line text-ink-soft"}`}>
               {k === "DIAGNOSIS" ? "Diagnosis" : "Care plan"}
             </button>
           ))}

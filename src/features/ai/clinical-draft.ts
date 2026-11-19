@@ -112,7 +112,7 @@ export function groundClinicalDraft(raw: string, source: DraftSource, minStateme
       out.push(header);
       continue;
     }
-    if (/AI-generated clinical support summary/i.test(trimmed)) continue; // the UI always shows the label
+    if (/AI-generated clinical (support summary|impression)/i.test(trimmed)) continue; // the UI always shows the label
     if (!/^[-•*]\s+/.test(trimmed)) {
       drop("not a statement in the required format");
       continue;

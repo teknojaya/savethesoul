@@ -89,7 +89,7 @@ test("Scenario 2 — declining wellbeing, approved summary shared and reviewed b
   await expect(page.getByRole("heading", { name: "Layla" })).toBeVisible();
   await expect(page.getByText(/Patient-approved summary/)).toBeVisible();
   const draft = page.getByTestId("ai-draft");
-  await expect(page.getByTestId("ai-summary-label")).toHaveText("AI-generated clinical support summary — requires professional review. Not a confirmed diagnosis.");
+  await expect(page.getByTestId("ai-summary-label")).toHaveText("Preliminary AI-generated clinical impression — not a confirmed diagnosis. Requires professional assessment.");
   if (await draft.getByText("No AI draft is available").isVisible()) {
     // Offline demo build: no language model, so no AI draft is ever presented.
     await expect(draft.getByTestId("draft-approve")).toHaveCount(0);

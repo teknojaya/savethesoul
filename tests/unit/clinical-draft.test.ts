@@ -40,7 +40,7 @@ describe("AI clinical draft grounding (regression)", () => {
 
   it("removes unsupported findings: no source, unshared sources, diagnoses, risk levels and medication", () => {
     const raw = [
-      "AI-generated clinical support summary — requires professional review. Not a confirmed diagnosis.",
+      "Preliminary AI-generated clinical impression — not a confirmed diagnosis. Requires professional assessment.",
       "Assessment results and changes over time:",
       "- WHO-5 decreased from 72 to 36 across the period [WHO-5]",
       "- Sleep rated 2 recently vs 3 before [Check-ins]",

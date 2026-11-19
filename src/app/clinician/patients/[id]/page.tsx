@@ -47,6 +47,11 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
       <Link href="/clinician/patients" className="inline-flex items-center gap-1 text-sm text-muted hover:text-ink">
         <ArrowLeft className="size-4" aria-hidden /> Patients
       </Link>
+      {d.patient.isSynthetic && (
+        <p className="rounded-2xl border border-amber-500/30 bg-amber-50 px-4 py-2.5 text-sm font-semibold text-amber-700" data-testid="demo-record-banner">
+          DEMO — Synthetic Patient and Fictional Clinical Record
+        </p>
+      )}
       <PageHeader
         eyebrow="Patient details"
         title={d.patient.preferredName}
@@ -57,7 +62,7 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
         <CardContent className="flex flex-wrap items-center gap-2 pt-5 sm:pt-6">
           <span className="text-sm text-muted">Shared with you:</span>
           {d.sharedCategories.map((c) => (
-            <Badge key={c} tone="teal">{CLINICIAN_SHARE_CATEGORIES[c as ClinicianShareCategory] ?? c}</Badge>
+            <Badge key={c} tone="brand">{CLINICIAN_SHARE_CATEGORIES[c as ClinicianShareCategory] ?? c}</Badge>
           ))}
           <Badge tone="outline"><Lock className="size-3" aria-hidden /> Conversations are never shared</Badge>
         </CardContent>
@@ -143,7 +148,7 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
           <div key={s.id} className="grid gap-4 lg:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle>Patient-reported and measured</CardTitle>
+                <CardTitle>A · Patient-reported information</CardTitle>
                 <CardDescription>Patient-approved summary · shared {formatDate(s.sharedAt)} · built from structured data, not AI</CardDescription>
               </CardHeader>
               <CardContent><SummaryView content={s.content} /></CardContent>
@@ -162,7 +167,7 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
 
       <section className="space-y-3">
         <div>
-          <h2 className="font-display text-xl text-ink">Clinician-confirmed findings</h2>
+          <h2 className="font-display text-xl text-ink">C · Clinician-confirmed findings</h2>
           <p className="text-sm text-muted">Diagnoses and care plans are recorded only by clinicians, separately from patient reports and AI observations. Entries are never edited: add a new one to update.</p>
         </div>
         <FindingsPanel patientId={id} findings={findings.map((f) => ({ ...f, createdAt: f.createdAt.toISOString() }))} />

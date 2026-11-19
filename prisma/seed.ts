@@ -12,6 +12,7 @@ import { SUPPORT_RESOURCES } from "../src/features/safety/resources";
 import { POLICY_VERSION } from "../src/features/consent/policy";
 import { scoreWho5 } from "../src/features/assessments/who5";
 import { DEMO_PASSWORD } from "../src/features/demo/accounts";
+import { prepareDemo } from "../src/server/demo/prepare-demo";
 
 const DAY = 86_400_000;
 const daysAgo = (d: number, hour = 10) => {
@@ -35,6 +36,7 @@ async function wipe() {
   await prisma.followUp.deleteMany();
   await prisma.careReferral.deleteMany();
   await prisma.supportResource.deleteMany();
+  await prisma.emergencyCase.deleteMany();
   await prisma.user.deleteMany(); // cascades to profiles and patient data
 }
 
@@ -368,6 +370,10 @@ async function main() {
       { kind: "OUTPUT_GUARD", code: "DIAGNOSIS" },
     ],
   });
+
+  // ── Hackathon demo: fictional clinical cases and simulated hospital emergency cases ──
+  const demo = await prepareDemo();
+  console.log(`Demo preparation: ${demo.created.length} created, ${demo.skipped.length} skipped.`);
 
   console.log("Seed complete. Demo password for all demo accounts:", DEMO_PASSWORD);
 }

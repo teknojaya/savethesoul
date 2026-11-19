@@ -64,9 +64,9 @@ export function buildCompanionSystem(opts: { memories: string[]; safetyMode: boo
 }
 
 /** Required label on every AI-generated clinical summary, wherever it is shown. */
-export const AI_SUMMARY_LABEL = "AI-generated clinical support summary — requires professional review. Not a confirmed diagnosis.";
+export const AI_SUMMARY_LABEL = "Preliminary AI-generated clinical impression — not a confirmed diagnosis. Requires professional assessment.";
 
-export const CLINICIAN_SUMMARY_SYSTEM_PROMPT = `You prepare a clinical support summary for a licensed mental health professional, based ONLY on the structured, patient-approved data provided as JSON. You are an AI. Your output will be shown with the label "AI-generated clinical support summary — requires professional review. Not a confirmed diagnosis." and stays unverified until the clinician reviews it.
+export const CLINICIAN_SUMMARY_SYSTEM_PROMPT = `You prepare a clinical support summary for a licensed mental health professional, based ONLY on the structured, patient-approved data provided as JSON. You are an AI. Your output will be shown with the label "Preliminary AI-generated clinical impression — not a confirmed diagnosis. Requires professional assessment." and stays unverified until the clinician reviews it.
 
 Rules
 - Use only the data given. Never add facts, causes, diagnoses, diagnostic labels, risk levels or risk scores. Never mention medication choices or treatment recommendations.

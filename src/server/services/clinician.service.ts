@@ -62,7 +62,7 @@ export async function listAssignedPatients(actor: Actor) {
 export async function getPatientDetail(actor: Actor, patientId: string) {
   const grant = await requireClinicianAccess(actor, patientId, "VIEW_PATIENT_DETAIL");
   const has = (c: string) => grant.categories.includes(c);
-  const profile = await prisma.patientProfile.findUniqueOrThrow({ where: { id: patientId } });
+  const profile = await prisma.patientProfile.findUniqueOrThrow({ where: { id: patientId }, include: { user: { select: { isDemo: true } } } });
 
   const [assessments, checkInsRaw, summaries, notes, referrals, followUps, alerts] = await Promise.all([
     has("WHO5_HISTORY")
@@ -94,6 +94,7 @@ export async function getPatientDetail(actor: Actor, patientId: string) {
       ageBand: profile.ageBand,
       region: profile.region,
       physicalHealthContext: has("PHYSICAL_HEALTH_CONTEXT") ? decryptOptional(profile.physicalHealthEnc) : null,
+      isSynthetic: profile.user.isDemo,
     },
     sharedCategories: grant.categories,
     assessments,

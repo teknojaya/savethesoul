@@ -49,7 +49,7 @@ describe("Clinical-support validation", () => {
     expect(ReferralCreateSchema.safeParse({ resourceId: "r", urgency: "ROUTINE", careType: "HOSPITAL" }).success).toBe(false);
   });
   it("labels AI summaries and forbids diagnoses and risk scores in the drafting instructions", () => {
-    expect(AI_SUMMARY_LABEL).toBe("AI-generated clinical support summary — requires professional review. Not a confirmed diagnosis.");
+    expect(AI_SUMMARY_LABEL).toBe("Preliminary AI-generated clinical impression — not a confirmed diagnosis. Requires professional assessment.");
     expect(CLINICIAN_SUMMARY_SYSTEM_PROMPT).toContain(AI_SUMMARY_LABEL);
     expect(CLINICIAN_SUMMARY_SYSTEM_PROMPT).toMatch(/Never add facts, causes, diagnoses, diagnostic labels, risk levels or risk scores/);
     expect(CLINICIAN_SUMMARY_SYSTEM_PROMPT).toMatch(/Questions the clinician may wish to explore/);

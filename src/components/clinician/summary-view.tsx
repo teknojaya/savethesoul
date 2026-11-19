@@ -8,7 +8,7 @@ export function SummaryView({ content }: { content: SummaryContent }) {
     <div className="space-y-4 text-sm">
       <div className="flex flex-wrap gap-1.5">
         {content.categories.map((c) => (
-          <span key={c} className="rounded-full bg-teal-50 px-2.5 py-0.5 text-xs text-teal-700">
+          <span key={c} className="rounded-full bg-brand-50 px-2.5 py-0.5 text-xs text-brand-700">
             {CLINICIAN_SHARE_CATEGORIES[c as ClinicianShareCategory] ?? c}
           </span>
         ))}
