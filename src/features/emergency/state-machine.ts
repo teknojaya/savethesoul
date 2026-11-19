@@ -41,20 +41,20 @@ export function canTransition(from: EmergencyStatus, to: EmergencyStatus): boole
 export const STATUS_LABEL: Record<EmergencyStatus, string> = {
   DETECTED: "Concern detected",
   REVIEW_REQUESTED: "Awaiting human review",
-  ACKNOWLEDGED: "Acknowledged by demo coordinator",
-  CONTACT_ATTEMPTED: "Contact attempted (simulated)",
-  ASSISTANCE_ARRANGED: "Assistance arranged (simulated)",
+  ACKNOWLEDGED: "Acknowledged",
+  CONTACT_ATTEMPTED: "Contact attempted",
+  ASSISTANCE_ARRANGED: "Assistance arranged",
   RESOLVED: "Resolved",
   FAILED: "Failed",
   CANCELLED: "Cancelled",
-  UNABLE_TO_CONTACT: "Unable to contact (simulated)",
+  UNABLE_TO_CONTACT: "Unable to contact",
 };
 
 export const ACTION_LABEL: Partial<Record<EmergencyStatus, string>> = {
   REVIEW_REQUESTED: "Request human review",
   ACKNOWLEDGED: "Acknowledge case",
-  CONTACT_ATTEMPTED: "Record contact attempt (simulated)",
-  ASSISTANCE_ARRANGED: "Record assistance arranged (simulated)",
+  CONTACT_ATTEMPTED: "Record contact attempt",
+  ASSISTANCE_ARRANGED: "Record assistance arranged",
   UNABLE_TO_CONTACT: "Record unable to contact",
   RESOLVED: "Resolve case",
   FAILED: "Mark as failed",

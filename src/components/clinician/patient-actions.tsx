@@ -6,13 +6,12 @@ import { Loader2, CheckCircle2, Sparkles, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, Textarea } from "@/components/ui/primitives";
 import { api } from "@/lib/api-client";
-import { AI_SUMMARY_LABEL } from "@/features/ai/prompts";
 import { formatDate, formatDateTime } from "@/lib/utils";
 
 const DECISION_BADGE: Record<string, { tone: "sage" | "amber" | "brand" | "safety"; label: string }> = {
-  UNVERIFIED: { tone: "amber", label: "Unverified" },
+  UNVERIFIED: { tone: "amber", label: "Needs review" },
   REVIEWED: { tone: "sage", label: "Reviewed" },
-  APPROVED: { tone: "sage", label: "Approved as reviewed (not a diagnosis)" },
+  APPROVED: { tone: "sage", label: "Approved" },
   CORRECTED: { tone: "brand", label: "Corrected by clinician" },
   REJECTED: { tone: "safety", label: "Rejected by clinician" },
 };
@@ -69,8 +68,7 @@ export function AiDraftCard({
             {reviewedAt && status !== "UNVERIFIED" ? ` ${formatDate(reviewedAt)}` : ""}
           </Badge>
         </div>
-        <p className="rounded-lg bg-amber-50 px-2.5 py-1.5 text-xs font-medium text-amber-900" data-testid="ai-summary-label">{AI_SUMMARY_LABEL}</p>
-        <CardDescription>Drafted by AI from the patient-approved structured data only (never conversations). It may contain errors. Approving it records your review; it never becomes a diagnosis.</CardDescription>
+        <CardDescription data-testid="ai-summary-label">AI draft from patient-approved data · review before clinical use</CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         {!draft ? (
@@ -204,7 +202,7 @@ export function NotesPanel({ patientId, notes }: { patientId: string; notes: { i
         }}
       >
         <label htmlFor="note" className="sr-only">Add a note</label>
-        <Textarea id="note" rows={3} placeholder="Private clinician annotation (encrypted, not visible to the patient in the prototype)" value={text} onChange={(e) => setText(e.target.value)} />
+        <Textarea id="note" rows={3} placeholder="Private clinician note (encrypted, not visible to the patient)" value={text} onChange={(e) => setText(e.target.value)} />
         <div className="flex justify-end">
           <Button size="sm" type="submit" disabled={busy || !text.trim()}>{busy && <Loader2 className="animate-spin" aria-hidden />} Add note</Button>
         </div>

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge, Card, Input, SimulatedBadge } from "@/components/ui/primitives";
+import { Badge, Card, Input } from "@/components/ui/primitives";
 import { ReferralTimeline } from "@/components/referrals/referral-timeline";
 import { STATUS_LABEL, TRANSITIONS, type ReferralStatus } from "@/features/referrals/state-machine";
 import { api, ApiError } from "@/lib/api-client";
@@ -73,7 +73,6 @@ export function ClinicianReferralCard({ referral: r, showPatient }: { referral: 
         </div>
         <div className="flex items-center gap-1.5">
           <Badge tone="sky">{STATUS_LABEL[r.status]}</Badge>
-          <SimulatedBadge />
         </div>
       </div>
       {r.reason ? (

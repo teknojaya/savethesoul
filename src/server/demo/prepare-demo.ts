@@ -248,11 +248,75 @@ async function prepareHospital(report: PrepareReport) {
   }
 }
 
+/**
+ * Demo of Sakinah detecting INDIRECT suicide warning signs (no explicit statement) for a synthetic
+ * patient who pre-authorised emergency escalation in their safety plan. The hospital receives
+ * Sakinah's risk report, last known location and authorised contacts, and a human acts on it.
+ * Demo data only: the live app never escalates to a hospital from an AI flag on its own.
+ */
+export const AI_CASE_REF = "SIM-ER-1006";
+async function prepareAiDetectedCase(report: PrepareReport) {
+  if (await prisma.emergencyCase.findUnique({ where: { caseRef: AI_CASE_REF } })) {
+    report.skipped.push(`emergency case ${AI_CASE_REF} (exists)`);
+    return;
+  }
+  const email = "noura@demo.savethesoul.app";
+  let pid = (await prisma.user.findUnique({ where: { email }, include: { patientProfile: true } }))?.patientProfile?.id ?? null;
+  if (!pid) {
+    const p = await syntheticPatient(report, email, "Noura", "25-34");
+    pid = p!.patientId;
+    const contact = await prisma.trustedContact.create({
+      data: { patientId: pid, name: "Huda", relationship: "Sister", phoneEnc: encrypt("+971 55 000 0012"), canReceiveUpdates: true, canReceiveSafetyAlerts: true, sharedCategories: ["SAFETY_PLAN_SUPPORT", "CHECK_IN_REQUEST"], isSafetyPlanContact: true, recipientVerified: true },
+    });
+    await prisma.consentRecord.create({ data: { patientId: pid, scope: "TRUSTED_CONTACT_SHARING", granteeType: "TRUSTED_CONTACT", granteeId: contact.id, categories: ["SAFETY_PLAN_SUPPORT", "CHECK_IN_REQUEST"], policyVersion: POLICY_VERSION, grantedAt: daysAgo(18) } });
+    await prisma.safetyPlan.create({ data: { patientId: pid, contentEnc: encryptJson({ warningSigns: ["Not sleeping", "Feeling like a burden"], copingSteps: ["Call Huda", "Breathing exercise"], people: ["Huda"] }) } }).catch(() => null);
+  }
+  const start = Date.now() - 6 * 60_000;
+  const report_ = [
+    "Sakinah AI risk report: indirect suicide warning signs (no explicit statement of intent)",
+    "",
+    "Signals detected over the last 72 hours:",
+    "• Repeatedly described herself as a burden to her family (\"they would be better off\")",
+    "• Mentioned giving away belongings and \"putting things in order\"",
+    "• Goodbye-like messages late at night; hopelessness about the future",
+    "• Sleep collapse: 2–3 hours a night for 5 nights; WHO-5 fell from 48 to 16 in two weeks",
+    "• Withdrawal: cancelled plans and stopped replying to friends",
+    "",
+    "Sakinah's assessment: high-concern pattern consistent with recognised suicide warning signs. AI flag for urgent human review, not a diagnosis.",
+    "Recommended immediate action: welfare call within 15 minutes. If unreachable, call the emergency contact and consider an ambulance (998).",
+    "",
+    "Patient: Noura, 25–34 · mobile +971 50 ••• ••47",
+    "Emergency contact: Huda (sister) · mobile +971 55 ••• ••12 · authorised in safety plan",
+    "Patient informed in-app that her care team has been alerted.",
+  ].join("\n");
+  await prisma.emergencyCase.create({
+    data: {
+      caseRef: AI_CASE_REF,
+      patientId: pid,
+      hospitalOrg: DEMO_HOSPITAL_ORG,
+      status: "REVIEW_REQUESTED",
+      concernType: "Suicide warning signs detected by Sakinah AI (indirect)",
+      contextEnc: encrypt(report_),
+      locationEnc: encrypt("Al Reem Island, Abu Dhabi · last known device location, 6 minutes ago"),
+      authorizationStatus: "Pre-authorised emergency escalation in the patient's safety plan (consent recorded 18 days ago).",
+      createdAt: new Date(start),
+      events: {
+        create: [
+          { kind: "AI_RISK_SIGNAL", toStatus: "DETECTED", actorRole: "SAKINAH_AI", noteEnc: encrypt("Sakinah detected a pattern of indirect suicide warning signs across recent conversations, check-ins and WHO-5."), simulated: true, createdAt: new Date(start) },
+          { kind: "TRANSITION", fromStatus: "DETECTED", toStatus: "REVIEW_REQUESTED", actorRole: "SAKINAH_AI", noteEnc: encrypt("Escalated to the hospital emergency desk under the patient's pre-authorised emergency consent. Risk report, location and authorised contacts attached."), simulated: true, createdAt: new Date(start + 30_000) },
+        ],
+      },
+    },
+  });
+  report.created.push(`emergency case ${AI_CASE_REF} (Sakinah AI-detected, REVIEW_REQUESTED)`);
+}
+
 export async function prepareDemo(): Promise<PrepareReport> {
   const report: PrepareReport = { created: [], skipped: [] };
   const aisha = await demoClinician("dr.aisha@demo.savethesoul.app");
   if (aisha) for (const c of CASES) await prepareClinicalCase(report, c, aisha);
   else report.skipped.push("clinical cases (demo clinician Dr. Aisha not found)");
   await prepareHospital(report);
+  await prepareAiDetectedCase(report);
   return report;
 }

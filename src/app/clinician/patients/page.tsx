@@ -33,7 +33,7 @@ export default async function PatientsPage() {
                     {p.latestWho5 !== null && <Badge tone={p.latestWho5 <= 50 ? "amber" : "sage"}>WHO-5 {p.latestWho5}</Badge>}
                     {p.trendDirection === "declining" && <Badge tone="amber">Declining</Badge>}
                     {p.openReferrals > 0 && <Badge tone="sky">{p.openReferrals} open referral{p.openReferrals > 1 ? "s" : ""}</Badge>}
-                    {p.pendingAlerts > 0 && <Badge tone="safety">Simulated alert</Badge>}
+                    {p.pendingAlerts > 0 && <Badge tone="safety">Safety alert</Badge>}
                   </div>
                   <ChevronRight className="size-4 text-muted" aria-hidden />
                 </Link>

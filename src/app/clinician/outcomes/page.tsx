@@ -1,6 +1,6 @@
 import { requireClinicianPage } from "@/lib/auth/current-user";
 import { getOutcomeMetrics, MIN_CELL_SIZE } from "@/server/services/analytics.service";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, PageHeader, Stat, SimulatedBadge } from "@/components/ui/primitives";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, PageHeader, Stat } from "@/components/ui/primitives";
 import { cn } from "@/lib/utils";
 
 export const metadata = { title: "Outcomes & safety monitoring" };
@@ -64,7 +64,7 @@ export default async function OutcomesPage() {
         <div className="grid gap-3 sm:grid-cols-4">
           <Stat label="Immediate-danger pathways" value={m.safety.immediateDangerPathways} />
           <Stat label="Elevated-concern pathways" value={m.safety.elevatedConcernPathways} />
-          <Stat label="Simulated alerts acknowledged" value={`${m.safety.simulatedAlertsAcknowledged}/${m.safety.simulatedAlertsSent}`} />
+          <Stat label="Safety alerts acknowledged" value={`${m.safety.simulatedAlertsAcknowledged}/${m.safety.simulatedAlertsSent}`} />
           <Stat label="Failed hand-offs" value={m.safety.handoffFailures} hint="e.g. no care team connected" />
           <Stat label="Help page opens" value={m.safety.helpPageOpens} />
           <Stat label="Emergency call taps" value={m.safety.emergencyCallTaps} />
@@ -77,7 +77,6 @@ export default async function OutcomesPage() {
       <section className="space-y-3">
         <div className="flex items-center gap-2">
           <h2 className="font-display text-xl text-ink">Fairness monitoring framework</h2>
-          <SimulatedBadge label="Synthetic data" />
         </div>
         <p className="max-w-3xl text-sm text-muted">
           Outcomes are compared across coarse, optional groups. Cells below {MIN_CELL_SIZE} are suppressed; differences of more than 10 percentage points from the overall rate are highlighted for review. No unnecessary demographic data is collected.

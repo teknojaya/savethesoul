@@ -257,7 +257,7 @@ describe("Demo preparation (targeted, idempotent, clinician-authored fictional r
       include: { clinicianProfile: true },
     });
     const first = await prepareDemo();
-    expect(first.created.length).toBeGreaterThanOrEqual(10);
+    expect(first.created.length).toBeGreaterThanOrEqual(12);
     const second = await prepareDemo();
     expect(second.created).toEqual([]);
 
@@ -269,7 +269,12 @@ describe("Demo preparation (targeted, idempotent, clinician-authored fictional r
     expect(texts.join(" ")).toMatch(/Generalized Anxiety Disorder/);
     expect(texts.join(" ")).toMatch(/Depressive episode, moderate/);
     expect(texts.join(" ")).toMatch(/no prescription is recorded/);
-    expect(await prisma.emergencyCase.count({ where: { hospitalOrg: DEMO_HOSPITAL_ORG, isSimulated: true } })).toBe(5);
+    expect(await prisma.emergencyCase.count({ where: { hospitalOrg: DEMO_HOSPITAL_ORG, isSimulated: true } })).toBe(6);
+    const ai = await prisma.emergencyCase.findUniqueOrThrow({ where: { caseRef: "SIM-ER-1006" }, include: { events: true, patient: { include: { user: true } } } });
+    expect(ai.status).toBe("REVIEW_REQUESTED");
+    expect(ai.patient!.user.isDemo).toBe(true);
+    expect(ai.events.some((e) => e.actorRole === "SAKINAH_AI" && e.kind === "AI_RISK_SIGNAL")).toBe(true);
+    expect(decrypt(ai.contextEnc)).toMatch(/indirect suicide warning signs/);
     expect((await prisma.user.findUniqueOrThrow({ where: { email: "coordinator@demo.savethesoul.app" } })).isDemo).toBe(true);
   });
 });

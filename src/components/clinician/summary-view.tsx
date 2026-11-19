@@ -92,7 +92,7 @@ export function SummaryView({ content }: { content: SummaryContent }) {
       )}
       {content.referralHistory && (
         <section>
-          <h4 className="font-semibold text-ink">Referral history (simulated)</h4>
+          <h4 className="font-semibold text-ink">Referral history</h4>
           {content.referralHistory.length ? (
             <ul className="mt-1 space-y-0.5 text-ink-soft">
               {content.referralHistory.map((r) => (

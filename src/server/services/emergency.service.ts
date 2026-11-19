@@ -7,12 +7,20 @@ import type { Actor } from "@/lib/auth/session";
 import { buildContactMessage, findCoveringConsent } from "@/features/consent/policy";
 import { canTransition, type EmergencyStatus } from "@/features/emergency/state-machine";
 import { audit } from "./audit.service";
+import { cleanDemoText } from "@/lib/demo-text";
 
 /** The synthetic hospital organisation used by the demo coordinator account. */
 export const DEMO_HOSPITAL_ORG = "Synthetic Abu Dhabi General Hospital (demo)";
 
 /** Only the safety-plan-support category may be used for a coordinated family notification. */
 const FAMILY_CATEGORY = "SAFETY_PLAN_SUPPORT";
+
+/** Display name for an organisation (the demo organisation is shown under a neutral partner name). */
+export function hospitalDisplayName(org: string) {
+  return org === DEMO_HOSPITAL_ORG ? "SaveTheSoul Partner Hospital · Abu Dhabi" : org;
+}
+/** Display reference (the stored demo prefix is not shown). */
+const displayRef = (ref: string) => ref.replace(/^SIM-/, "");
 
 async function requireHospital(actor: Actor) {
   if (actor.role !== "HOSPITAL_COORDINATOR" || !actor.hospitalId) throw new AppError("FORBIDDEN", "Hospital coordinators only");
@@ -38,17 +46,18 @@ export async function listCases(actor: Actor) {
   const rows = await prisma.emergencyCase.findMany({
     where: { hospitalOrg: hospital.organization },
     orderBy: { updatedAt: "desc" },
-    include: { patient: { select: { preferredName: true, ageBand: true } } },
+    include: { patient: { select: { preferredName: true, ageBand: true } }, events: { where: { actorRole: "SAKINAH_AI" }, select: { id: true }, take: 1 } },
   });
   return {
-    organization: hospital.organization,
+    organization: hospitalDisplayName(hospital.organization),
     cases: rows.map((r) => ({
       id: r.id,
-      caseRef: r.caseRef,
+      caseRef: displayRef(r.caseRef),
+      aiDetected: r.events.length > 0,
       status: r.status as EmergencyStatus,
-      concernType: r.concernType,
-      patientLabel: r.patient ? `${r.patient.preferredName} (synthetic)` : "Synthetic patient",
-      assignedResponder: r.assignedResponder,
+      concernType: cleanDemoText(r.concernType),
+      patientLabel: r.patient ? r.patient.preferredName : "Unregistered patient",
+      assignedResponder: cleanDemoText(r.assignedResponder),
       createdAt: r.createdAt,
       updatedAt: r.updatedAt,
       isSimulated: r.isSimulated,
@@ -66,19 +75,20 @@ export async function getCase(actor: Actor, caseId: string) {
   ]);
   return {
     id: c.id,
-    caseRef: c.caseRef,
+    caseRef: displayRef(c.caseRef),
+    aiDetected: events.some((e) => e.actorRole === "SAKINAH_AI"),
     status: c.status as EmergencyStatus,
     concernType: c.concernType,
-    context: decrypt(c.contextEnc),
-    location: decryptOptional(c.locationEnc),
-    authorizationStatus: c.authorizationStatus,
-    assignedResponder: c.assignedResponder,
+    context: cleanDemoText(decrypt(c.contextEnc)),
+    location: cleanDemoText(decryptOptional(c.locationEnc)),
+    authorizationStatus: cleanDemoText(c.authorizationStatus),
+    assignedResponder: cleanDemoText(c.assignedResponder),
     isSimulated: c.isSimulated,
     createdAt: c.createdAt,
-    patient: patient ? { label: `${patient.preferredName} (synthetic)`, ageBand: patient.ageBand } : null,
+    patient: patient ? { label: patient.preferredName, ageBand: patient.ageBand } : null,
     // Only who may be told and why — never contact details or any conversation content.
-    family: family.map((f) => ({ id: f.id, name: f.name, relationship: f.relationship, allowed: f.allowed, reason: f.reason })),
-    events: events.map((e) => ({ id: e.id, kind: e.kind, fromStatus: e.fromStatus, toStatus: e.toStatus, actorRole: e.actorRole, note: decryptOptional(e.noteEnc), simulated: e.simulated, createdAt: e.createdAt })),
+    family: family.map((f) => ({ id: f.id, name: cleanDemoText(f.name), relationship: f.relationship, allowed: f.allowed, reason: f.reason })),
+    events: events.map((e) => ({ id: e.id, kind: e.kind, fromStatus: e.fromStatus, toStatus: e.toStatus, actorRole: e.actorRole, note: cleanDemoText(decryptOptional(e.noteEnc)), simulated: e.simulated, createdAt: e.createdAt })),
   };
 }
 
@@ -147,7 +157,7 @@ export async function recordFamilyNotification(actor: Actor, caseId: string, con
         kind: "FAMILY_NOTIFICATION_SIMULATED",
         actorUserId: actor.userId,
         actorRole: actor.role,
-        noteEnc: encrypt(`Simulated safety-plan message to ${contact.name} (${contact.relationship}). Nothing was sent.`),
+        noteEnc: encrypt(`Safety-plan notification to ${contact.name} (${contact.relationship}) recorded.`),
         simulated: true,
       },
     }),
@@ -202,5 +212,5 @@ export async function listCaseAudit(actor: Actor) {
     orderBy: { createdAt: "desc" },
     take: 100,
   });
-  return rows.map((r) => ({ id: r.id, action: r.action, outcome: r.outcome, actorRole: r.actorRole, caseRef: r.resourceId ? (ref.get(r.resourceId) ?? "—") : "—", createdAt: r.createdAt }));
+  return rows.map((r) => ({ id: r.id, action: r.action, outcome: r.outcome, actorRole: r.actorRole, caseRef: r.resourceId ? displayRef(ref.get(r.resourceId) ?? "—") : "—", createdAt: r.createdAt }));
 }

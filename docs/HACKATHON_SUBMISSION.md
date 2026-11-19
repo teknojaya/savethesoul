@@ -196,7 +196,7 @@ Demo accounts have no administrator privileges. All data is synthetic. The demo 
 2. Information is separated into **A · Patient-reported information**, **B · AI preliminary assessment** (Approve / Correct / Reject; approval never turns it into a diagnosis) and **C · Clinician-confirmed findings**, where the fictional diagnosis and care plan are authored by Dr. Aisha.
 
 **Scenario 8: Simulated hospital emergency (Emergency Coordinator)**
-1. On the sign-in page choose **Hospital Emergency Demo → Emergency Coordinator**. Every page shows *"SIMULATED EMERGENCY ALERT — No real hospital or emergency responder has been notified."*
+1. On the sign-in page choose **Hospital Emergency Demo → Emergency Coordinator** (marked *Demo* in the portal). At the top, an **Urgent · Sakinah AI risk alert** shows case ER-1006: Sakinah detected *indirect* suicide warning signs for Noura (burden statements, giving belongings away, goodbye-like messages, sleep collapse, WHO-5 48 → 16) and escalated under her pre-authorised emergency consent. Choose **Act now** to see Sakinah's risk report, last known location and authorised contacts, then **Acknowledge** and act.
 2. The dashboard shows counters and only the cases routed to *Synthetic Abu Dhabi General Hospital (demo)*. Open **SIM-ER-1001** (Sara): minimum permitted context only, never chat history.
 3. **Acknowledge case**, then record a contact attempt. Each step is validated (no skipping review) and appears in the timeline and **Audit records**.
 4. Under **Trusted-contact coordination**, record a simulated notification to Mariam. It is allowed only because Sara authorised Mariam for safety messages; it uses the fixed safety-plan message, nothing is sent, and it appears in Sara's own notification history.
@@ -216,7 +216,8 @@ Demo accounts have no administrator privileges. All data is synthetic. The demo 
 | Consent ledger, revocation, server-side enforcement | Messages to trusted contacts (recorded, **never sent**) |
 | Encrypted storage, audit log, export, deletion | All patients, clinicians, records and fairness statistics |
 | Verified emergency and crisis numbers as `tel:` links | No hospital, police or family is ever contacted by the system |
-| Role-based clinician portal and referral workflow | Hospital emergency portal, its cases, coordinator and every response step (banner on every page) |
+| Role-based clinician portal and referral workflow | Hospital emergency portal, its cases, coordinator and every response step (portal marked *Demo*) |
+| | Sakinah AI-detected escalation to the hospital (demo case only; the live app never escalates to a hospital from an AI flag) |
 | Explore My Mental Wellbeing (grounded AI, nothing stored) | Diagnoses and care plans (fictional, clinician-authored, labelled DEMO) |
 | Hospital access scoped to its own organisation, audited | Trusted-contact notifications from the hospital workflow (recorded, never sent) |
 

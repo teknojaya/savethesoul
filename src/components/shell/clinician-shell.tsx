@@ -49,7 +49,7 @@ export function ClinicianShell({ name, title, isDemo, children }: { name: string
         <div className="mt-auto rounded-xl border border-line p-3 text-sm">
           <p className="font-medium text-ink">{name}</p>
           <p className="text-xs text-muted">{title}</p>
-          {isDemo && <p className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-amber-700">Synthetic demo clinician</p>}
+          {isDemo && <span className="mt-1 inline-block rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-brand-700" title="Demo account">Demo</span>}
           <button onClick={signOut} className="mt-2 flex items-center gap-1.5 text-xs text-muted hover:text-ink">
             <LogOut className="size-3.5" aria-hidden /> Sign out
           </button>
@@ -75,9 +75,6 @@ export function ClinicianShell({ name, title, isDemo, children }: { name: string
         </header>
         <main id="main" className="flex-1 px-4 pb-12 pt-6 sm:px-6 lg:px-10 lg:pt-10">
           <div className="mx-auto w-full max-w-6xl">
-            <div className="mb-6 rounded-2xl border border-amber-500/20 bg-amber-50 px-4 py-2.5 text-xs text-amber-700">
-              <strong>Prototype · synthetic data only.</strong> All patients, referrals and alerts are fictional and simulated. AI-generated text is unverified until you review it.
-            </div>
             {children}
           </div>
         </main>

@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { Siren } from "lucide-react";
+import { Siren, BrainCircuit, ArrowRight } from "lucide-react";
 import { requireHospitalPage } from "@/lib/auth/current-user";
 import { listCases } from "@/server/services/emergency.service";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, EmptyState, PageHeader, SimulatedBadge } from "@/components/ui/primitives";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, EmptyState, PageHeader } from "@/components/ui/primitives";
 import { EmergencyStatusBadge } from "@/components/hospital/status-badge";
 import type { EmergencyStatus } from "@/features/emergency/state-machine";
 import { formatDateTime } from "@/lib/utils";
@@ -23,7 +23,26 @@ export default async function HospitalDashboard() {
   const { organization, cases } = await listCases(actor);
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="Hospital emergency coordination · demo" title="Emergency dashboard" description={`${organization}. Cases appear here only when they are routed to this hospital.`} />
+      <PageHeader eyebrow="Hospital emergency coordination" title="Emergency dashboard" description={`${organization}. Cases appear here only when they are routed to this hospital.`} />
+      {cases
+        .filter((c) => c.aiDetected && (c.status === "DETECTED" || c.status === "REVIEW_REQUESTED"))
+        .map((c) => (
+          <Link
+            key={c.id}
+            href={`/hospital/cases/${c.id}`}
+            className="flex flex-wrap items-center gap-3 rounded-2xl border-2 border-safety-500 bg-safety-50 p-4 text-safety-700 shadow-soft hover:bg-safety-100"
+            data-testid="ai-alert"
+            role="alert"
+          >
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-safety-600 text-white"><BrainCircuit className="size-5" aria-hidden /></span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-xs font-bold uppercase tracking-wide">Urgent · Sakinah AI risk alert · {c.caseRef}</span>
+              <span className="block font-semibold text-ink">{c.concernType}</span>
+              <span className="block text-sm">{c.patientLabel} · received {formatDateTime(c.createdAt)} · immediate human review required</span>
+            </span>
+            <span className="inline-flex items-center gap-1 rounded-full bg-safety-600 px-4 py-2 text-sm font-semibold text-white">Act now <ArrowRight className="size-4" aria-hidden /></span>
+          </Link>
+        ))}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6" data-testid="case-counters">
         {GROUPS.map((g) => (
           <Card key={g.label} className="p-4">
@@ -35,13 +54,13 @@ export default async function HospitalDashboard() {
       <Card>
         <CardHeader>
           <CardTitle className="flex flex-wrap items-center gap-2">
-            Incoming and active cases <SimulatedBadge label="Simulated" />
+            Incoming and active cases
           </CardTitle>
           <CardDescription>Only the minimum permitted context is shown. Conversations are never shared with the hospital.</CardDescription>
         </CardHeader>
         <CardContent>
           {cases.length === 0 ? (
-            <EmptyState icon={<Siren />} title="No cases" description="No simulated cases have been routed to this hospital." />
+            <EmptyState icon={<Siren />} title="No cases" description="No cases have been routed to this hospital." />
           ) : (
             <ul className="divide-y divide-line" data-testid="case-list">
               {cases.map((c) => (

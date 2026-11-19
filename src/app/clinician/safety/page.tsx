@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requireClinicianPage } from "@/lib/auth/current-user";
 import { listAlertsForClinician } from "@/server/services/safety.service";
 import { listAuditForClinician } from "@/server/services/audit.service";
-import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, EmptyState, PageHeader, SimulatedBadge, Callout } from "@/components/ui/primitives";
+import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, EmptyState, PageHeader, Callout } from "@/components/ui/primitives";
 import { AcknowledgeButton } from "@/components/clinician/acknowledge-button";
 import { formatDateTime } from "@/lib/utils";
 import { Info } from "lucide-react";
@@ -16,7 +16,7 @@ export default async function SafetyPage() {
     <div className="space-y-6">
       <PageHeader eyebrow="Safety & audit" title="Safety alerts and access records" />
       <Callout tone="info" icon={<Info />}>
-        Alerts appear only when a patient chooses to alert their care team. They are <strong>simulated</strong>: no hospital, ambulance or police service is contacted. In a real deployment, alert handling would follow an approved clinical escalation protocol with defined response times.
+        Alerts appear only when a patient chooses to alert their care team. Acknowledge each alert promptly and follow your clinical escalation protocol.
       </Callout>
 
       <Card>
@@ -34,7 +34,6 @@ export default async function SafetyPage() {
                   {formatDateTime(a.simulatedAlertAt ?? a.createdAt)} · {a.level === "IMMEDIATE_DANGER" ? "Immediate danger pathway" : "Elevated concern pathway"} · source {a.source.toLowerCase().replace("_", " ")}
                 </p>
               </div>
-              <SimulatedBadge />
               {a.workflowStatus === "SIMULATED_ALERT_SENT" ? (
                 <AcknowledgeButton id={a.id} />
               ) : (

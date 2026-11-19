@@ -6,6 +6,7 @@ import { computeWho5Trend, summariseCheckIns } from "@/features/assessments/tren
 import { audit } from "./audit.service";
 import { getClinicianGrant, requireAssignment, requireClinician, requireClinicianAccess } from "./access.service";
 import { listSummariesForClinician } from "./summary.service";
+import { cleanDemoText } from "@/lib/demo-text";
 
 export function getClinicianProfile(clinicianId: string) {
   return prisma.clinicianProfile.findUniqueOrThrow({
@@ -104,8 +105,8 @@ export async function getPatientDetail(actor: Actor, patientId: string) {
       ? summariseCheckIns(checkIns.map((c) => ({ mood: c.mood ?? 0, stress: c.stress, sleepQuality: c.sleepQuality, functioning: c.functioning, createdAt: c.createdAt })))
       : null,
     summaries,
-    notes: notes.map((n) => ({ id: n.id, content: decrypt(n.contentEnc), createdAt: n.createdAt })),
-    referrals: referrals.map((r) => ({ ...r, reason: decryptOptional(r.reasonEnc), reasonEnc: undefined })),
+    notes: notes.map((n) => ({ id: n.id, content: cleanDemoText(decrypt(n.contentEnc)), createdAt: n.createdAt })),
+    referrals: referrals.map((r) => ({ ...r, reason: cleanDemoText(decryptOptional(r.reasonEnc)), reasonEnc: undefined })),
     followUps,
     alerts,
   };

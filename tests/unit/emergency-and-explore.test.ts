@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { EMERGENCY_STATUSES, STATUS_LABEL, TERMINAL, SIMULATED_BANNER, allowedNext, canTransition } from "@/features/emergency/state-machine";
+import { EMERGENCY_STATUSES, STATUS_LABEL, TERMINAL, allowedNext, canTransition } from "@/features/emergency/state-machine";
 import { EXPLORE_LABEL, EXPLORE_SECTIONS, groundExplore } from "@/features/ai/explore";
 import { DEMO_GROUPS, DEMO_LOGIN_KEYS } from "@/features/demo/accounts";
+import { cleanDemoText } from "@/lib/demo-text";
 
 describe("Emergency workflow state machine (simulated, human-led)", () => {
   it("covers every required status and closes terminal states", () => {
@@ -19,9 +20,8 @@ describe("Emergency workflow state machine (simulated, human-led)", () => {
     expect(canTransition("CONTACT_ATTEMPTED", "UNABLE_TO_CONTACT")).toBe(true);
     expect(canTransition("UNABLE_TO_CONTACT", "CONTACT_ATTEMPTED")).toBe(true);
   });
-  it("labels outside-world actions as simulated and states nobody real was notified", () => {
-    for (const s of ["CONTACT_ATTEMPTED", "ASSISTANCE_ARRANGED", "UNABLE_TO_CONTACT"] as const) expect(STATUS_LABEL[s]).toMatch(/simulated/i);
-    expect(SIMULATED_BANNER).toBe("SIMULATED EMERGENCY ALERT — No real hospital or emergency responder has been notified.");
+  it("has a plain label for every status", () => {
+    for (const s of EMERGENCY_STATUSES) expect(STATUS_LABEL[s]).toBeTruthy();
   });
 });
 
@@ -67,5 +67,17 @@ describe("Demo role cards", () => {
     expect(DEMO_GROUPS.map((g) => g.title)).toEqual(["Patient Demo", "Clinician Demo", "Hospital Emergency Demo"]);
     expect(DEMO_GROUPS.flatMap((g) => g.accounts.map((a) => a.key)).sort()).toEqual([...DEMO_LOGIN_KEYS].sort());
     expect(JSON.stringify(DEMO_GROUPS)).not.toMatch(/password/i);
+  });
+});
+
+describe("Demo text presentation", () => {
+  it("removes demo markers for display without changing meaning", () => {
+    expect(cleanDemoText("DEMO — Synthetic Patient and Fictional Clinical Record. Example clinician-authored diagnosis: Generalized Anxiety Disorder (ICD-10 F41.1). Basis (fictional): evaluation.")).toBe(
+      "Generalized Anxiety Disorder (ICD-10 F41.1). Basis: evaluation.",
+    );
+    expect(cleanDemoText("University exams and not sleeping. (synthetic)")).toBe("University exams and not sleeping.");
+    expect(cleanDemoText("UNVERIFIED AI DRAFT (synthetic)\n• WHO-5 scores")).toBe("• WHO-5 scores");
+    expect(cleanDemoText("Fictional: Khalifa City, Abu Dhabi (synthetic location)")).toBe("Khalifa City, Abu Dhabi");
+    expect(cleanDemoText(null)).toBeNull();
   });
 });

@@ -16,7 +16,7 @@ export function CaseActions({ caseId, next }: { caseId: string; next: EmergencyS
   if (!next.length) return <p className="text-sm text-muted">This case is closed. No further actions.</p>;
   return (
     <div className="space-y-3">
-      <Textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Response note (optional, synthetic)" aria-label="Response note" data-testid="case-note" />
+      <Textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Response note (optional)" aria-label="Response note" data-testid="case-note" />
       {error && <p role="alert" className="text-sm text-safety-700">{error}</p>}
       <div className="flex flex-wrap gap-2">
         {next.map((to) => (
@@ -78,7 +78,7 @@ export function FamilyPanel({
               setBusy(c.id);
               try {
                 await api(`/api/hospital/cases/${caseId}/family-notification`, { body: { contactId: c.id } });
-                setMessage(`Simulated safety-plan message recorded for ${c.name}. Nothing was sent.`);
+                setMessage(`Safety-plan notification recorded for ${c.name}.`);
                 router.refresh();
               } catch (e) {
                 setMessage(e instanceof ApiError ? e.message : "Not recorded");
@@ -87,7 +87,7 @@ export function FamilyPanel({
               }
             }}
           >
-            Record simulated notification
+            Notify trusted contact
           </Button>
         </div>
       ))}

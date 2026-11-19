@@ -5,6 +5,7 @@ import { AppError, notFound } from "@/lib/errors";
 import { getEnv } from "@/lib/env";
 import { assertTransition, type ReferralActor, type ReferralStatus } from "@/features/referrals/state-machine";
 import { audit } from "./audit.service";
+import { cleanDemoText } from "@/lib/demo-text";
 
 export async function createReferral(
   patientId: string,
@@ -68,7 +69,7 @@ function present(r: Awaited<ReturnType<typeof loadReferral>>) {
     status: r.status as ReferralStatus,
     urgency: r.urgency,
     isSimulated: r.isSimulated,
-    reason: decryptOptional(r.reasonEnc),
+    reason: cleanDemoText(decryptOptional(r.reasonEnc)),
     requestedAt: r.requestedAt,
     firstContactAt: r.firstContactAt,
     completedAt: r.completedAt,

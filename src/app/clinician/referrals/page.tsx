@@ -27,7 +27,7 @@ export default async function ReferralsPage() {
       <PageHeader
         eyebrow="Referrals"
         title="Referral requests"
-        description="REQUESTED → ACKNOWLEDGED → SCHEDULED → COMPLETED. Every change is recorded. All referrals in the prototype are simulated."
+        description="REQUESTED → ACKNOWLEDGED → SCHEDULED → COMPLETED. Every change is recorded."
       />
       <section className="space-y-3">
         <h2 className="font-display text-xl text-ink">Open ({open.length})</h2>

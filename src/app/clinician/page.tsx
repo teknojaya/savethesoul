@@ -19,7 +19,7 @@ export default async function ClinicianOverview() {
 
       {o.pendingAlerts > 0 && (
         <Callout tone="safety" icon={<BellRing />}>
-          <strong>{o.pendingAlerts} simulated safety alert{o.pendingAlerts > 1 ? "s" : ""}</strong> awaiting acknowledgement.{" "}
+          <strong>{o.pendingAlerts} safety alert{o.pendingAlerts > 1 ? "s" : ""}</strong> awaiting acknowledgement.{" "}
           <Link href="/clinician/safety" className="font-semibold underline">Review now</Link>
         </Callout>
       )}
@@ -43,7 +43,7 @@ export default async function ClinicianOverview() {
               <Link key={p.patientId} href={`/clinician/patients/${p.patientId}`} className="flex items-center justify-between gap-2 rounded-xl border border-line px-3 py-2.5 text-sm hover:bg-sand/40">
                 <span className="font-medium text-ink">{p.preferredName}</span>
                 <span className="flex flex-wrap gap-1.5">
-                  {p.pendingAlerts > 0 && <Badge tone="safety">Simulated alert</Badge>}
+                  {p.pendingAlerts > 0 && <Badge tone="safety">Safety alert</Badge>}
                   {p.latestWho5 !== null && <Badge tone={p.latestWho5 <= 50 ? "amber" : "neutral"}>WHO-5 {p.latestWho5}</Badge>}
                   {p.trendDirection === "declining" && <Badge tone="amber">Declining</Badge>}
                 </span>

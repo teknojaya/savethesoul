@@ -19,9 +19,8 @@ test("Sign-in offers Patient, Clinician and Hospital Emergency demo role cards (
 
 test("Hospital coordinator: simulated banner, own-organisation cases, acknowledge, and consent-checked family notification", async ({ page }) => {
   await demoLogin(page, "coordinator", /\/hospital/);
-  await expect(page.getByTestId("hospital-sim-banner")).toContainText("SIMULATED EMERGENCY ALERT — No real hospital or emergency responder has been notified.");
   await expect(page.getByTestId("case-counters")).toBeVisible();
-  await page.getByTestId("case-row").filter({ hasText: "SIM-ER-1001" }).click();
+  await page.getByTestId("case-row").filter({ hasText: "ER-1001" }).click();
   await page.waitForURL(/\/hospital\/cases\//);
   await expect(page.getByTestId("case-status")).toContainText("Awaiting human review");
   await expect(page.getByTestId("case-context")).not.toContainText(/conversation:|chat transcript/i);
@@ -34,13 +33,28 @@ test("Hospital coordinator: simulated banner, own-organisation cases, acknowledg
   const family = page.getByTestId("family-panel");
   await expect(family).toContainText("Mariam");
   await family.getByTestId("family-notify").first().click();
-  await expect(page.getByTestId("case-timeline")).toContainText(/Simulated safety-plan message to Mariam/);
+  await expect(page.getByTestId("case-timeline")).toContainText(/Safety-plan notification to Mariam/);
 
   await page.getByTestId("case-action-CONTACT_ATTEMPTED").click();
-  await expect(page.getByTestId("case-status")).toContainText("Contact attempted (simulated)");
+  await expect(page.getByTestId("case-status")).toContainText("Contact attempted");
 
   await page.goto("/hospital/audit");
   await expect(page.getByTestId("audit-table")).toContainText("emergency case acknowledged");
+});
+
+test("Sakinah AI-detected indirect warning signs reach the hospital with a risk report, location and contacts", async ({ page }) => {
+  await demoLogin(page, "coordinator", /\/hospital/);
+  const alert = page.getByTestId("ai-alert");
+  await expect(alert).toContainText("Sakinah AI risk alert");
+  await alert.click();
+  await page.waitForURL(/\/hospital\/cases\//);
+  await expect(page.getByTestId("ai-alert-banner")).toBeVisible();
+  await expect(page.getByTestId("case-context")).toContainText("Sakinah AI risk report");
+  await expect(page.getByTestId("case-context")).toContainText("Emergency contact: Huda");
+  await expect(page.getByText("Al Reem Island")).toBeVisible();
+  await expect(page.getByTestId("case-timeline")).toContainText("Sakinah AI detected warning signs");
+  await page.getByTestId("case-action-ACKNOWLEDGED").click();
+  await expect(page.getByTestId("ai-alert-banner")).toHaveCount(0);
 });
 
 test("Hospital coordinator cannot open patient or clinician areas", async ({ page }) => {
@@ -54,7 +68,6 @@ test("Clinician sees the fictional clinician-authored diagnosis separated from A
   await demoLogin(page, "dr.aisha", /\/clinician/);
   await page.goto("/clinician/patients");
   await page.getByTestId("patient-row").filter({ hasText: "Hana" }).click();
-  await expect(page.getByTestId("demo-record-banner")).toContainText("DEMO — Synthetic Patient and Fictional Clinical Record");
   await expect(page.getByText("A · Patient-reported information")).toBeVisible();
   await expect(page.getByText("B · AI preliminary assessment")).toBeVisible();
   await expect(page.getByText("C · Clinician-confirmed findings")).toBeVisible();

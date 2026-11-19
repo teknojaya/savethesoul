@@ -22,7 +22,7 @@ export function AcknowledgeButton({ id }: { id: string }) {
         router.refresh();
       }}
     >
-      {busy && <Loader2 className="animate-spin" aria-hidden />} Acknowledge (simulated)
+      {busy && <Loader2 className="animate-spin" aria-hidden />} Acknowledge
     </Button>
   );
 }

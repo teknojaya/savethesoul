@@ -18,6 +18,7 @@ import { buildDraftInput, groundClinicalDraft } from "@/features/ai/clinical-dra
 import { audit, recordSystemEvent } from "./audit.service";
 import { requireClinicianAccess } from "./access.service";
 import { listCheckIns } from "./wellbeing.service";
+import { cleanDemoText } from "@/lib/demo-text";
 
 export interface SummaryContent {
   generatedAt: string;
@@ -270,13 +271,18 @@ export async function listSummariesForClinician(actor: Actor, patientId: string)
   return rows.map((r) => ({
     id: r.id,
     sharedAt: r.sharedAt,
-    content: decryptJson<SummaryContent>(r.contentEnc),
-    aiDraft: r.aiDraftEnc ? decrypt(r.aiDraftEnc) : null,
+    content: cleanContent(decryptJson<SummaryContent>(r.contentEnc)),
+    aiDraft: r.aiDraftEnc ? cleanDemoText(decrypt(r.aiDraftEnc)) : null,
     aiDraftStatus: r.aiDraftStatus,
     reviewedAt: r.reviewedAt,
-    correctedDraft: decryptOptional(r.correctedDraftEnc),
-    reviewNote: decryptOptional(r.reviewNoteEnc),
+    correctedDraft: cleanDemoText(decryptOptional(r.correctedDraftEnc)),
+    reviewNote: cleanDemoText(decryptOptional(r.reviewNoteEnc)),
   }));
+}
+
+function cleanContent(c: SummaryContent): SummaryContent {
+  const x = c as SummaryContent & { patientNote?: string | null };
+  return "patientNote" in x ? { ...x, patientNote: cleanDemoText(x.patientNote ?? null) } : c;
 }
 
 /**

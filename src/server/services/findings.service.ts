@@ -3,6 +3,7 @@ import { decrypt, encrypt } from "@/lib/crypto";
 import type { Actor } from "@/lib/auth/session";
 import { audit } from "./audit.service";
 import { requireClinicianAccess } from "./access.service";
+import { cleanDemoText } from "@/lib/demo-text";
 
 /**
  * Clinician-confirmed findings (formal diagnosis, care plan). Authored only by a clinician with an
@@ -17,7 +18,7 @@ export async function listFindings(actor: Actor, patientId: string) {
   });
   const authors = await prisma.user.findMany({ where: { id: { in: [...new Set(rows.map((r) => r.authorUserId))] } }, select: { id: true, displayName: true } });
   const name = new Map(authors.map((a) => [a.id, a.displayName]));
-  return rows.map((r) => ({ id: r.id, kind: r.kind, content: decrypt(r.contentEnc), createdAt: r.createdAt, author: name.get(r.authorUserId) ?? "Clinician" }));
+  return rows.map((r) => ({ id: r.id, kind: r.kind, content: cleanDemoText(decrypt(r.contentEnc)), createdAt: r.createdAt, author: name.get(r.authorUserId) ?? "Clinician" }));
 }
 
 export async function addFinding(actor: Actor, patientId: string, input: { kind: "DIAGNOSIS" | "CARE_PLAN"; content: string }) {

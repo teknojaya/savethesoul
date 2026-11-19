@@ -3,7 +3,7 @@ import { ArrowLeft, Lock, ShieldAlert } from "lucide-react";
 import { requireClinicianPage } from "@/lib/auth/current-user";
 import { getPatientDetail } from "@/server/services/clinician.service";
 import { AppError } from "@/lib/errors";
-import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, EmptyState, PageHeader, SimulatedBadge } from "@/components/ui/primitives";
+import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, EmptyState, PageHeader } from "@/components/ui/primitives";
 import { Who5TrendChart, CheckInChart } from "@/components/wellbeing/charts";
 import { SummaryView } from "@/components/clinician/summary-view";
 import { AiDraftCard, FindingsPanel, NotesPanel } from "@/components/clinician/patient-actions";
@@ -47,11 +47,6 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
       <Link href="/clinician/patients" className="inline-flex items-center gap-1 text-sm text-muted hover:text-ink">
         <ArrowLeft className="size-4" aria-hidden /> Patients
       </Link>
-      {d.patient.isSynthetic && (
-        <p className="rounded-2xl border border-amber-500/30 bg-amber-50 px-4 py-2.5 text-sm font-semibold text-amber-700" data-testid="demo-record-banner">
-          DEMO — Synthetic Patient and Fictional Clinical Record
-        </p>
-      )}
       <PageHeader
         eyebrow="Patient details"
         title={d.patient.preferredName}
@@ -72,7 +67,7 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
         <Card className="border-safety-100">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-safety-700"><ShieldAlert className="size-4" aria-hidden /> Safety alerts</CardTitle>
-            <CardDescription>Patient-initiated, simulated alerts. Categories come from a rule-based detector and are not a clinical risk assessment.</CardDescription>
+            <CardDescription>Patient-initiated alerts. Categories come from a rule-based detector and are not a clinical risk assessment.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
             {d.alerts.map((a) => (
@@ -80,7 +75,6 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
                 <span>{formatDateTime(a.createdAt)} · {a.level === "IMMEDIATE_DANGER" ? "Immediate danger pathway" : "Elevated concern pathway"}</span>
                 <span className="flex items-center gap-1.5">
                   <Badge tone={a.workflowStatus === "SIMULATED_ACKNOWLEDGED" ? "sage" : "safety"}>{a.workflowStatus === "SIMULATED_ACKNOWLEDGED" ? "Acknowledged" : "Awaiting acknowledgement"}</Badge>
-                  <SimulatedBadge />
                 </span>
               </div>
             ))}
