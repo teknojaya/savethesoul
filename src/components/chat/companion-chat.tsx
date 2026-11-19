@@ -26,6 +26,8 @@ import { Badge, Callout } from "@/components/ui/primitives";
 import { CrisisPanel } from "@/components/safety/crisis-panel";
 import { RichText } from "./rich-text";
 import { VoiceMode, type VoiceSendResult } from "./voice-mode";
+import { ComposerMic, type VoiceAvailability } from "./composer-mic";
+import { useReplySpeech } from "./use-reply-speech";
 import { SAKINAH_NAME, SAKINAH_WELCOME_AUDIO_PATH, SAKINAH_WELCOME_TEXT } from "@/features/voice/sakinah";
 import {
   classifyPlayError,
@@ -104,6 +106,10 @@ export function CompanionChat(props: {
   const [remembered, setRemembered] = useState<Set<string>>(new Set());
   const [notice, setNotice] = useState<string | null>(null);
   const [voiceMode, setVoiceMode] = useState(false);
+  /** Voice availability and consent (for the composer microphone and Listen buttons). */
+  const [voice, setVoice] = useState<VoiceAvailability | null>(null);
+  /** The message box holds a transcript the user dictated (sent as a spoken message). */
+  const [pendingVoice, setPendingVoice] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -132,6 +138,37 @@ export function CompanionChat(props: {
       a.pause();
       setGreetingAudio("stopped");
     }
+  }
+
+  const speech = useReplySpeech(() => stopGreeting());
+
+  useEffect(() => {
+    fetch("/api/voice/consent")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((v: VoiceAvailability | null) => setVoice(v ?? { available: false, consented: false }))
+      .catch(() => setVoice({ available: false, consented: false }));
+  }, []);
+
+  function insertTranscript(text: string) {
+    const t = text.trim();
+    if (!t) return;
+    setInput((prev) => (prev.trim() ? `${prev.trim()} ${t}` : t));
+    setPendingVoice(true);
+    requestAnimationFrame(() => {
+      const el = inputRef.current;
+      if (!el) return;
+      el.focus();
+      el.style.height = "auto";
+      el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
+    });
+  }
+
+  /** Sends what is in the message box; a dictated message is sent as spoken and its reply read aloud. */
+  async function sendComposer() {
+    const spoken = pendingVoice;
+    setPendingVoice(false);
+    const result = await send(input, spoken ? "voice" : "text");
+    if (spoken && result?.assistantMessageId && voice?.consented) void speech.speak(result.assistantMessageId);
   }
 
   /** Attempts the greeting once for this chat id; the attempt is recorded first, so it can never repeat. */
@@ -384,7 +421,10 @@ export function CompanionChat(props: {
           <Button
             variant={voiceMode ? "soft" : "ghost"}
             size="sm"
-            onClick={() => setVoiceMode((v) => !v)}
+            onClick={() => {
+              speech.stop();
+              setVoiceMode((v) => !v);
+            }}
             aria-pressed={voiceMode}
             data-testid="voice-toggle"
             aria-label={voiceMode ? "Switch to text chat" : "Switch to voice mode"}
@@ -434,6 +474,11 @@ export function CompanionChat(props: {
                   canRemember={props.memoryEnabled && m.role === "user" && !m.id.startsWith("u-")}
                   remembered={remembered.has(m.id)}
                   onRemember={() => setRemembering({ id: m.id, text: m.content })}
+                  listen={
+                    voice?.available && voice.consented && !voiceMode && m.role !== "user" && !m.pending && !/^(a-|w-|sakinah-greeting)/.test(m.id)
+                      ? { speaking: speech.speakingId === m.id, onListen: () => speech.speak(m.id), onStop: speech.stop }
+                      : null
+                  }
                 />
                 {m.id === GREETING_MESSAGE.id && (
                   <GreetingControls
@@ -493,10 +538,10 @@ export function CompanionChat(props: {
         ) : (
         <footer className="border-t border-line/70 bg-surface/80 px-4 pb-safe pt-3 backdrop-blur">
           <form
-            className="mx-auto flex max-w-2xl items-end gap-2"
+            className="relative mx-auto flex max-w-2xl items-end gap-2"
             onSubmit={(e) => {
               e.preventDefault();
-              send(input);
+              void sendComposer();
             }}
           >
             <label htmlFor="composer" className="sr-only">Message the companion</label>
@@ -508,22 +553,39 @@ export function CompanionChat(props: {
               maxLength={4000}
               onChange={(e) => {
                 setInput(e.target.value);
+                if (!e.target.value.trim()) setPendingVoice(false);
                 e.target.style.height = "auto";
                 e.target.style.height = `${Math.min(e.target.scrollHeight, 160)}px`;
               }}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
                   e.preventDefault();
-                  send(input);
+                  void sendComposer();
                 }
               }}
               placeholder="Write how you're feeling…"
               className="max-h-40 min-h-11 flex-1 resize-none rounded-2xl border border-line bg-surface px-4 py-2.5 text-[15px] focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100"
             />
+            <ComposerMic
+              disabled={busy}
+              voice={voice}
+              onVoiceChange={setVoice}
+              onTranscript={insertTranscript}
+              onBeforeRecord={() => {
+                stopGreeting();
+                speech.stop();
+              }}
+            />
             <Button type="submit" size="icon" disabled={busy || !input.trim()} aria-label="Send message" className="size-11 shrink-0">
               {busy ? <Loader2 className="animate-spin" /> : <ArrowUp />}
             </Button>
           </form>
+          {pendingVoice && input.trim() && (
+            <p className="mx-auto mt-1.5 max-w-2xl text-center text-xs text-teal-800" data-testid="transcript-review-hint">
+              Check what I heard and edit it if needed, then tap Send.
+            </p>
+          )}
+          {speech.error && <p className="mx-auto mt-1.5 max-w-2xl text-center text-xs text-safety-700">{speech.error}</p>}
           <p className="mx-auto mt-2 max-w-2xl pb-1 text-center text-[11px] text-muted">
             AI wellbeing companion — general support, not medical advice. In an emergency in the UAE call <a href="tel:999" className="font-semibold text-safety-700">999</a> or{" "}
             <a href="tel:998" className="font-semibold text-safety-700">998</a>; elsewhere, your local emergency number.
@@ -535,7 +597,19 @@ export function CompanionChat(props: {
   );
 }
 
-function MessageBubble({ m, canRemember, remembered, onRemember }: { m: Msg; canRemember: boolean; remembered: boolean; onRemember: () => void }) {
+function MessageBubble({
+  m,
+  canRemember,
+  remembered,
+  onRemember,
+  listen,
+}: {
+  m: Msg;
+  canRemember: boolean;
+  remembered: boolean;
+  onRemember: () => void;
+  listen?: { speaking: boolean; onListen: () => void; onStop: () => void } | null;
+}) {
   if (m.role === "user") {
     return (
       <div className="group ms-auto flex max-w-[85%] flex-col items-end gap-1">
@@ -584,6 +658,17 @@ function MessageBubble({ m, canRemember, remembered, onRemember }: { m: Msg; can
           {m.provider === "demo" && <Badge tone="amber">Pre-written demo response</Badge>}
           {m.provider === "voice-welcome" && <Badge tone="neutral">Sakinah · pre-recorded AI voice greeting</Badge>}
           {(m.provider === "openai" || m.provider === "anthropic") && <Badge tone="neutral">AI-generated · not medical advice</Badge>}
+          {listen && (
+            <button
+              type="button"
+              onClick={listen.speaking ? listen.onStop : listen.onListen}
+              className="inline-flex h-7 items-center gap-1 rounded-full px-2 text-xs font-medium text-teal-700 hover:bg-teal-50"
+              aria-label={listen.speaking ? "Stop reading aloud" : "Listen to this reply"}
+              data-testid="reply-listen"
+            >
+              {listen.speaking ? <Square className="size-3.5" aria-hidden /> : <Volume2 className="size-3.5" aria-hidden />} {listen.speaking ? "Stop" : "Listen"}
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -661,9 +746,13 @@ function GreetingControls({
           </Button>
         )}
       </div>
+      <p className="flex items-start gap-2 rounded-2xl bg-teal-50/70 px-3 py-2 text-sm text-teal-900" data-testid="voice-hint">
+        <Mic className="mt-0.5 size-4 shrink-0" aria-hidden />
+        <span>Prefer talking instead of typing? Just tap the microphone beside the message box. I&apos;m here to listen.</span>
+      </p>
       {showSuggestions && (
         <div>
-          <p className="mb-2 text-xs text-muted">Reply by typing, tap Voice to speak, or start with one of these, {preferredName}:</p>
+          <p className="mb-2 text-xs text-muted">Or start with one of these, {preferredName}:</p>
           <div className="flex flex-wrap gap-2">
             {SUGGESTIONS.map((t) => (
               <button
