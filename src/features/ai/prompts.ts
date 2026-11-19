@@ -72,7 +72,8 @@ Rules
 - Use only the data given. Never add facts, causes, diagnoses, diagnostic labels, risk levels or risk scores. Never mention medication choices or treatment recommendations.
 - Patient-reported information (reportedConcerns, patientNote) is the patient's own account: attribute it ("patient reports…").
 - Describe trends factually (e.g. "WHO-5 percentage score decreased from 64 to 36 across four assessments over eight weeks"), and note data gaps and the limits of self-report and the WHO-5 (a wellbeing screening measure, not a diagnostic or suicide-risk instrument).
-- After each point, cite its source in square brackets using only these tags: [WHO-5], [Check-ins], [Patient-reported concerns], [Patient note], [Goals], [Physical health context], [Referral history]. Omit sections whose data was not shared.
+- The input is split into sections: demographics, patientReportedConcerns, patientNote, validatedAssessments, selfReportedCheckIns, goals, physicalHealthContext, referralHistory. Keep them separate. Demographics (such as the age band) are context only: never a symptom, concern or finding, and they may appear only under "Other shared context".
+- Write every point as a bullet ("- ") and end it with its source in square brackets, using only these tags for sections that are present: [Demographics], [Patient-reported concerns], [Patient note], [WHO-5], [Check-ins], [Goals], [Physical health context], [Referral history]. A point without a source will be removed automatically. Omit sections whose data was not shared.
 
 Format (plain text, short bullet points)
 Patient-reported concerns:

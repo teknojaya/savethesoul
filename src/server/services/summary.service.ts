@@ -14,6 +14,7 @@ import { computeWho5Trend, summariseCheckIns } from "@/features/assessments/tren
 import { WHO5_LIMITATIONS } from "@/features/assessments/who5";
 import { getChatProvider } from "@/features/ai/provider-factory";
 import { CLINICIAN_SUMMARY_SYSTEM_PROMPT } from "@/features/ai/prompts";
+import { buildDraftInput, groundClinicalDraft } from "@/features/ai/clinical-draft";
 import { audit, recordSystemEvent } from "./audit.service";
 import { requireClinicianAccess } from "./access.service";
 import { listCheckIns } from "./wellbeing.service";
@@ -203,15 +204,18 @@ async function generateAiDraft(content: SummaryContent): Promise<{ text: string;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), getEnv().LLM_TIMEOUT_MS);
   try {
-    // Only the structured, patient-approved snapshot is sent — never conversations.
-    const { patient, ...rest } = content;
+    // Only the structured, patient-approved snapshot is sent — never conversations — with each
+    // kind of information (demographics, patient reports, assessments…) in its own section.
     const text = await provider.complete({
       system: CLINICIAN_SUMMARY_SYSTEM_PROMPT,
-      messages: [{ role: "user", content: `Patient-approved structured data (JSON):\n${JSON.stringify({ ageBand: patient.ageBand, ...rest })}` }],
+      messages: [{ role: "user", content: `Patient-approved structured data (JSON):\n${JSON.stringify(buildDraftInput(content))}` }],
       signal: controller.signal,
       maxTokens: 4000,
     });
-    return text.trim() ? { text: text.trim(), provider: provider.id } : null;
+    // Unsupported statements are removed before any clinician sees the draft.
+    const grounded = groundClinicalDraft(text, content);
+    if (grounded.removed) await recordSystemEvent("AI_DRAFT_FILTERED", `${grounded.removed}`);
+    return grounded.text ? { text: grounded.text, provider: provider.id } : null;
   } catch {
     await recordSystemEvent("LLM_ERROR", "SUMMARY_DRAFT_FAILED");
     return null;

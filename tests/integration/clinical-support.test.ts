@@ -39,7 +39,14 @@ async function call(handler: (r: NextRequest, c: { params: Promise<Record<string
 const CONCERNS = { areas: ["STRESS", "SLEEP"], duration: "1_TO_3_MONTHS", frequency: "MOST_DAYS", dailyLifeImpact: "A_LOT", helpWanted: "ASSESSMENT" };
 
 /** Fake model: records exactly what the AI draft step receives. */
-function fakeDraftModel() {
+const GROUNDED_DRAFT = [
+  "Patient-reported concerns:",
+  "- Patient reports stress and poor sleep, nearly every day for 1–3 months [Patient-reported concerns]",
+  "Questions the clinician may wish to explore:",
+  "- How the patient describes the effect on daily life [Patient-reported concerns]",
+].join("\n");
+
+function fakeDraftModel(draft = GROUNDED_DRAFT) {
   const seen: GenerateInput[] = [];
   const p: ChatProvider = {
     id: "openai",
@@ -51,7 +58,7 @@ function fakeDraftModel() {
     },
     async complete(input) {
       seen.push(input);
-      return "Patient-reported concerns:\n- Patient reports stress and poor sleep for 1–3 months [Patient-reported concerns]";
+      return draft;
     },
   };
   setProviderOverride(p);
@@ -110,6 +117,42 @@ describe("Clinical summary: patient-controlled sources", () => {
     expect(sent).not.toContain("SECRET-CHAT-TEXT");
     expect(sent).toContain("Stress or pressure");
     expect(seen[0].system).toMatch(/Not a confirmed diagnosis/);
+  });
+});
+
+describe("AI draft grounding before clinicians see it (regression)", () => {
+  it("stores only grounded statements: demographics as a concern and unsupported findings are removed", async () => {
+    fakeDraftModel(
+      [
+        "Patient-reported concerns:",
+        "- Patient reports stress and poor sleep nearly every day for 1–3 months [Patient-reported concerns]",
+        "- Age band 35–44 [Patient-reported concerns]",
+        "Preliminary observations (AI, unverified):",
+        "- Consistent with generalized anxiety disorder [Patient-reported concerns]",
+        "- History of panic attacks since childhood",
+        "Questions the clinician may wish to explore:",
+        "- Which daily activities are most affected [Patient-reported concerns]",
+      ].join("\n"),
+    );
+    const { patient, aisha } = await setup();
+    await prisma.patientProfile.update({ where: { id: patient.patientId }, data: { ageBand: "35-44" } });
+    const r = await share(patient, aisha.clinicianId, ["REPORTED_CONCERNS"], { reportedConcerns: CONCERNS });
+    current.actor = aisha;
+    const detail = await prisma.clinicalSummary.findUniqueOrThrow({ where: { id: r.body.summary.id } });
+    const { decrypt } = await import("@/lib/crypto");
+    const stored = decrypt(detail.aiDraftEnc!);
+    expect(stored).toContain("Patient reports stress and poor sleep");
+    expect(stored).not.toMatch(/35–44|anxiety disorder|childhood/);
+    expect(stored).toMatch(/3 AI statements were removed by automatic grounding checks/);
+    expect(detail.aiDraftStatus).toBe("UNVERIFIED");
+    expect(await prisma.systemEvent.count({ where: { kind: "AI_DRAFT_FILTERED", code: "3" } })).toBe(1);
+  });
+
+  it("an entirely ungrounded draft is not stored at all", async () => {
+    fakeDraftModel("The patient clearly has major depression and should start medication.");
+    const { patient, aisha } = await setup();
+    const r = await share(patient, aisha.clinicianId, ["REPORTED_CONCERNS"], { reportedConcerns: CONCERNS });
+    expect((await prisma.clinicalSummary.findUniqueOrThrow({ where: { id: r.body.summary.id } })).aiDraftEnc).toBeNull();
   });
 });
 
