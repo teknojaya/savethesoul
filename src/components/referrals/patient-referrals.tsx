@@ -10,6 +10,18 @@ import { STATUS_LABEL, TERMINAL, type ReferralStatus } from "@/features/referral
 import { api, ApiError } from "@/lib/api-client";
 import { formatDate, formatDateTime } from "@/lib/utils";
 
+type CareType = "PSYCHOLOGIST" | "PSYCHIATRIST" | "PRIMARY_CARE" | "SERVICE";
+const CARE_TYPES: Record<CareType, { label: string; description: string }> = {
+  PSYCHOLOGIST: { label: "Psychologist", description: "Assessment and talking therapies" },
+  PSYCHIATRIST: { label: "Psychiatrist", description: "A medical doctor who can assess and prescribe" },
+  PRIMARY_CARE: { label: "Primary care (GP)", description: "Often a good first step, including a physical check" },
+  SERVICE: { label: "A verified service", description: "Helplines and community services" },
+};
+function matchesCareType(title: string, t: CareType) {
+  const x = title.toLowerCase();
+  return t === "PSYCHIATRIST" ? x.includes("psychiatr") : t === "PSYCHOLOGIST" ? x.includes("psycholog") : false;
+}
+
 export interface PatientReferral {
   id: string;
   status: ReferralStatus;
@@ -99,6 +111,7 @@ export function RequestReferral({
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [careType, setCareType] = useState<CareType | "">("");
   const [target, setTarget] = useState("");
   const [urgency, setUrgency] = useState<"ROUTINE" | "SOON" | "URGENT">("ROUTINE");
   const [reason, setReason] = useState("");
@@ -106,16 +119,18 @@ export function RequestReferral({
   const [error, setError] = useState<string | null>(null);
 
   async function submit() {
+    if (!careType) return setError("Choose the kind of help you'd like.");
     if (!target) return setError("Choose who you'd like to be referred to.");
     setPending(true);
     setError(null);
     const [kind, id] = target.split(":");
     try {
       await api("/api/referrals", {
-        body: { clinicianId: kind === "c" ? id : null, resourceId: kind === "r" ? id : null, urgency, reason: reason.trim() || null },
+        body: { clinicianId: kind === "c" ? id : null, resourceId: kind === "r" ? id : null, urgency, reason: reason.trim() || null, careType },
       });
       setOpen(false);
       setTarget("");
+      setCareType("");
       setReason("");
       router.refresh();
     } catch (e) {
@@ -138,21 +153,52 @@ export function RequestReferral({
         <p className="font-semibold text-ink">Request a referral</p>
         <SimulatedBadge label="Simulated workflow" />
       </div>
-      <Field label="Who would you like to see?" htmlFor="target">
-        <select id="target" value={target} onChange={(e) => setTarget(e.target.value)} className="h-11 rounded-xl border border-line bg-surface px-3 text-[15px]">
-          <option value="">Choose…</option>
-          <optgroup label="Demo clinicians (synthetic)">
-            {clinicians.map((c) => (
-              <option key={c.id} value={`c:${c.id}`}>{c.name} — {c.title}, {c.organization}</option>
-            ))}
-          </optgroup>
-          <optgroup label="Services (track your own referral)">
-            {resources.map((r) => (
-              <option key={r.id} value={`r:${r.id}`}>{r.name}</option>
-            ))}
-          </optgroup>
-        </select>
-      </Field>
+      <fieldset data-testid="care-type">
+        <legend className="text-sm font-medium text-ink-soft">What kind of help would you like?</legend>
+        <div className="mt-2 grid gap-2 sm:grid-cols-2">
+          {(Object.keys(CARE_TYPES) as CareType[]).map((t) => (
+            <button
+              key={t}
+              type="button"
+              aria-pressed={careType === t}
+              onClick={() => {
+                setCareType(t);
+                setTarget("");
+              }}
+              className={`rounded-2xl border p-3 text-start text-sm ${careType === t ? "border-teal-500 bg-teal-50" : "border-line bg-surface"}`}
+            >
+              <span className="block font-medium text-ink">{CARE_TYPES[t].label}</span>
+              <span className="block text-xs text-muted">{CARE_TYPES[t].description}</span>
+            </button>
+          ))}
+        </div>
+      </fieldset>
+      {careType && (
+        <Field label="Who would you like to see?" htmlFor="target">
+          <select id="target" value={target} onChange={(e) => setTarget(e.target.value)} className="h-11 rounded-xl border border-line bg-surface px-3 text-[15px]">
+            <option value="">Choose…</option>
+            {(careType === "PSYCHOLOGIST" || careType === "PSYCHIATRIST") && (
+              <optgroup label="Demo clinicians (synthetic)">
+                {clinicians
+                  .filter((c) => matchesCareType(c.title, careType))
+                  .map((c) => (
+                    <option key={c.id} value={`c:${c.id}`}>{c.name} — {c.title}, {c.organization}</option>
+                  ))}
+              </optgroup>
+            )}
+            <optgroup label="Verified services (track your own referral)">
+              {resources.map((r) => (
+                <option key={r.id} value={`r:${r.id}`}>{r.name}</option>
+              ))}
+            </optgroup>
+          </select>
+        </Field>
+      )}
+      <p className="rounded-xl bg-sand/60 px-3 py-2 text-xs text-ink-soft">
+        A clinician only sees information you choose to share.{" "}
+        <a href="/patient/support/share" className="font-medium text-teal-700 underline">Review and choose what to share</a>. This request is simulated: no real provider receives it, and
+        any acknowledgement shown is labelled simulated.
+      </p>
       <fieldset>
         <legend className="text-sm font-medium text-ink-soft">How soon?</legend>
         <div className="mt-2 flex gap-2">

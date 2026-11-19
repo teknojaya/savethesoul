@@ -8,6 +8,8 @@ import { CheckInChart, Who5TrendChart } from "@/components/wellbeing/charts";
 import { GoalsManager } from "@/components/wellbeing/goals-manager";
 import { WHO5_LIMITATIONS } from "@/features/assessments/who5";
 import { formatDate } from "@/lib/utils";
+import { describeWellbeing } from "@/features/assessments/wellbeing-summary";
+import { ClipboardList, HeartHandshake, History, MessageCircleHeart } from "lucide-react";
 
 export const metadata = { title: "My Wellbeing" };
 
@@ -21,6 +23,7 @@ function delta(recent: number | null, prior: number | null) {
 export default async function WellbeingPage() {
   const actor = await requirePatientPage();
   const o = await getWellbeingOverview(actor.patientId);
+  const summary = describeWellbeing(o.trend, o.checkInSummary);
   const TrendIcon = o.trend.direction === "declining" ? TrendingDown : o.trend.direction === "improving" ? TrendingUp : Minus;
 
   return (
@@ -57,6 +60,40 @@ export default async function WellbeingPage() {
         <Stat label="Check-ins · last 7 days" value={o.checkInSummary.recentCount} hint="Self-reported" />
       </div>
 
+      <Card data-testid="wellbeing-summary">
+        <CardHeader>
+          <CardTitle>Your wellbeing summary</CardTitle>
+          <CardDescription>{summary.disclaimer}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-[15px] text-ink">
+            {summary.headline} <strong>This is not a diagnosis.</strong>
+            {summary.suggestProfessional && " You may find it helpful to speak with a qualified mental health professional."}
+          </p>
+          {summary.points.length > 0 && (
+            <ul className="space-y-0.5 text-sm text-ink-soft">
+              {summary.points.map((p) => (
+                <li key={p}>• {p}</li>
+              ))}
+            </ul>
+          )}
+          <div className="flex flex-wrap gap-2 pt-1">
+            <Link href="/patient/companion" className={buttonVariants({ size: "sm" })}>
+              <MessageCircleHeart aria-hidden /> Continue talking with Sakinah
+            </Link>
+            <Link href="#history" className={buttonVariants({ size: "sm", variant: "secondary" })}>
+              <History aria-hidden /> Review wellbeing history
+            </Link>
+            <Link href="/patient/support" className={buttonVariants({ size: "sm", variant: "secondary" })}>
+              <HeartHandshake aria-hidden /> Find professional support
+            </Link>
+            <Link href="/patient/support/share" className={buttonVariants({ size: "sm", variant: "secondary" })}>
+              <ClipboardList aria-hidden /> Prepare a summary for my clinician
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
+
       {o.trend.suggestProfessionalFollowUp && (
         <Callout tone="info" icon={<Compass />}>
           <p className="font-semibold">Talking with a professional may help</p>
@@ -68,7 +105,7 @@ export default async function WellbeingPage() {
         </Callout>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-5">
+      <div id="history" className="grid scroll-mt-20 gap-4 lg:grid-cols-5">
         <Card className="lg:col-span-3">
           <CardHeader>
             <CardTitle>WHO-5 Well-Being Index</CardTitle>

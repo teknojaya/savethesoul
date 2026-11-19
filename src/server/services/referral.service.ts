@@ -8,7 +8,13 @@ import { audit } from "./audit.service";
 
 export async function createReferral(
   patientId: string,
-  input: { clinicianId?: string | null; resourceId?: string | null; urgency: "ROUTINE" | "SOON" | "URGENT"; reason?: string | null },
+  input: {
+    clinicianId?: string | null;
+    resourceId?: string | null;
+    urgency: "ROUTINE" | "SOON" | "URGENT";
+    reason?: string | null;
+    careType?: "PSYCHOLOGIST" | "PSYCHIATRIST" | "PRIMARY_CARE" | "SERVICE" | null;
+  },
 ) {
   if (!input.clinicianId && !input.resourceId) {
     throw new AppError("VALIDATION", "Choose a clinician or a service");
@@ -35,6 +41,7 @@ export async function createReferral(
         clinicianId: input.clinicianId ?? null,
         resourceId: input.resourceId ?? null,
         urgency: input.urgency,
+        careType: input.careType ?? null,
         reasonEnc: encryptOptional(input.reason),
         isSimulated: true,
       },
