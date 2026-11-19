@@ -25,7 +25,7 @@ export const dynamic = "force-dynamic";
 export const POST = route({ roles: ["PATIENT"] }, async ({ req, actor, params }) => {
   const patientId = requirePatient(actor);
   const conversationId = param(params, "id");
-  const { content } = await parseJson(req, SendMessageSchema);
+  const { content, inputMode } = await parseJson(req, SendMessageSchema);
   await assertConversationOwned(patientId, conversationId);
 
   // Safety Guardian first: deterministic, no AI, no cost. A message that may signal danger
@@ -47,7 +47,7 @@ export const POST = route({ roles: ["PATIENT"] }, async ({ req, actor, params })
     async start(controller) {
       const send = (obj: unknown) => controller.enqueue(encoder.encode(JSON.stringify(obj) + "\n"));
       try {
-        for await (const ev of sendMessage(patientId, conversationId, content, { aiAllowed })) send(ev);
+        for await (const ev of sendMessage(patientId, conversationId, content, { aiAllowed, spoken: inputMode === "voice" })) send(ev);
       } catch (err) {
         console.error("[chat] stream failed:", err instanceof Error ? err.name : "unknown");
         send({ type: "replace", text: LLM_UNAVAILABLE_RESPONSE, reason: "provider-error" });

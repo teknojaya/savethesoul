@@ -16,6 +16,7 @@ const SECTIONS: { title: string; body: string[] }[] = [
       "When you chat with the companion, your message and recent conversation are sent from our server to a large language model provider (OpenAI's GPT models in this demo deployment; Anthropic's Claude is also supported) to generate a reply. Requests are sent with storage disabled. API keys are held only on our server.",
       "Before any message reaches the AI, an independent rule-based safety check looks for language suggesting immediate danger. If it finds some, the AI is bypassed and you're shown real emergency contacts.",
       "If no AI provider is configured, an offline demo companion with pre-written responses is used and clearly labelled.",
+      "Voice Mode (optional, separate consent): when you tap the microphone, your recording is sent from our server to OpenAI to be transcribed and is not stored by SaveTheSoul. Sakina's replies are turned into speech by OpenAI. You review each transcript before it is sent, and only sent messages are saved (encrypted). Sakina is an AI and is not connected to the 800-SAKINA helpline.",
       "If you share a summary with a clinician, the AI may draft a short summary from the structured data you approved (never from your conversations). It is labelled unverified until the clinician reviews it.",
     ],
   },

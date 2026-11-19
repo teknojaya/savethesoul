@@ -237,6 +237,8 @@ enum ConsentScope {
   SHARE_SUMMARY_WITH_CLINICIAN
   TRUSTED_CONTACT_SHARING
   AGGREGATE_ANALYTICS
+  // Voice Mode: recordings sent to the AI provider for transcription; replies synthesised as speech.
+  VOICE_PROCESSING
 }
 
 enum GranteeType {

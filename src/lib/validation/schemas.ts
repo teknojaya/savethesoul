@@ -42,6 +42,8 @@ export const PreferencesSchema = z
 
 export const SendMessageSchema = z.object({
   content: shortText(4000),
+  /** "voice" when the message was spoken and transcribed (Voice Mode); the reply is kept short for speech. */
+  inputMode: z.enum(["text", "voice"]).default("text"),
 });
 
 export const Who5Schema = z.object({

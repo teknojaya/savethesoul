@@ -63,7 +63,7 @@ export async function* sendMessage(
   patientId: string,
   conversationId: string,
   content: string,
-  opts: { aiAllowed?: boolean } = {},
+  opts: { aiAllowed?: boolean; spoken?: boolean } = {},
 ): AsyncGenerator<StreamEvent> {
   const convo = await repo.findOwnedConversation(patientId, conversationId);
   if (!convo) throw notFound("Conversation not found");
@@ -104,6 +104,7 @@ export async function* sendMessage(
     preferredName: profile.preferredName,
     recentImmediateEvent: recentImmediate > 0,
     timeoutMs: env.LLM_TIMEOUT_MS,
+    spoken: opts.spoken,
   })) {
     if (ev.type === "safety" && ev.assessment.level !== "NO_FLAG") {
       crisis = ev.mode === "crisis";

@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "ConsentScope" ADD VALUE 'VOICE_PROCESSING';

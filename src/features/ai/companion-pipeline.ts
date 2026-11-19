@@ -35,6 +35,8 @@ export interface PipelineInput {
   /** True if this conversation had an IMMEDIATE event recently — keeps safety mode on. */
   recentImmediateEvent: boolean;
   timeoutMs: number;
+  /** The user spoke this message in Voice Mode; the reply will be read aloud. */
+  spoken?: boolean;
 }
 
 /**
@@ -72,6 +74,7 @@ export async function* runCompanionTurn(input: PipelineInput): AsyncGenerator<Pi
   const system = buildCompanionSystem({
     memories: input.memories,
     safetyMode,
+    spoken: input.spoken,
     preferredName: input.preferredName,
   });
   const messages: ChatTurn[] = [...input.history.slice(-20), { role: "user", content: input.userText }];

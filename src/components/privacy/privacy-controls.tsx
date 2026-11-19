@@ -11,6 +11,7 @@ import { cn, formatDate, formatDateTime } from "@/lib/utils";
 const SCOPE_LABEL: Record<string, string> = {
   AI_PROCESSING: "AI processing of companion messages",
   WELLBEING_MEMORY: "Personal wellbeing memory",
+  VOICE_PROCESSING: "Voice Mode: recordings transcribed and replies spoken by AI",
   SHARE_SUMMARY_WITH_CLINICIAN: "Share summary with clinician",
   TRUSTED_CONTACT_SHARING: "Share with trusted contact",
   AGGREGATE_ANALYTICS: "Anonymous service statistics",

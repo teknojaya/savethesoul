@@ -7,6 +7,9 @@ export type AppErrorCode =
   | "RATE_LIMITED"
   | "CONSENT_REQUIRED"
   | "INVALID_TRANSITION"
+  | "PAYLOAD_TOO_LARGE"
+  | "UNSUPPORTED_MEDIA"
+  | "UNAVAILABLE"
   | "INTERNAL";
 
 const STATUS: Record<AppErrorCode, number> = {
@@ -18,6 +21,9 @@ const STATUS: Record<AppErrorCode, number> = {
   RATE_LIMITED: 429,
   CONSENT_REQUIRED: 403,
   INVALID_TRANSITION: 409,
+  PAYLOAD_TOO_LARGE: 413,
+  UNSUPPORTED_MEDIA: 415,
+  UNAVAILABLE: 503,
   INTERNAL: 500,
 };
 

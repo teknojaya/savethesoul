@@ -17,6 +17,13 @@ const EnvSchema = z.object({
   LLM_TIMEOUT_MS: z.coerce.number().int().positive().default(30000),
   ANTHROPIC_API_KEY: z.string().optional(),
   OPENAI_API_KEY: z.string().optional(),
+  /** Voice Mode (OpenAI audio). Speech-to-text and text-to-speech models, voice and language. */
+  VOICE_STT_MODEL: z.string().trim().min(1).default("gpt-4o-mini-transcribe"),
+  VOICE_TTS_MODEL: z.string().trim().min(1).default("gpt-4o-mini-tts"),
+  VOICE_TTS_VOICE: z.string().trim().min(1).default("marin"),
+  /** ISO-639-1 language for transcription. English first; "ar" is the planned next step. */
+  VOICE_LANGUAGE: z.string().trim().min(2).max(5).default("en"),
+  VOICE_TIMEOUT_MS: z.coerce.number().int().positive().default(30000),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
 });
 
