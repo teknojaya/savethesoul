@@ -102,6 +102,19 @@ Sessions are random tokens stored in the database as SHA-256 hashes, sent in `Ht
 - **Production:** `/api/health` reports `provider: "openai"`, `model: "gpt-5.4-mini"`, `status: "verified"` after real replies on the deployed site.
 - **Output guard fix:** the live check found that the guard blocked the model's *correct refusals* ("I can't tell you whether you have depression"). The diagnosis and medication rules now recognise refusals, while still blocking assertions such as "I can't be sure, but you have depression".
 
+### Voice Mode: Sakina
+
+Push-to-talk conversation with **Sakina**, the AI companion's name (provisional; not affiliated with the 800-SAKINA helpline).
+- Speech is transcribed by `gpt-4o-mini-transcribe`. The user reviews the transcript, then sends it through the **same safety-checked chat route** as typed text.
+- Sakina's saved, safety-checked replies are spoken by `gpt-4o-mini-tts`, in two parts so speech starts sooner.
+- Consent is separate and revocable. Recordings are never stored, and crisis guidance is shown without waiting for audio.
+
+Tested with the real APIs on 19 Nov 2026, synthetic speech, on a local dev server (production timing may differ):
+- transcription was accurate in MP3 and Ogg/Opus and took 0.7–2.2 s;
+- spoken replies were 63–70 words;
+- Sakina's first sound came about 5–8 s after the user finished speaking;
+- a spoken overdose disclosure bypassed the AI and showed its text in 0.8 s.
+
 ## 9. Privacy and data protection
 
 - Explicit, granular consent at onboarding for AI processing, chat history, memory and analytics, each of which can be revoked.

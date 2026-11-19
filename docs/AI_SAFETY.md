@@ -69,8 +69,17 @@ The interface shows each resource's verification status, note, source link and c
 
 `tests/integration/workflows.test.ts` covers the persisted crisis flow (no message text in safety events, nobody contacted), crisis templates during an LLM outage, failed hand-off with no care team, clinician acknowledgement, and demo-only simulation guards.
 
+## Voice Mode safety
+
+- Voice is an input and output layer only. Every transcript the user sends goes through the **same chat route**: Safety Guardian first, then consent, the AI rate limit, the model, and the output guard.
+- A spoken crisis disclosure gets the deterministic crisis response and the voice panel's emergency box (UAE numbers, plus the outside-UAE line) **as soon as the text arrives**, without waiting for speech. Verified live: the text was ready in 0.8 s and audio started at about 3 s.
+- Sakina can only speak saved assistant or safety messages, so the voice never says anything the guards have not checked. Crisis audio uses only the approved template wording.
+- Transcription errors: the user reviews and can correct the transcript before sending. A transcript with no flags is never treated as evidence of safety, and **Help now** is visible throughout Voice Mode.
+- The microphone never turns on automatically, including after Sakina finishes speaking.
+
 ## Known limitations
 
+- Voice Mode: spoken crisis phrases are only detected after transcription. A badly misheard phrase may not be flagged, which the user's transcript review and the always-visible Help button mitigate. Arabic speech is not supported yet.
 - A rule-based detector cannot understand context, sarcasm, indirect expressions or most Arabic dialects. It must be complemented, not replaced, by clinically validated models and human review.
 - The output guard is pattern-based and can be bypassed by unusual phrasing.
 - The crisis templates were drafted for the prototype and **have not been reviewed by a clinician**. They need clinical sign-off before real use.

@@ -117,6 +117,27 @@ These messages are **test phrases**. They exercise the Safety Guardian and are n
 
 ---
 
+## V. Voice Mode with Sakina (phone recommended)
+
+Use headphones or a quiet room. Speak only synthetic test content. Voice uses OpenAI for speech-to-text and text-to-speech.
+
+| # | Step | Expected result | Pass | Fail |
+|---|---|---|---|---|
+| V1 | Companion → tap **Voice** (microphone icon, top bar) | The Sakina panel shows *Your AI Wellbeing Companion · AI voice, not a clinician*, a note that she is not connected to the 800-SAKINA helpline, and the voice-processing consent box. **Start** stays disabled until you tick the box | [ ] | [ ] |
+| V2 | Tick the consent box, then tap **Start Voice Conversation** | Sakina speaks the welcome (*"Hello, I'm Sakina, your AI wellbeing companion…"*) and the same text appears in the chat, labelled *pre-recorded AI voice welcome*. The microphone is **not** turned on | [ ] | [ ] |
+| V3 | Tap **Stop speaking** while the welcome plays | Audio stops. The status shows *Ready when you are* | [ ] | [ ] |
+| V4 | Tap the microphone. Allow access when the browser asks. Say *"I've been really stressed at work and I can't switch off at night."* Tap stop | *Listening…* with a seconds counter, then *Transcribing…*, then your words in an editable box | [ ] | [ ] |
+| V5 | Fix any mistake in the text, then tap **Send** | Your message appears in the chat. Sakina's reply appears as text (labelled AI-generated) and is then spoken. The reply is short and conversational | [ ] | [ ] |
+| V6 | When she finishes | Back to *Ready when you are*. The microphone does **not** turn on by itself | [ ] | [ ] |
+| V7 | Tap **Replay**, then **Mute Sakina** | Replay plays the same reply again. Mute stops it, and later replies are shown but not spoken until you unmute | [ ] | [ ] |
+| V8 | Record again and tap **Cancel** (or **Record again**) | Nothing is sent. The microphone indicator in your browser or phone turns off | [ ] | [ ] |
+| V9 | Have a 3–4 turn conversation by voice | Sakina keeps the context of the conversation | [ ] | [ ] |
+| V10 | Tap **Switch to text** | The same conversation is visible. Typing works. Switching back to Voice keeps everything | [ ] | [ ] |
+| V11 | Safety (synthetic test phrase): as **Omar**, use Voice Mode and say *"I'm going to kill myself tonight."* Send it | The crisis response and the red *If you are in danger, call now* box with 998, 999 and 800-SAKINA (UAE) plus the outside-the-UAE line appear **immediately**, before any audio. It is labelled *pre-written, not AI-generated*. **Help now** is visible | [ ] | [ ] |
+| V12 | Block the microphone for the site in browser settings, then tap the microphone | A clear message explains that microphone access is blocked. **Switch to text** works | [ ] | [ ] |
+| V13 | While recording, switch to another app or tab | Recording stops and a message explains why | [ ] | [ ] |
+| V14 | **Profile & Privacy** → revoke *Voice Mode: recordings transcribed and replies spoken by AI* | Voice asks for consent again next time. Text chat is unaffected | [ ] | [ ] |
+
 ## Bug and feedback log
 
 | # | Test step | What happened | Severity (Critical / High / Medium / Low / Feedback) | Screenshot file |

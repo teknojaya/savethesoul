@@ -70,6 +70,18 @@ Profile & Privacy shows:
 
 A production policy must be set with clinical governance and legal counsel.
 
+## Voice Mode (audio processing)
+
+| | |
+|---|---|
+| Consent | Separate `VOICE_PROCESSING` consent, ticked before the first voice session. It is audited (`CONSENT_GRANTED_VOICE`) and can be revoked in Profile & Privacy. AI-processing consent is also required |
+| Microphone | Opened only when the user taps the microphone. Released on stop, cancel, the 60 s limit, leaving Voice Mode, or the app going into the background. The `Permissions-Policy` header allows the microphone for this origin only |
+| Recordings | Uploaded once to `/api/voice/transcribe` (3 MB at most; declared type and file signature checked). Held in memory for that request, sent to OpenAI speech-to-text, then discarded. **Never stored or logged by SaveTheSoul** |
+| Transcripts | Returned to the user for review. Stored, encrypted, **only if the user sends them**, as an ordinary chat message |
+| Spoken replies | `/api/voice/speech` accepts only the ID of the user's own saved assistant or safety message. Its decrypted, safety-checked text is sent to OpenAI text-to-speech, and the audio is returned with `no-store`. Nothing is cached on the server |
+| Logs | Failures are recorded as error codes only (for example `VOICE_ERROR / STT_TIMEOUT`), never content |
+| Limitations | OpenAI processes the audio and text under its API data-handling terms; SaveTheSoul cannot delete data held by OpenAI. Ambient sound near the user is captured while recording. Transcription can mishear words, which is why the user reviews the transcript before sending. Hosting and processing are outside the UAE (synthetic data only) |
+
 ## UAE and Abu Dhabi compliance considerations (future deployment)
 
 SaveTheSoul **does not claim compliance** with any of the following. These are the requirements a production deployment would need to assess with qualified legal and regulatory advice:

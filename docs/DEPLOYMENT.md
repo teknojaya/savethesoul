@@ -20,6 +20,7 @@
 | `LLM_MODEL` | `gpt-5.4-mini` (provisional until `pnpm ai:live-check` confirms access) |
 | `LLM_TIMEOUT_MS` | `30000` |
 | `OPENAI_API_KEY` | Project-scoped key with a monthly budget. Set it yourself: `railway variable set OPENAI_API_KEY --stdin -s savethesoul-web --skip-deploys` |
+| `VOICE_STT_MODEL` / `VOICE_TTS_MODEL` / `VOICE_TTS_VOICE` / `VOICE_LANGUAGE` | Optional. Defaults: `gpt-4o-mini-transcribe`, `gpt-4o-mini-tts`, `marin`, `en`. Voice Mode reuses `OPENAI_API_KEY` |
 | `SEED_ALLOW_RESET` | `true` only on the dedicated synthetic demo deployment |
 
 Do **not** set `NODE_ENV` as a service variable: it would make the build skip devDependencies. `next start` runs in production mode on its own.
@@ -69,6 +70,12 @@ Then sign in at `/login` with a demo account.
 6. Roll back by setting `LLM_PROVIDER=demo` (the labelled offline companion), or redeploy the previous build in Railway.
 
 If the API rejects the model or key, replies become the labelled fallback message, crisis guidance is unaffected, and `/api/health` shows `status: "unavailable"` with `lastFailureCode: "CONFIG"`.
+
+## Voice Mode release notes
+
+- Migration `20261119091615_voice_processing_consent` adds one enum value (`ALTER TYPE ... ADD VALUE`). It is non-destructive and runs automatically in the pre-deploy step.
+- The security header must keep `microphone=(self)`. With `microphone=()` the browser blocks recording; the E2E suite checks this.
+- The welcome audio `public/audio/sakina-welcome.mp3` is generated once with `pnpm exec tsx scripts/generate-welcome-audio.ts`. Regenerate it if the welcome text, voice or model changes.
 
 ## Rotating DATA_ENCRYPTION_KEY
 
