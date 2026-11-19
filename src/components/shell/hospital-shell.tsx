@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { LayoutDashboard, ScrollText, LogOut } from "lucide-react";
 import { Logo } from "@/components/brand";
 import { cn } from "@/lib/utils";
+import { SIMULATED_BANNER } from "@/features/emergency/state-machine";
 
 const ITEMS = [
   { href: "/hospital", label: "Emergency dashboard", icon: LayoutDashboard, exact: true },
@@ -72,7 +73,7 @@ export function HospitalShell({ name, organization, children }: { name: string; 
         <main id="main" className="flex-1 px-4 pb-12 pt-6 sm:px-6 lg:px-10 lg:pt-10">
           <div className="mx-auto w-full max-w-6xl">
             <div className="mb-6 rounded-2xl border border-amber-500/30 bg-amber-50 px-4 py-2.5 text-xs text-amber-700" data-testid="hospital-sim-banner">
-              <strong>SIMULATED EMERGENCY ALERTS — No real hospital or emergency responder has been notified.</strong> Synthetic patients and fictional cases only. This portal shows
+              <strong>{SIMULATED_BANNER}</strong> Synthetic patients and fictional cases only. This portal shows
               how a participating hospital could coordinate human assistance; it is not monitored and does not dispatch help.
             </div>
             {children}

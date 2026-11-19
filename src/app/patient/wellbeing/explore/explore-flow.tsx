@@ -6,6 +6,7 @@ import { ClipboardList, HeartHandshake, Loader2, MessageCircleHeart, Sparkles } 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Callout, Card, CardContent, CardDescription, CardHeader, CardTitle, Textarea } from "@/components/ui/primitives";
 import { RichText } from "@/components/chat/rich-text";
+import { EmergencyContacts } from "@/components/safety/emergency-contacts";
 import { CONCERN_AREAS, CONCERN_DURATION, CONCERN_FREQUENCY, CONCERN_IMPACT, HELP_WANTED } from "@/features/consent/policy";
 import { api, ApiError } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
@@ -75,6 +76,7 @@ export function ExploreFlow({ name }: { name: string }) {
     return (
       <Callout tone="safety" data-testid="explore-safety">
         <RichText text={result.text} />
+        <EmergencyContacts compact className="mt-3" />
         <Link href="/help" className={cn(buttonVariants({ variant: "safety", size: "sm" }), "mt-3")}>Get help now</Link>
       </Callout>
     );
