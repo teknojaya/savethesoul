@@ -60,3 +60,4 @@ skills-lock.json
 *.sql.gz
 *.dump
 /backups/
+/.next-build/

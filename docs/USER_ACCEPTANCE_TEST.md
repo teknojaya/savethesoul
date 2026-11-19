@@ -144,6 +144,19 @@ Use headphones or a quiet room. Speak only synthetic test content. Voice uses Op
 | V13 | While recording, switch to another app or tab | Recording stops and a message explains why | [ ] | [ ] |
 | V14 | **Profile & Privacy** → revoke *Voice Mode: recordings transcribed and replies spoken by AI* | Voice asks for consent again next time. Text chat is unaffected | [ ] | [ ] |
 
+## H. Final upgrade checks
+
+| # | Step | Expected | Pass? |
+|---|---|---|---|
+| H1 | Open `/login` | Three role cards: Patient Demo, Clinician Demo, Hospital Emergency Demo | |
+| H2 | Landing page and footer | New product description and the short disclaimer; blue design; Sakinah avatar unchanged | |
+| H3 | My Wellbeing → Explore My Mental Wellbeing | Nothing runs before the permission tick; result labelled "Preliminary AI-generated clinical impression — not a confirmed diagnosis. Requires professional assessment."; no diagnosis named | |
+| H4 | In Explore, type a synthetic danger phrase in "own words" | Emergency numbers (998/999/800-SAKINA); no assessment | |
+| H5 | Dr. Aisha → Hana | DEMO banner; sections A, B and C; fictional GAD diagnosis by Dr. Aisha | |
+| H6 | Emergency Coordinator | Banner "SIMULATED EMERGENCY ALERT — No real hospital or emergency responder has been notified." on every page; five SIM-ER cases | |
+| H7 | SIM-ER-1001 → Acknowledge → notify Mariam | Steps appear in timeline and audit; notification says nothing was sent | |
+| H8 | As coordinator, open `/clinician` | Redirected back to the hospital portal | |
+
 ## Bug and feedback log
 
 | # | Test step | What happened | Severity (Critical / High / Medium / Low / Feedback) | Screenshot file |

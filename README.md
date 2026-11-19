@@ -4,14 +4,20 @@
 
 **Live demo:** https://savethesoul-web-production.up.railway.app (one-click synthetic demo accounts at `/login`). Judge guide: [docs/HACKATHON_SUBMISSION.md](docs/HACKATHON_SUBMISSION.md).
 
-SaveTheSoul is a working prototype of a mental wellbeing companion for Abu Dhabi, built for the **Future Health Digital Innovation Challenge 2026** (category: *Earlier, Safer Mental Wellbeing Support*). It connects four things that are usually separate:
+SaveTheSoul is an AI-powered mental wellbeing and connected-care platform. Through Sakinah, users can receive supportive conversations, explore possible mental health concerns, complete wellbeing assessments, and prepare information for qualified healthcare professionals. Clinical diagnoses and treatment decisions remain with licensed professionals.
+
+> AI-assisted wellbeing support and preliminary insights. Not a substitute for professional diagnosis or treatment.
+
+It is a working prototype for Abu Dhabi, built for the **Future Health Digital Innovation Challenge 2026** (category: *Earlier, Safer Mental Wellbeing Support*). It connects four things that are usually separate:
 
 1. **Supportive AI conversation**: a private, warm companion for stress, loneliness, sleep, work and family difficulties.
 2. **Early recognition**: daily check-ins and the validated **WHO-5 Well-Being Index**, with plain-language, non-diagnostic trend explanations.
 3. **Real professional care**: a verified Abu Dhabi support directory, consent-based clinician summaries, and a tracked referral workflow.
 4. **Safe human-led escalation**: an independent Safety Guardian, real emergency numbers on every screen, and patient-initiated (simulated) alerts.
+5. **Explore My Mental Wellbeing**: a structured, consent-gated assessment that combines the person's answers with their WHO-5 and check-ins into a grounded *preliminary* explanation (never a diagnosis) they can take to a professional.
+6. **Connected care demo**: a clinician view that separates **A · patient-reported**, **B · AI preliminary** and **C · clinician-confirmed** information, and a **simulated hospital emergency portal** for a synthetic emergency coordinator.
 
-> SaveTheSoul is an **AI wellbeing companion**. It never claims to be a psychiatrist, does not diagnose or prescribe, and does not contact anyone automatically. All clinicians and records in the demo are **synthetic**; all alerts, referrals and family notifications are **simulated**.
+> Sakinah is an **AI wellbeing companion**. It never claims to be a clinician, the AI never diagnoses or prescribes, and nothing contacts anyone automatically. Diagnoses shown in the demo are **fictional, clinician-authored records** on synthetic patients, labelled "DEMO — Synthetic Patient and Fictional Clinical Record". All clinicians and records in the demo are **synthetic**; all alerts, referrals and family notifications are **simulated**.
 
 ## Quick start (local)
 
@@ -97,7 +103,8 @@ Privacy: voice needs a separate, revocable **Voice processing** consent. Audio i
 | `pnpm test:unit` | Vitest unit tests (no database) |
 | `pnpm test:integration` | Vitest integration tests against `savethesoul_test` (`TEST_DATABASE_URL`) |
 | `pnpm test:e2e` | Playwright demo-scenario tests against an isolated `savethesoul_e2e` database |
-| `pnpm db:migrate` / `pnpm db:seed` | Apply migrations / reset synthetic demo data |
+| `pnpm db:migrate` / `pnpm db:seed` | Apply migrations / reset synthetic demo data (wipes data; never on production) |
+| `pnpm demo:prepare` | Add the synthetic demo cases (Hana, Khalid, Sara, coordinator, SIM-ER cases) **without** touching existing data; idempotent |
 
 ## Documentation
 
@@ -109,6 +116,10 @@ Privacy: voice needs a separate, revocable **Voice processing** consent. Audio i
 - [Clinical coordination and escalation](docs/CLINICAL_COORDINATION.md)
 - [Deployment (Railway)](docs/DEPLOYMENT.md)
 - [Hackathon submission & judge guide](docs/HACKATHON_SUBMISSION.md)
+
+## Design system
+
+Blue-first, defined as Tailwind 4 `@theme` tokens in `src/app/globals.css`: primary `#1868DB` (hover `#124FA8`, soft `#EAF3FF`), canvas `#F4F8FF`, ink `#172B4D`, muted `#64748B`, line `#DFE7F2`, success `#16865D`, warning `#B76A15`, danger `#C93838`. Crisis and emergency states always use the danger/warning tokens, never blue.
 
 ## Status
 

@@ -77,6 +77,18 @@ The interface shows each resource's verification status, note, source link and c
 - Transcription errors: the user reviews and can correct the transcript before sending. A transcript with no flags is never treated as evidence of safety, and **Help now** is visible throughout Voice Mode.
 - The microphone never turns on automatically, including after Sakinah finishes speaking.
 
+## Explore and clinical drafts: grounding
+
+Both the clinician summary draft and the patient-facing Explore explanation pass through the deterministic grounding filter (`src/features/ai/clinical-draft.ts`, `src/features/ai/explore.ts`): every statement needs a source tag for data that is actually present; diagnostic labels, severity, risk levels and medication are removed; demographics are context only. Removed statements are counted and disclosed. The Safety Guardian runs on the person's own words before any model call. A live `gpt-5.4-mini` check of the Explore prompt kept 20 statements, removed 0, and produced no diagnostic terms.
+
+## Hospital emergency portal (simulated)
+
+- Cases are created only from a **patient-initiated** alert by a **synthetic demo** account while `DEMO_MODE` is on. Never from an AI score, never for real accounts.
+- Banner on every page: "SIMULATED EMERGENCY ALERT — No real hospital or emergency responder has been notified."
+- Every step is a validated, human-led transition, recorded in the case timeline and the audit log.
+- A coordinator sees only cases routed to their organisation (others: 404, audited) and only minimum context (categories, no message text).
+- Family notification requires the patient's own standing permission for that contact (safety messages, safety-plan category, active consent); it uses the fixed template, is never sent, and appears in the patient's history.
+
 ## Known limitations
 
 - Voice Mode: spoken crisis phrases are only detected after transcription. A badly misheard phrase may not be flagged, which the user's transcript review and the always-visible Help button mitigate. Arabic speech is not supported yet.

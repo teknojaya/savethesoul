@@ -88,6 +88,24 @@ Additive only: three `DraftReviewStatus` values (APPROVED, CORRECTED, REJECTED),
 3. The new columns and the `ClinicianFinding` table can stay; the old build ignores them. Findings would simply not be shown until the release is restored.
 4. Redeploy `9f05231` from Railway's deployment list.
 
+## Final upgrade release (migration `20261119145243_hospital_emergency_portal`)
+
+**Additive only:** a new `UserRole` value `HOSPITAL_COORDINATOR`, a new `EmergencyStatus` enum, and three new tables (`HospitalProfile`, `EmergencyCase`, `EmergencyCaseEvent`). No existing column or row is changed.
+
+**Rehearsal (19 Nov 2026):** a fresh `pg_dump` of production was restored into a local database. Before and after `prisma migrate deploy`, all 25 existing tables had identical row counts and identical whole-table MD5 checksums (encrypted columns included). `scripts/prepare-demo.ts` was then run on the copy: 105 synthetic rows added, **0 existing rows changed or removed** (per-row MD5 comparison); a second run created nothing.
+
+**Deployment steps (after approval):**
+1. Back up production (`pg_dump`, as above).
+2. Push `main`; Railway's pre-deploy runs `prisma migrate deploy`.
+3. Add the demo cases without touching existing data: `railway ssh -s savethesoul-web -- pnpm demo:prepare`. **Do not** run `pnpm db:seed` (it wipes data).
+4. Verify `/api/health`, the three role cards on `/login`, the hospital dashboard, Hana's DEMO record and Explore.
+
+**Rollback to the previous build (`f05630e`):**
+1. Back up the database.
+2. Disable the coordinator before redeploying the old build (the old Prisma client cannot read the new role value): `DELETE FROM "User" WHERE role='HOSPITAL_COORDINATOR';` (cascades to its `HospitalProfile` and sessions).
+3. The new tables and enum can stay; the old build ignores them. The synthetic Hana, Khalid and Sara records are ordinary patient rows and can stay or be removed by email (`*@demo.savethesoul.app`).
+4. Redeploy `f05630e` from Railway's deployment list.
+
 ## Rotating DATA_ENCRYPTION_KEY
 
 `scripts/rotate-encryption-key.ts` re-encrypts every `*Enc` column in one transaction. Without `--apply` it is a dry run that proves the current key decrypts everything. Back up the database first, run the dry run, apply, then switch the variable. The local development key was rotated this way on 19 November 2026. Production uses a different key and was not rotated.

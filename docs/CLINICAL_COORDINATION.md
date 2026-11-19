@@ -64,6 +64,10 @@ A "received" or "acknowledged" state is shown only for an acknowledgement that a
 
 A sustained WHO-5 decline, or several concerning check-ins, leads to an offer of **professional review** (summary, support options, referral). It is never treated as a crisis.
 
+## 4a. Simulated hospital emergency coordination
+
+A synthetic **Hospital Emergency Coordinator** (`/hospital`) shows how a participating hospital could coordinate human assistance. Statuses: DETECTED → REVIEW_REQUESTED → ACKNOWLEDGED → CONTACT_ATTEMPTED → ASSISTANCE_ARRANGED / UNABLE_TO_CONTACT → RESOLVED, with FAILED and CANCELLED. Review and acknowledgement cannot be skipped; terminal states are closed. Trusted-contact coordination follows the patient's own permissions only. Everything is simulated and labelled "SIMULATED EMERGENCY ALERT — No real hospital or emergency responder has been notified."
+
 ## 5. What real-world escalation would require (not built)
 
 - Operational partnerships with DoH-licensed providers and a staffed 24/7 receiving team.

@@ -12,11 +12,15 @@
 
 ## 1. Project description
 
-SaveTheSoul is an AI-supported mental wellbeing companion. It helps people manage everyday emotional difficulties, notice changes in their wellbeing earlier, and connect with trusted human care.
+SaveTheSoul is an AI-powered mental wellbeing and connected-care platform. Through Sakinah, users can receive supportive conversations, explore possible mental health concerns, complete wellbeing assessments, and prepare information for qualified healthcare professionals. Clinical diagnoses and treatment decisions remain with licensed professionals.
+
+*AI-assisted wellbeing support and preliminary insights. Not a substitute for professional diagnosis or treatment.*
 
 It combines supportive AI conversation, the validated WHO-5 Wellbeing Index, longitudinal insights the user controls, and clinician-facing summaries the user approves. Together these close the gap between private distress and professional support.
 
 An independent, rule-based **Safety Guardian** puts emergency human resources first and does not rely on the AI. Dedicated clinician and trusted-contact workflows help coordinate care, with consent checked on the server for every access.
+
+A connected-care demo shows the whole path: the patient's own account, a clearly labelled AI preliminary impression, fictional clinician-authored findings, and a **simulated** hospital emergency coordination portal.
 
 **SaveTheSoul does not replace psychiatrists.** It supports individuals between appointments and before they reach care. Qualified healthcare professionals remain responsible for diagnosis, treatment and emergency decisions.
 
@@ -136,7 +140,7 @@ See [PRIVACY_AND_CONSENT.md](PRIVACY_AND_CONSENT.md).
 
 ## 11. Demo access
 
-Open **https://savethesoul-web-production.up.railway.app/login**. The sign-in page has one-click demo buttons. Every account uses the password `SaveTheSoul-demo-2026`.
+Open **https://savethesoul-web-production.up.railway.app/login**. The sign-in page has three role cards (**Patient Demo**, **Clinician Demo**, **Hospital Emergency Demo**) with one-click buttons. One-click sign-in happens on the server, so no password is in the page. Patient and clinician accounts also accept the password `SaveTheSoul-demo-2026`; the hospital coordinator has a random password and is reachable only through its one-click button.
 
 | Account | Role | Use it for |
 |---|---|---|
@@ -145,6 +149,9 @@ Open **https://savethesoul-web-production.up.railway.app/login**. The sign-in pa
 | `yousef@demo.savethesoul.app` | Patient (not on the one-click list) | Safety check-in with a care team |
 | `dr.aisha@demo.savethesoul.app` | Psychiatrist | Clinician portal, referrals, follow-up |
 | `dr.james@demo.savethesoul.app` | Psychologist | Access restriction (a different caseload) |
+| `coordinator@demo.savethesoul.app` | Hospital emergency coordinator (synthetic) | Simulated emergency dashboard and response workflow |
+
+Synthetic demo cases seen through these accounts: **Hana** (fictional clinician-authored diagnosis: Generalized Anxiety Disorder) and **Khalid** (fictional: moderate depressive episode) under Dr. Aisha, each marked *DEMO — Synthetic Patient and Fictional Clinical Record*; **Sara** (synthetic patient with a trusted contact, Mariam) in hospital case SIM-ER-1001; and cases SIM-ER-1002 to 1005 in other workflow states.
 
 Demo accounts have no administrator privileges. All data is synthetic. The demo database is reset to its seed state by the team (see [DEPLOYMENT.md](DEPLOYMENT.md#4-seed-or-reset-the-demo)). Sign-in is rate-limited.
 
@@ -178,6 +185,23 @@ Demo accounts have no administrator privileges. All data is synthetic. The demo 
 3. Under **Profile & Privacy**, revoke *"Share with trusted contact · Fatima"*. Try messaging Fatima again: the attempt is **Blocked** and recorded.
 4. As **Dr. Aisha**, open **Referrals**. Yousef's request shows as *Requested*. **Acknowledge** it, then **Schedule** it. Under **Follow-ups**, record the functioning change and mark it **Completed**. **Outcomes** updates the completion rate and shows the fairness framework with small-cell suppression.
 
+**Scenario 6: Explore My Mental Wellbeing (any patient)**
+1. Open **My Wellbeing**, then **Explore My Mental Wellbeing**. Nothing starts until you tick the AI-processing permission.
+2. Answer the structured questions (areas, duration, frequency, daily-life impact, sleep, stress; optional own words) and choose **See my preliminary insights**.
+3. The result is labelled *"Preliminary AI-generated clinical impression — not a confirmed diagnosis. Requires professional assessment."*. Every AI statement is grounded in your answers, WHO-5 or check-ins; diagnostic, risk and medication statements are removed automatically. What is still uncertain is listed. Nothing is stored.
+4. **Prepare a summary for my clinician** pre-fills the patient-controlled share flow. Typing words that indicate danger instead shows emergency numbers and bypasses the AI.
+
+**Scenario 7: Clinician review with fictional diagnoses (Dr. Aisha)**
+1. Open **Assigned patients**, then **Hana**. The page is marked *DEMO — Synthetic Patient and Fictional Clinical Record*.
+2. Information is separated into **A · Patient-reported information**, **B · AI preliminary assessment** (Approve / Correct / Reject; approval never turns it into a diagnosis) and **C · Clinician-confirmed findings**, where the fictional diagnosis and care plan are authored by Dr. Aisha.
+
+**Scenario 8: Simulated hospital emergency (Emergency Coordinator)**
+1. On the sign-in page choose **Hospital Emergency Demo → Emergency Coordinator**. Every page shows *"SIMULATED EMERGENCY ALERT — No real hospital or emergency responder has been notified."*
+2. The dashboard shows counters and only the cases routed to *Synthetic Abu Dhabi General Hospital (demo)*. Open **SIM-ER-1001** (Sara): minimum permitted context only, never chat history.
+3. **Acknowledge case**, then record a contact attempt. Each step is validated (no skipping review) and appears in the timeline and **Audit records**.
+4. Under **Trusted-contact coordination**, record a simulated notification to Mariam. It is allowed only because Sara authorised Mariam for safety messages; it uses the fixed safety-plan message, nothing is sent, and it appears in Sara's own notification history.
+5. When a synthetic demo patient (for example Yousef) sends the in-app simulated alert, a new SIM-ER case appears here. Real accounts never create hospital cases.
+
 **Access restriction check:** sign in as **Dr. James**. He sees only Daniel. Opening another patient's URL shows *"You don't have access…"* and the attempt is audited.
 
 **Offline safety:** in the installed PWA, switch off the network. `/help` and `/offline` still show the emergency numbers.
@@ -192,11 +216,24 @@ Demo accounts have no administrator privileges. All data is synthetic. The demo 
 | Consent ledger, revocation, server-side enforcement | Messages to trusted contacts (recorded, **never sent**) |
 | Encrypted storage, audit log, export, deletion | All patients, clinicians, records and fairness statistics |
 | Verified emergency and crisis numbers as `tel:` links | No hospital, police or family is ever contacted by the system |
-| Role-based clinician portal and referral workflow | |
+| Role-based clinician portal and referral workflow | Hospital emergency portal, its cases, coordinator and every response step (banner on every page) |
+| Explore My Mental Wellbeing (grounded AI, nothing stored) | Diagnoses and care plans (fictional, clinician-authored, labelled DEMO) |
+| Hospital access scoped to its own organisation, audited | Trusted-contact notifications from the hospital workflow (recorded, never sent) |
 
 ## 14–17. Automated testing results
 
-All of the following were run on **19 November 2026**.
+**Final upgrade (local, 19–20 November 2026, not yet deployed):**
+
+| Check | Result |
+|---|---|
+| TypeScript, ESLint | Pass, 0 errors / 0 problems |
+| Unit (Vitest) | **206 / 206 passed** (adds the emergency state machine, Explore grounding, demo role cards) |
+| Integration (Vitest + PostgreSQL) | **90 / 90 passed** (adds hospital role and organisation scoping, validated and audited transitions, family-notification consent and revocation, demo-only case creation, server-side demo login, Explore consent / crisis bypass / nothing stored, idempotent `prepareDemo`) |
+| End-to-end (Playwright, mobile) | **26 / 26 passed** (adds role cards, hospital workflow, coordinator access restriction, fictional diagnosis view, Explore and its crisis path) |
+| Production build | Pass |
+| Migration rehearsal on a restored production copy | Pass (see [DEPLOYMENT.md](DEPLOYMENT.md)) |
+
+The results below were recorded on **19 November 2026** for the previously deployed build.
 
 **Local (deployed commit, with the OpenAI integration):**
 
