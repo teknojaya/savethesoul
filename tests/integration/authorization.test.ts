@@ -1,3 +1,4 @@
+import { setProviderOverride } from "@/features/ai/provider-factory";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { prisma } from "@/lib/db/prisma";
 import { AppError } from "@/lib/errors";
@@ -107,7 +108,10 @@ describe("Clinician access restrictions", () => {
     const patient = await makePatient();
     const doc = await makeClinician();
     await submitWho5(patient.patientId, [2, 2, 2, 2, 2]);
+    // A generative model is needed for an AI draft (the offline demo never produces one).
+    setProviderOverride({ id: "openai", label: "test", model: "test", isGenerative: true, async *stream() {}, complete: async () => "Synthetic AI draft [WHO-5]" });
     const s = await shareSummary(patient.patientId, doc.clinicianId, ["WHO5_HISTORY"], null);
+    setProviderOverride(null);
     const before = await prisma.clinicalSummary.findUniqueOrThrow({ where: { id: s.id } });
     expect(before.aiDraftStatus).toBe("UNVERIFIED");
     await markDraftReviewed(doc, s.id);

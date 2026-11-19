@@ -23,6 +23,7 @@ export async function exportPatientData(actor: Actor & { patientId: string }) {
       safetyEvents: true,
       safetyPlan: true,
       followUps: true,
+      findings: true,
     },
   });
   await audit(actor, { action: "EXPORT_OWN_DATA", resourceType: "Patient", resourceId: patientId, subjectPatientId: patientId });
@@ -65,7 +66,12 @@ export async function exportPatientData(actor: Actor & { patientId: string }) {
       sharedAt: s.sharedAt,
       content: decryptJson(s.contentEnc),
       aiDraft: decryptOptional(s.aiDraftEnc),
+      aiDraftReviewStatus: s.aiDraftStatus,
+      clinicianCorrectedDraft: decryptOptional(s.correctedDraftEnc),
+      clinicianReviewNote: decryptOptional(s.reviewNoteEnc),
     })),
+    /** Findings a clinician recorded about the patient (diagnosis, care plan). */
+    clinicianFindings: p.findings.map((f) => ({ id: f.id, kind: f.kind, clinicianId: f.clinicianId, content: decrypt(f.contentEnc), createdAt: f.createdAt })),
     safetyEvents: p.safetyEvents,
     safetyPlan: p.safetyPlan ? decryptJson(p.safetyPlan.contentEnc) : null,
     followUps: p.followUps,

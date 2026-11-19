@@ -25,15 +25,15 @@ enum UserRole {
 }
 
 model User {
-  id           String    @id @default(cuid())
-  email        String    @unique
+  id           String   @id @default(cuid())
+  email        String   @unique
   passwordHash String
   displayName  String
-  role         UserRole  @default(PATIENT)
-  locale       String    @default("en")
-  isDemo       Boolean   @default(false)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  role         UserRole @default(PATIENT)
+  locale       String   @default("en")
+  isDemo       Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   sessions         Session[]
   patientProfile   PatientProfile?
@@ -56,22 +56,22 @@ model Session {
 }
 
 model PatientProfile {
-  id                  String    @id @default(cuid())
-  userId              String    @unique
-  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                  String   @id @default(cuid())
+  userId              String   @unique
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   preferredName       String
   // Data minimisation: only an optional coarse age band, no birth date.
   ageBand             String?
-  preferredLanguage   String    @default("en")
-  region              String    @default("Abu Dhabi")
-  onboardingCompleted Boolean   @default(false)
+  preferredLanguage   String   @default("en")
+  region              String   @default("Abu Dhabi")
+  onboardingCompleted Boolean  @default(false)
   // User-controlled preferences
-  chatHistoryEnabled  Boolean   @default(true)
-  memoryEnabled       Boolean   @default(false)
+  chatHistoryEnabled  Boolean  @default(true)
+  memoryEnabled       Boolean  @default(false)
   // Voluntarily supplied physical-health context (encrypted free text)
   physicalHealthEnc   String?
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
   conversations   Conversation[]
   checkIns        WellbeingCheckIn[]
@@ -84,6 +84,7 @@ model PatientProfile {
   referrals       CareReferral[]
   summaries       ClinicalSummary[]
   clinicianNotes  ClinicianNote[]
+  findings        ClinicianFinding[]
   safetyEvents    SafetyEvent[]
   safetyPlan      SafetyPlan?
   assignments     CareAssignment[]
@@ -106,6 +107,7 @@ model ClinicianProfile {
   referrals   CareReferral[]
   summaries   ClinicalSummary[]
   notes       ClinicianNote[]
+  findings    ClinicianFinding[]
   followUps   FollowUp[]
 }
 
@@ -181,15 +183,15 @@ model WellbeingMemory {
 // ───────────────────────────── Wellbeing ─────────────────────────────
 
 model WellbeingCheckIn {
-  id            String         @id @default(cuid())
-  patientId     String
-  patient       PatientProfile @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  mood          Int // 1 (very low) – 5 (very good)
-  stress        Int? // 1 (none) – 5 (very high)
-  sleepQuality  Int? // 1 (very poor) – 5 (very good)
-  functioning   Int? // self-reported daily functioning 1–5
-  noteEnc       String?
-  createdAt     DateTime       @default(now())
+  id           String         @id @default(cuid())
+  patientId    String
+  patient      PatientProfile @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  mood         Int // 1 (very low) – 5 (very good)
+  stress       Int? // 1 (none) – 5 (very high)
+  sleepQuality Int? // 1 (very poor) – 5 (very good)
+  functioning  Int? // self-reported daily functioning 1–5
+  noteEnc      String?
+  createdAt    DateTime       @default(now())
 
   @@index([patientId, createdAt])
 }
@@ -388,6 +390,8 @@ model CareReferral {
   reasonEnc      String?
   // Every referral in the prototype is simulated: no real provider receives it.
   isSimulated    Boolean           @default(true)
+  /// Kind of help the patient asked for: PSYCHOLOGIST, PSYCHIATRIST, PRIMARY_CARE or SERVICE.
+  careType       String?
   requestedAt    DateTime          @default(now())
   firstContactAt DateTime?
   completedAt    DateTime?
@@ -423,19 +427,19 @@ enum FollowUpStatus {
 }
 
 model FollowUp {
-  id           String           @id @default(cuid())
-  patientId    String
-  patient      PatientProfile   @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  clinicianId  String
-  clinician    ClinicianProfile @relation(fields: [clinicianId], references: [id], onDelete: Cascade)
-  referralId   String?
-  referral     CareReferral?    @relation(fields: [referralId], references: [id], onDelete: SetNull)
-  scheduledFor DateTime
-  status       FollowUpStatus   @default(PLANNED)
+  id                String           @id @default(cuid())
+  patientId         String
+  patient           PatientProfile   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  clinicianId       String
+  clinician         ClinicianProfile @relation(fields: [clinicianId], references: [id], onDelete: Cascade)
+  referralId        String?
+  referral          CareReferral?    @relation(fields: [referralId], references: [id], onDelete: SetNull)
+  scheduledFor      DateTime
+  status            FollowUpStatus   @default(PLANNED)
   // Patient-reported functioning change at follow-up: -2 (much worse) … +2 (much better)
   functioningChange Int?
-  createdAt    DateTime         @default(now())
-  completedAt  DateTime?
+  createdAt         DateTime         @default(now())
+  completedAt       DateTime?
 
   @@index([clinicianId, status])
   @@index([patientId])
@@ -450,30 +454,59 @@ enum SummaryStatus {
 
 enum DraftReviewStatus {
   UNVERIFIED
+  /// Legacy: "I have reviewed this draft".
   REVIEWED
+  APPROVED
+  CORRECTED
+  REJECTED
 }
 
 /// A patient-approved snapshot shared with one clinician. The structured part is built
 /// deterministically from assessments/check-ins; the optional AI draft is labelled
 /// UNVERIFIED until a clinician reviews it.
 model ClinicalSummary {
-  id               String            @id @default(cuid())
-  patientId        String
-  patient          PatientProfile    @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  clinicianId      String
-  clinician        ClinicianProfile  @relation(fields: [clinicianId], references: [id], onDelete: Cascade)
-  consentId        String
-  contentEnc       String
-  aiDraftEnc       String?
-  aiDraftStatus    DraftReviewStatus @default(UNVERIFIED)
-  status           SummaryStatus     @default(SHARED)
-  reviewedAt       DateTime?
-  reviewedByUserId String?
-  sharedAt         DateTime          @default(now())
-  revokedAt        DateTime?
+  id                String            @id @default(cuid())
+  patientId         String
+  patient           PatientProfile    @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  clinicianId       String
+  clinician         ClinicianProfile  @relation(fields: [clinicianId], references: [id], onDelete: Cascade)
+  consentId         String
+  contentEnc        String
+  aiDraftEnc        String?
+  aiDraftStatus     DraftReviewStatus @default(UNVERIFIED)
+  status            SummaryStatus     @default(SHARED)
+  reviewedAt        DateTime?
+  reviewedByUserId  String?
+  /// Clinician-corrected version of the AI draft (encrypted); the original draft is kept.
+  correctedDraftEnc String?
+  /// Clinician's review note on the AI draft (encrypted).
+  reviewNoteEnc     String?
+  sharedAt          DateTime          @default(now())
+  revokedAt         DateTime?
 
   @@index([clinicianId, status])
   @@index([patientId])
+}
+
+enum FindingKind {
+  DIAGNOSIS
+  CARE_PLAN
+}
+
+/// Clinician-authored, confirmed findings (e.g. a formal diagnosis or care plan). Kept separate
+/// from patient-reported data and AI drafts. Append-only: a change is recorded as a new entry.
+model ClinicianFinding {
+  id           String           @id @default(cuid())
+  patientId    String
+  patient      PatientProfile   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  clinicianId  String
+  clinician    ClinicianProfile @relation(fields: [clinicianId], references: [id], onDelete: Cascade)
+  authorUserId String
+  kind         FindingKind
+  contentEnc   String
+  createdAt    DateTime         @default(now())
+
+  @@index([patientId, clinicianId])
 }
 
 model ClinicianNote {
@@ -512,21 +545,21 @@ enum SafetyWorkflowStatus {
 
 /// Records THAT a safety pathway was triggered, never the message text itself.
 model SafetyEvent {
-  id                String               @id @default(cuid())
-  patientId         String
-  patient           PatientProfile       @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  conversationId    String?
-  conversation      Conversation?        @relation(fields: [conversationId], references: [id], onDelete: SetNull)
-  level             SafetyLevel
-  source            SafetySource
-  detector          String
-  categories        String[]
-  workflowStatus    SafetyWorkflowStatus @default(OPEN)
-  simulatedAlertAt  DateTime?
-  acknowledgedAt    DateTime?
-  acknowledgedById  String?
-  failureReason     String?
-  createdAt         DateTime             @default(now())
+  id               String               @id @default(cuid())
+  patientId        String
+  patient          PatientProfile       @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  conversationId   String?
+  conversation     Conversation?        @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  level            SafetyLevel
+  source           SafetySource
+  detector         String
+  categories       String[]
+  workflowStatus   SafetyWorkflowStatus @default(OPEN)
+  simulatedAlertAt DateTime?
+  acknowledgedAt   DateTime?
+  acknowledgedById String?
+  failureReason    String?
+  createdAt        DateTime             @default(now())
 
   @@index([patientId, createdAt])
   @@index([workflowStatus])

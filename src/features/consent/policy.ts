@@ -13,7 +13,26 @@ export const CLINICIAN_SHARE_CATEGORIES = {
   GOALS: "Your wellbeing goals",
   PHYSICAL_HEALTH_CONTEXT: "Physical health context you added",
   PATIENT_NOTE: "A personal note you write for the clinician",
+  REPORTED_CONCERNS: "What you're finding difficult (areas, how long, how often, effect on daily life)",
+  REFERRAL_HISTORY: "Your referral and follow-up history",
 } as const;
+
+/** Areas a patient can choose to describe (patient-reported; never inferred by the AI). */
+export const CONCERN_AREAS = {
+  STRESS: "Stress or pressure",
+  LOW_MOOD: "Low mood or loss of interest",
+  WORRY: "Worry, anxiety or panic",
+  SLEEP: "Sleep",
+  GRIEF: "Grief or loss",
+  RELATIONSHIPS: "Relationships or family",
+  WORK_STUDY: "Work or study",
+  LONELINESS: "Loneliness or adjusting to a new place",
+  OTHER: "Something else",
+} as const;
+export const CONCERN_DURATION = { UNDER_2_WEEKS: "Less than 2 weeks", "2_TO_4_WEEKS": "2–4 weeks", "1_TO_3_MONTHS": "1–3 months", OVER_3_MONTHS: "More than 3 months" } as const;
+export const CONCERN_FREQUENCY = { SOMETIMES: "Some days", OFTEN: "More than half the days", MOST_DAYS: "Nearly every day" } as const;
+export const CONCERN_IMPACT = { NONE: "Not much", SOME: "Somewhat", A_LOT: "A lot" } as const;
+export const HELP_WANTED = { TALK_THERAPY: "Talking therapy", ASSESSMENT: "A professional assessment", MEDICATION_REVIEW: "A medication review with a doctor", NOT_SURE: "Not sure yet" } as const;
 export type ClinicianShareCategory = keyof typeof CLINICIAN_SHARE_CATEGORIES;
 
 export const CONTACT_SHARE_CATEGORIES = {

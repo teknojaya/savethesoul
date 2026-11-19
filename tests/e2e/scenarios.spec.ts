@@ -66,6 +66,10 @@ test("Scenario 2 — declining wellbeing, approved summary shared and reviewed b
   await demoLogin(page, "layla");
   await page.goto("/patient/wellbeing");
   await expect(page.getByText("Talking with a professional may help")).toBeVisible();
+  const summary = page.getByTestId("wellbeing-summary");
+  await expect(summary).toContainText("lower wellbeing");
+  await expect(summary).toContainText("This is not a diagnosis.");
+  await expect(summary.getByRole("link", { name: /Prepare a summary for my clinician/ })).toBeVisible();
 
   await page.goto("/patient/support/share");
   await page.getByText("Dr. Aisha Al Mansoori").click();
@@ -83,11 +87,25 @@ test("Scenario 2 — declining wellbeing, approved summary shared and reviewed b
   await page.goto("/clinician/patients");
   await page.getByTestId("patient-row").filter({ hasText: "Layla" }).click();
   await expect(page.getByRole("heading", { name: "Layla" })).toBeVisible();
-  await expect(page.getByText("Patient-approved summary")).toBeVisible();
+  await expect(page.getByText(/Patient-approved summary/)).toBeVisible();
   const draft = page.getByTestId("ai-draft");
-  await expect(draft).toContainText("Unverified");
-  await page.getByTestId("mark-reviewed").click();
-  await expect(draft).toContainText("Reviewed");
+  await expect(page.getByTestId("ai-summary-label")).toHaveText("AI-generated clinical support summary — requires professional review. Not a confirmed diagnosis.");
+  if (await draft.getByText("No AI draft is available").isVisible()) {
+    // Offline demo build: no language model, so no AI draft is ever presented.
+    await expect(draft.getByTestId("draft-approve")).toHaveCount(0);
+  } else {
+    await expect(draft).toContainText("Unverified");
+    await page.getByTestId("draft-note").fill("Synthetic review note: consistent with WHO-5 data.");
+    await page.getByTestId("draft-approve").click();
+    await expect(draft).toContainText("Approved by clinician");
+    await expect(page.getByTestId("review-note")).toContainText("Synthetic review note");
+  }
+
+  // Clinician-confirmed findings are separate from patient reports and AI observations.
+  await page.getByTestId("finding-text").fill("Synthetic care plan: weekly check-in for four weeks.");
+  await page.getByRole("button", { name: "Care plan" }).click();
+  await page.getByTestId("finding-save").click();
+  await expect(page.getByTestId("finding").first()).toContainText("Care plan · Dr. Aisha Al Mansoori");
 });
 
 test("Scenario 3 — urgent disclosure bypasses AI; failed hand-off without a care team", async ({ page }) => {

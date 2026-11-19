@@ -69,6 +69,44 @@ export function SummaryView({ content }: { content: SummaryContent }) {
           <p className="text-ink-soft">{content.physicalHealthContext ?? "None provided"}</p>
         </section>
       )}
+      {content.reportedConcerns && (
+        <section data-testid="reported-concerns">
+          <h4 className="font-semibold text-ink">Patient-reported concerns</h4>
+          <dl className="mt-1 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-ink-soft">
+            <dt className="text-muted">Areas</dt>
+            <dd>{content.reportedConcerns.areas.join(" · ")}</dd>
+            <dt className="text-muted">For</dt>
+            <dd>{content.reportedConcerns.duration}</dd>
+            <dt className="text-muted">How often</dt>
+            <dd>{content.reportedConcerns.frequency}</dd>
+            <dt className="text-muted">Daily-life impact</dt>
+            <dd>{content.reportedConcerns.dailyLifeImpact}</dd>
+            {content.reportedConcerns.helpWanted && (
+              <>
+                <dt className="text-muted">Help wanted</dt>
+                <dd>{content.reportedConcerns.helpWanted}</dd>
+              </>
+            )}
+          </dl>
+        </section>
+      )}
+      {content.referralHistory && (
+        <section>
+          <h4 className="font-semibold text-ink">Referral history (simulated)</h4>
+          {content.referralHistory.length ? (
+            <ul className="mt-1 space-y-0.5 text-ink-soft">
+              {content.referralHistory.map((r) => (
+                <li key={r.requestedAt}>
+                  {formatDate(r.requestedAt)} · {r.with ?? "Service"}
+                  {r.careType ? ` (${r.careType.toLowerCase().replace("_", " ")})` : ""} · {r.status.toLowerCase().replace(/_/g, " ")}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-muted">No referrals yet.</p>
+          )}
+        </section>
+      )}
       {content.patientNote !== undefined && (
         <section>
           <h4 className="font-semibold text-ink">Note from the patient</h4>

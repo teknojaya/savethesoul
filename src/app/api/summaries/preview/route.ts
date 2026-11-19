@@ -6,5 +6,5 @@ import { previewSummary } from "@/server/services/summary.service";
 /** Builds exactly what would be shared, without sharing anything. */
 export const POST = route({ roles: ["PATIENT"] }, async ({ req, actor }) => {
   const input = await parseJson(req, SummaryPreviewSchema);
-  return { preview: await previewSummary(requirePatient(actor), input.clinicianId, input.categories, input.patientNote) };
+  return { preview: await previewSummary(requirePatient(actor), input.clinicianId, input.categories, input.patientNote, input.reportedConcerns) };
 });

@@ -6,7 +6,8 @@ import { AppError } from "@/lib/errors";
 import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, EmptyState, PageHeader, SimulatedBadge } from "@/components/ui/primitives";
 import { Who5TrendChart, CheckInChart } from "@/components/wellbeing/charts";
 import { SummaryView } from "@/components/clinician/summary-view";
-import { AiDraftCard, NotesPanel } from "@/components/clinician/patient-actions";
+import { AiDraftCard, FindingsPanel, NotesPanel } from "@/components/clinician/patient-actions";
+import { listFindings } from "@/server/services/findings.service";
 import { ClinicianReferralCard } from "@/components/clinician/referral-actions";
 import { CLINICIAN_SHARE_CATEGORIES, type ClinicianShareCategory } from "@/features/consent/policy";
 import type { ReferralStatus } from "@/features/referrals/state-machine";
@@ -39,6 +40,7 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
   }
 
   const has = (c: ClinicianShareCategory) => d.sharedCategories.includes(c);
+  const findings = await listFindings(actor, id);
 
   return (
     <div className="space-y-6">
@@ -141,16 +143,30 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
           <div key={s.id} className="grid gap-4 lg:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle>Patient-approved summary</CardTitle>
-                <CardDescription>Shared {formatDate(s.sharedAt)} · built from structured data, not AI</CardDescription>
+                <CardTitle>Patient-reported and measured</CardTitle>
+                <CardDescription>Patient-approved summary · shared {formatDate(s.sharedAt)} · built from structured data, not AI</CardDescription>
               </CardHeader>
               <CardContent><SummaryView content={s.content} /></CardContent>
             </Card>
-            <AiDraftCard summaryId={s.id} draft={s.aiDraft} status={s.aiDraftStatus} reviewedAt={s.reviewedAt?.toISOString() ?? null} />
+            <AiDraftCard
+              summaryId={s.id}
+              draft={s.aiDraft}
+              status={s.aiDraftStatus}
+              reviewedAt={s.reviewedAt?.toISOString() ?? null}
+              correctedDraft={s.correctedDraft}
+              reviewNote={s.reviewNote}
+            />
           </div>
         ))}
       </section>
 
+      <section className="space-y-3">
+        <div>
+          <h2 className="font-display text-xl text-ink">Clinician-confirmed findings</h2>
+          <p className="text-sm text-muted">Diagnoses and care plans are recorded only by clinicians, separately from patient reports and AI observations. Entries are never edited: add a new one to update.</p>
+        </div>
+        <FindingsPanel patientId={id} findings={findings.map((f) => ({ ...f, createdAt: f.createdAt.toISOString() }))} />
+      </section>
       <div className="grid gap-4 lg:grid-cols-2">
         <section className="space-y-3">
           <h2 className="font-display text-xl text-ink">Referrals & follow-up</h2>

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { CLINICIAN_SHARE_CATEGORIES, CONTACT_SHARE_CATEGORIES } from "@/features/consent/policy";
+import { CLINICIAN_SHARE_CATEGORIES, CONTACT_SHARE_CATEGORIES, CONCERN_AREAS, CONCERN_DURATION, CONCERN_FREQUENCY, CONCERN_IMPACT, HELP_WANTED } from "@/features/consent/policy";
 
 /** Shared request schemas (usable by server, web client and a future native client). */
 
@@ -67,14 +67,44 @@ export const MemorySchema = z.object({ content: shortText(300) });
 const clinicianCategory = z.enum(Object.keys(CLINICIAN_SHARE_CATEGORIES) as [keyof typeof CLINICIAN_SHARE_CATEGORIES]);
 const contactCategory = z.enum(Object.keys(CONTACT_SHARE_CATEGORIES) as [keyof typeof CONTACT_SHARE_CATEGORIES]);
 
-export const SummaryPreviewSchema = z.object({
-  clinicianId: id,
-  categories: z.array(clinicianCategory).min(1, "Choose at least one type of information"),
-  patientNote: z.string().trim().max(1000).nullable().optional(),
+/** Patient-reported concerns: chosen by the patient, never inferred by the AI. */
+export const ReportedConcernsSchema = z.object({
+  areas: z.array(z.enum(Object.keys(CONCERN_AREAS) as [keyof typeof CONCERN_AREAS])).min(1, "Choose at least one area").max(9),
+  duration: z.enum(Object.keys(CONCERN_DURATION) as [keyof typeof CONCERN_DURATION]),
+  frequency: z.enum(Object.keys(CONCERN_FREQUENCY) as [keyof typeof CONCERN_FREQUENCY]),
+  dailyLifeImpact: z.enum(Object.keys(CONCERN_IMPACT) as [keyof typeof CONCERN_IMPACT]),
+  helpWanted: z.enum(Object.keys(HELP_WANTED) as [keyof typeof HELP_WANTED]).nullable().optional(),
 });
 
-export const SummaryShareSchema = SummaryPreviewSchema.extend({
-  confirm: z.literal(true, { message: "Please confirm you have reviewed the summary" }),
+export const SummaryPreviewSchema = z
+  .object({
+    clinicianId: id,
+    categories: z.array(clinicianCategory).min(1, "Choose at least one type of information"),
+    patientNote: z.string().trim().max(1000).nullable().optional(),
+    reportedConcerns: ReportedConcernsSchema.nullable().optional(),
+  })
+  .refine((v) => !v.categories.includes("REPORTED_CONCERNS") || !!v.reportedConcerns, {
+    message: "Describe what you're finding difficult, or untick that item",
+    path: ["reportedConcerns"],
+  });
+
+export const SummaryShareSchema = SummaryPreviewSchema.and(
+  z.object({ confirm: z.literal(true, { message: "Please confirm you have reviewed the summary" }) }),
+);
+
+/** Clinician decision on an AI-generated draft. */
+export const DraftReviewSchema = z
+  .object({
+    decision: z.enum(["APPROVED", "CORRECTED", "REJECTED", "REVIEWED"]).default("REVIEWED"),
+    correctedText: z.string().trim().max(8000).nullable().optional(),
+    note: z.string().trim().max(2000).nullable().optional(),
+  })
+  .refine((v) => v.decision !== "CORRECTED" || !!v.correctedText, { message: "Enter the corrected summary", path: ["correctedText"] });
+
+/** Clinician-authored, confirmed finding (diagnosis or care plan). */
+export const ClinicianFindingSchema = z.object({
+  kind: z.enum(["DIAGNOSIS", "CARE_PLAN"]),
+  content: z.string().trim().min(3, "Please enter the finding").max(4000),
 });
 
 export const TrustedContactSchema = z.object({
@@ -106,6 +136,7 @@ export const SafetyPlanSchema = z.object({
 });
 
 export const ReferralCreateSchema = z.object({
+  careType: z.enum(["PSYCHOLOGIST", "PSYCHIATRIST", "PRIMARY_CARE", "SERVICE"]).nullable().optional(),
   clinicianId: id.nullable().optional(),
   resourceId: id.nullable().optional(),
   urgency: z.enum(["ROUTINE", "SOON", "URGENT"]),

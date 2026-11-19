@@ -6,7 +6,7 @@ import { Eye, Loader2, Lock, Send, CheckCircle2, Stethoscope } from "lucide-reac
 import { Button } from "@/components/ui/button";
 import { Badge, Callout, Card, CardContent, CardHeader, CardTitle, SimulatedBadge, Textarea } from "@/components/ui/primitives";
 import { SummaryView } from "@/components/clinician/summary-view";
-import { CLINICIAN_SHARE_CATEGORIES, type ClinicianShareCategory } from "@/features/consent/policy";
+import { CLINICIAN_SHARE_CATEGORIES, CONCERN_AREAS, CONCERN_DURATION, CONCERN_FREQUENCY, CONCERN_IMPACT, HELP_WANTED, type ClinicianShareCategory } from "@/features/consent/policy";
 import type { SummaryContent } from "@/server/services/summary.service";
 import { api, ApiError } from "@/lib/api-client";
 import { cn, formatDate } from "@/lib/utils";
@@ -31,6 +31,53 @@ interface SharedSummary {
   categories: string[];
 }
 
+interface Concerns {
+  areas: (keyof typeof CONCERN_AREAS)[];
+  duration: keyof typeof CONCERN_DURATION | "";
+  frequency: keyof typeof CONCERN_FREQUENCY | "";
+  dailyLifeImpact: keyof typeof CONCERN_IMPACT | "";
+  helpWanted: keyof typeof HELP_WANTED | "";
+}
+
+/** Patient-reported concerns: the patient chooses every answer; nothing is inferred. */
+function ConcernsForm({ value, onChange }: { value: Concerns; onChange: (v: Concerns) => void }) {
+  const chip = (active: boolean) => cn("rounded-full border px-3 py-1.5 text-sm", active ? "border-teal-500 bg-teal-50 text-teal-800" : "border-line text-ink-soft");
+  const single = <K extends "duration" | "frequency" | "dailyLifeImpact" | "helpWanted">(key: K, options: Record<string, string>, legend: string) => (
+    <fieldset>
+      <legend className="text-xs font-medium text-ink-soft">{legend}</legend>
+      <div className="mt-1.5 flex flex-wrap gap-1.5">
+        {Object.entries(options).map(([k, label]) => (
+          <button key={k} type="button" aria-pressed={value[key] === k} className={chip(value[key] === k)} onClick={() => onChange({ ...value, [key]: k })}>
+            {label}
+          </button>
+        ))}
+      </div>
+    </fieldset>
+  );
+  return (
+    <div className="space-y-3 rounded-2xl border border-line bg-surface p-3" data-testid="concerns-form">
+      <p className="text-xs text-muted">In your own words: you choose every answer. Sakinah never fills this in for you.</p>
+      <fieldset>
+        <legend className="text-xs font-medium text-ink-soft">What are you finding difficult?</legend>
+        <div className="mt-1.5 flex flex-wrap gap-1.5">
+          {(Object.keys(CONCERN_AREAS) as (keyof typeof CONCERN_AREAS)[]).map((a) => {
+            const on = value.areas.includes(a);
+            return (
+              <button key={a} type="button" aria-pressed={on} className={chip(on)} onClick={() => onChange({ ...value, areas: on ? value.areas.filter((x) => x !== a) : [...value.areas, a] })}>
+                {CONCERN_AREAS[a]}
+              </button>
+            );
+          })}
+        </div>
+      </fieldset>
+      {single("duration", CONCERN_DURATION, "For how long?")}
+      {single("frequency", CONCERN_FREQUENCY, "How often?")}
+      {single("dailyLifeImpact", CONCERN_IMPACT, "How much does it affect work, study, relationships or daily tasks?")}
+      {single("helpWanted", HELP_WANTED, "What kind of help would you like? (optional)")}
+    </div>
+  );
+}
+
 const DEFAULT_CATS: ClinicianShareCategory[] = ["WHO5_HISTORY", "MOOD_TRENDS", "SLEEP_STRESS", "FUNCTIONING"];
 
 export function ShareFlow({ clinicians, summaries }: { clinicians: Clinician[]; summaries: SharedSummary[] }) {
@@ -38,6 +85,11 @@ export function ShareFlow({ clinicians, summaries }: { clinicians: Clinician[]; 
   const [clinicianId, setClinicianId] = useState(clinicians[0]?.id ?? "");
   const [cats, setCats] = useState<ClinicianShareCategory[]>(DEFAULT_CATS);
   const [note, setNote] = useState("");
+  const [concerns, setConcerns] = useState<Concerns>({ areas: [], duration: "", frequency: "", dailyLifeImpact: "", helpWanted: "" });
+  const reported = () =>
+    cats.includes("REPORTED_CONCERNS")
+      ? { areas: concerns.areas, duration: concerns.duration, frequency: concerns.frequency, dailyLifeImpact: concerns.dailyLifeImpact, helpWanted: concerns.helpWanted || null }
+      : null;
   const [preview, setPreview] = useState<SummaryContent | null>(null);
   const [confirmed, setConfirmed] = useState(false);
   const [pending, setPending] = useState<"preview" | "share" | null>(null);
@@ -54,7 +106,7 @@ export function ShareFlow({ clinicians, summaries }: { clinicians: Clinician[]; 
     setPending("preview");
     setError(null);
     try {
-      const { preview } = await api<{ preview: SummaryContent }>("/api/summaries/preview", { body: { clinicianId, categories: cats, patientNote: note || null } });
+      const { preview } = await api<{ preview: SummaryContent }>("/api/summaries/preview", { body: { clinicianId, categories: cats, patientNote: note || null, reportedConcerns: reported() } });
       setPreview(preview);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Could not build preview");
@@ -67,7 +119,7 @@ export function ShareFlow({ clinicians, summaries }: { clinicians: Clinician[]; 
     setPending("share");
     setError(null);
     try {
-      await api("/api/summaries", { body: { clinicianId, categories: cats, patientNote: note || null, confirm: true } });
+      await api("/api/summaries", { body: { clinicianId, categories: cats, patientNote: note || null, reportedConcerns: reported(), confirm: true } });
       setShared(clinicians.find((c) => c.id === clinicianId)?.name ?? "the clinician");
       setPreview(null);
       setConfirmed(false);
@@ -128,6 +180,16 @@ export function ShareFlow({ clinicians, summaries }: { clinicians: Clinician[]; 
                 </label>
               ))}
             </div>
+            {cats.includes("REPORTED_CONCERNS") && (
+              <ConcernsForm
+                value={concerns}
+                onChange={(v) => {
+                  setConcerns(v);
+                  setPreview(null);
+                  setConfirmed(false);
+                }}
+              />
+            )}
             {cats.includes("PATIENT_NOTE") && (
               <Textarea rows={3} maxLength={1000} placeholder="Anything you'd like the clinician to know…" value={note} onChange={(e) => { setNote(e.target.value); setPreview(null); }} />
             )}

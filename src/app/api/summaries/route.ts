@@ -10,5 +10,5 @@ export const GET = route({ roles: ["PATIENT"] }, async ({ actor }) => ({
 /** Shares a summary the patient has previewed and explicitly confirmed. */
 export const POST = route({ roles: ["PATIENT"] }, async ({ req, actor }) => {
   const input = await parseJson(req, SummaryShareSchema);
-  return { summary: await shareSummary(requirePatient(actor), input.clinicianId, input.categories, input.patientNote) };
+  return { summary: await shareSummary(requirePatient(actor), input.clinicianId, input.categories, input.patientNote, input.reportedConcerns) };
 });

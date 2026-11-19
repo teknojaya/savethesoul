@@ -3,7 +3,13 @@ import { decryptJson, decryptOptional, encrypt, encryptJson, decrypt } from "@/l
 import type { Actor } from "@/lib/auth/session";
 import { AppError, notFound } from "@/lib/errors";
 import { getEnv } from "@/lib/env";
-import { CLINICIAN_SHARE_CATEGORIES, POLICY_VERSION, type ClinicianShareCategory } from "@/features/consent/policy";
+import { CLINICIAN_SHARE_CATEGORIES, CONCERN_AREAS, CONCERN_DURATION, CONCERN_FREQUENCY, CONCERN_IMPACT, HELP_WANTED, POLICY_VERSION, type ClinicianShareCategory } from "@/features/consent/policy";
+import type { z } from "zod";
+import type { ReportedConcernsSchema } from "@/lib/validation/schemas";
+
+export type ReportedConcernsInput = z.infer<typeof ReportedConcernsSchema>;
+
+export { AI_SUMMARY_LABEL } from "@/features/ai/prompts";
 import { computeWho5Trend, summariseCheckIns } from "@/features/assessments/trends";
 import { WHO5_LIMITATIONS } from "@/features/assessments/who5";
 import { getChatProvider } from "@/features/ai/provider-factory";
@@ -24,6 +30,9 @@ export interface SummaryContent {
   goals?: string[];
   physicalHealthContext?: string | null;
   patientNote?: string | null;
+  /** Patient-reported (chosen by the patient in the share form; never inferred by AI). */
+  reportedConcerns?: { areas: string[]; duration: string; frequency: string; dailyLifeImpact: string; helpWanted: string | null };
+  referralHistory?: { requestedAt: string; status: string; careType: string | null; with: string | null }[];
   limitations: string[];
   excluded: string[];
 }
@@ -49,6 +58,7 @@ export async function buildSummaryContent(
   patientId: string,
   categories: ClinicianShareCategory[],
   patientNote?: string | null,
+  reportedConcerns?: ReportedConcernsInput | null,
 ): Promise<SummaryContent> {
   const profile = await prisma.patientProfile.findUniqueOrThrow({ where: { id: patientId } });
   const has = (c: ClinicianShareCategory) => categories.includes(c);
@@ -93,13 +103,41 @@ export async function buildSummaryContent(
   }
   if (has("PHYSICAL_HEALTH_CONTEXT")) content.physicalHealthContext = decryptOptional(profile.physicalHealthEnc);
   if (has("PATIENT_NOTE")) content.patientNote = patientNote ?? null;
+  if (has("REPORTED_CONCERNS") && reportedConcerns) {
+    content.reportedConcerns = {
+      areas: reportedConcerns.areas.map((a) => CONCERN_AREAS[a]),
+      duration: CONCERN_DURATION[reportedConcerns.duration],
+      frequency: CONCERN_FREQUENCY[reportedConcerns.frequency],
+      dailyLifeImpact: CONCERN_IMPACT[reportedConcerns.dailyLifeImpact],
+      helpWanted: reportedConcerns.helpWanted ? HELP_WANTED[reportedConcerns.helpWanted] : null,
+    };
+  }
+  if (has("REFERRAL_HISTORY")) {
+    const refs = await prisma.careReferral.findMany({
+      where: { patientId },
+      orderBy: { requestedAt: "asc" },
+      include: { clinician: { include: { user: { select: { displayName: true } } } }, resource: { select: { name: true } } },
+    });
+    content.referralHistory = refs.map((r) => ({
+      requestedAt: r.requestedAt.toISOString(),
+      status: r.status,
+      careType: r.careType,
+      with: r.clinician?.user.displayName ?? r.resource?.name ?? null,
+    }));
+  }
   return content;
 }
 
-export async function previewSummary(patientId: string, clinicianId: string, categories: ClinicianShareCategory[], patientNote?: string | null) {
+export async function previewSummary(
+  patientId: string,
+  clinicianId: string,
+  categories: ClinicianShareCategory[],
+  patientNote?: string | null,
+  reportedConcerns?: ReportedConcernsInput | null,
+) {
   const clinician = await prisma.clinicianProfile.findUnique({ where: { id: clinicianId } });
   if (!clinician) throw notFound("Clinician not found");
-  return buildSummaryContent(patientId, categories, patientNote);
+  return buildSummaryContent(patientId, categories, patientNote, reportedConcerns);
 }
 
 /**
@@ -108,10 +146,16 @@ export async function previewSummary(patientId: string, clinicianId: string, cat
  *  - connects the patient to the clinician's care list (assignment)
  *  - stores the encrypted snapshot, plus an UNVERIFIED AI draft if available
  */
-export async function shareSummary(patientId: string, clinicianId: string, categories: ClinicianShareCategory[], patientNote?: string | null) {
+export async function shareSummary(
+  patientId: string,
+  clinicianId: string,
+  categories: ClinicianShareCategory[],
+  patientNote?: string | null,
+  reportedConcerns?: ReportedConcernsInput | null,
+) {
   const clinician = await prisma.clinicianProfile.findUnique({ where: { id: clinicianId } });
   if (!clinician) throw notFound("Clinician not found");
-  const content = await buildSummaryContent(patientId, categories, patientNote);
+  const content = await buildSummaryContent(patientId, categories, patientNote, reportedConcerns);
 
   const summary = await prisma.$transaction(async (tx) => {
     const now = new Date();
@@ -154,6 +198,8 @@ export async function shareSummary(patientId: string, clinicianId: string, categ
 
 async function generateAiDraft(content: SummaryContent): Promise<{ text: string; provider: string } | null> {
   const provider = getChatProvider();
+  // The offline demo companion is not a language model: it must never pose as an AI clinical draft.
+  if (!provider.isGenerative) return null;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), getEnv().LLM_TIMEOUT_MS);
   try {
@@ -224,18 +270,41 @@ export async function listSummariesForClinician(actor: Actor, patientId: string)
     aiDraft: r.aiDraftEnc ? decrypt(r.aiDraftEnc) : null,
     aiDraftStatus: r.aiDraftStatus,
     reviewedAt: r.reviewedAt,
+    correctedDraft: decryptOptional(r.correctedDraftEnc),
+    reviewNote: decryptOptional(r.reviewNoteEnc),
   }));
 }
 
-export async function markDraftReviewed(actor: Actor, summaryId: string) {
+/**
+ * Clinician decision on the AI draft: approve, correct (the original is kept), reject, or the
+ * legacy "reviewed" acknowledgement. Only the clinician the summary was shared with, while the
+ * patient's consent is active. Every decision is audited.
+ */
+export async function reviewDraft(
+  actor: Actor,
+  summaryId: string,
+  input: { decision: "APPROVED" | "CORRECTED" | "REJECTED" | "REVIEWED"; correctedText?: string | null; note?: string | null } = { decision: "REVIEWED" },
+) {
   const s = await prisma.clinicalSummary.findUnique({ where: { id: summaryId } });
   if (!s || s.status !== "SHARED") throw notFound("Summary not found");
   const { clinicianId } = await requireClinicianAccess(actor, s.patientId, "REVIEW_AI_DRAFT");
   if (s.clinicianId !== clinicianId) throw new AppError("FORBIDDEN", "This summary was not shared with you");
-  await audit(actor, { action: "REVIEW_AI_DRAFT", resourceType: "ClinicalSummary", resourceId: summaryId, subjectPatientId: s.patientId });
+  if (!s.aiDraftEnc) throw new AppError("VALIDATION", "There is no AI draft to review");
+  await audit(actor, { action: `REVIEW_AI_DRAFT_${input.decision}`, resourceType: "ClinicalSummary", resourceId: summaryId, subjectPatientId: s.patientId });
   return prisma.clinicalSummary.update({
     where: { id: summaryId },
-    data: { aiDraftStatus: "REVIEWED", reviewedAt: new Date(), reviewedByUserId: actor.userId },
+    data: {
+      aiDraftStatus: input.decision,
+      reviewedAt: new Date(),
+      reviewedByUserId: actor.userId,
+      ...(input.decision === "CORRECTED" && input.correctedText ? { correctedDraftEnc: encrypt(input.correctedText) } : {}),
+      ...(input.note ? { reviewNoteEnc: encrypt(input.note) } : {}),
+    },
     select: { id: true, aiDraftStatus: true, reviewedAt: true },
   });
+}
+
+/** Back-compat wrapper: "I have reviewed this draft". */
+export async function markDraftReviewed(actor: Actor, summaryId: string) {
+  return reviewDraft(actor, summaryId, { decision: "REVIEWED" });
 }
