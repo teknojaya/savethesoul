@@ -76,6 +76,14 @@ export const ReportedConcernsSchema = z.object({
   helpWanted: z.enum(Object.keys(HELP_WANTED) as [keyof typeof HELP_WANTED]).nullable().optional(),
 });
 
+/** "Explore My Mental Wellbeing": structured, patient-provided answers plus explicit permission. */
+export const ExploreSchema = ReportedConcernsSchema.extend({
+  sleep: z.enum(["GOOD", "OK", "POOR"]),
+  stress: z.enum(["LOW", "MEDIUM", "HIGH"]),
+  ownWords: z.string().trim().max(600).nullable().optional(),
+  consent: z.literal(true, { message: "Please agree before continuing" }),
+});
+
 export const SummaryPreviewSchema = z
   .object({
     clinicianId: id,

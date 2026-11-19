@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, Loader2, Lock, Send, CheckCircle2, Stethoscope } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -86,6 +86,23 @@ export function ShareFlow({ clinicians, summaries }: { clinicians: Clinician[]; 
   const [cats, setCats] = useState<ClinicianShareCategory[]>(DEFAULT_CATS);
   const [note, setNote] = useState("");
   const [concerns, setConcerns] = useState<Concerns>({ areas: [], duration: "", frequency: "", dailyLifeImpact: "", helpWanted: "" });
+  // Answers from "Explore My Mental Wellbeing" (this tab only) prefill the concerns form.
+  useEffect(() => {
+    if (!new URLSearchParams(window.location.search).has("from")) return;
+    const id = requestAnimationFrame(() => {
+      try {
+        const raw = sessionStorage.getItem("sts:explore-concerns");
+        if (!raw) return;
+        const v = JSON.parse(raw);
+        setConcerns({ areas: v.areas ?? [], duration: v.duration ?? "", frequency: v.frequency ?? "", dailyLifeImpact: v.dailyLifeImpact ?? "", helpWanted: v.helpWanted ?? "" });
+        setCats((cur) => (cur.includes("REPORTED_CONCERNS") ? cur : [...cur, "REPORTED_CONCERNS"]));
+      } catch {
+        /* optional convenience */
+      }
+    });
+    return () => cancelAnimationFrame(id);
+  }, []);
+
   const reported = () =>
     cats.includes("REPORTED_CONCERNS")
       ? { areas: concerns.areas, duration: concerns.duration, frequency: concerns.frequency, dailyLifeImpact: concerns.dailyLifeImpact, helpWanted: concerns.helpWanted || null }

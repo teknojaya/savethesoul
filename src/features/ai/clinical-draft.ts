@@ -91,8 +91,20 @@ export interface GroundingResult {
  * Removes unsupported statements from a model draft. Returns text: null when too little grounded
  * content remains (the clinician then sees "no AI draft available" and uses the structured data).
  */
-export function groundClinicalDraft(raw: string, source: DraftSource, minStatements = 2): GroundingResult {
-  const allowed = allowedTags(source);
+export interface GroundingConfig {
+  sections?: readonly string[];
+  allowed?: Set<string>;
+  /** Section in which demographics must never appear as a concern. */
+  concernsSection?: string;
+  /** The only section where demographic context is allowed. */
+  contextSection?: string;
+}
+
+export function groundClinicalDraft(raw: string, source: DraftSource, minStatements = 2, config: GroundingConfig = {}): GroundingResult {
+  const allowed = config.allowed ?? allowedTags(source);
+  const sections = config.sections ?? DRAFT_SECTIONS;
+  const concernsSection = config.concernsSection ?? "Patient-reported concerns:";
+  const contextSection = config.contextSection ?? "Other shared context:";
   const reasons: string[] = [];
   const out: string[] = [];
   let section = "";
@@ -106,7 +118,7 @@ export function groundClinicalDraft(raw: string, source: DraftSource, minStateme
   for (const line of raw.split("\n")) {
     const trimmed = line.trim();
     if (!trimmed) continue;
-    const header = DRAFT_SECTIONS.find((h) => trimmed.replace(/^#+\s*|\*\*/g, "").startsWith(h.replace(":", "")));
+    const header = sections.find((h) => trimmed.replace(/^#+\s*|\*\*/g, "").startsWith(h.replace(":", "")));
     if (header) {
       section = header;
       out.push(header);
@@ -134,11 +146,11 @@ export function groundClinicalDraft(raw: string, source: DraftSource, minStateme
       drop("clinical boundary");
       continue;
     }
-    if (section === "Patient-reported concerns:" && (tags.includes(SOURCE_TAGS.DEMOGRAPHICS) || DEMOGRAPHIC.test(trimmed.replace(TAG, "")))) {
+    if (section === concernsSection && (tags.includes(SOURCE_TAGS.DEMOGRAPHICS) || DEMOGRAPHIC.test(trimmed.replace(TAG, "")))) {
       drop("demographics presented as a concern");
       continue;
     }
-    if (tags.includes(SOURCE_TAGS.DEMOGRAPHICS) && section !== "Other shared context:") {
+    if (tags.includes(SOURCE_TAGS.DEMOGRAPHICS) && section !== contextSection) {
       drop("demographics outside context");
       continue;
     }
@@ -147,7 +159,8 @@ export function groundClinicalDraft(raw: string, source: DraftSource, minStateme
   }
 
   // Remove headers left without statements.
-  const compact = out.filter((l, i) => !DRAFT_SECTIONS.includes(l as (typeof DRAFT_SECTIONS)[number]) || (out[i + 1] && !DRAFT_SECTIONS.includes(out[i + 1] as (typeof DRAFT_SECTIONS)[number])));
+  const isHeader = (l: string | undefined) => !!l && sections.includes(l);
+  const compact = out.filter((l, i) => !isHeader(l) || (out[i + 1] !== undefined && !isHeader(out[i + 1])));
   if (kept < minStatements) return { text: null, kept, removed, reasons };
   const footer = removed ? `\n\n(${removed} AI statement${removed === 1 ? " was" : "s were"} removed by automatic grounding checks.)` : "";
   return { text: compact.join("\n").replace(/\n(?=[A-Z][^\n]*:$)/gm, "\n\n") + footer, kept, removed, reasons };

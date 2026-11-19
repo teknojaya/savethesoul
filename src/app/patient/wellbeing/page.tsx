@@ -9,7 +9,7 @@ import { GoalsManager } from "@/components/wellbeing/goals-manager";
 import { WHO5_LIMITATIONS } from "@/features/assessments/who5";
 import { formatDate } from "@/lib/utils";
 import { describeWellbeing } from "@/features/assessments/wellbeing-summary";
-import { ClipboardList, HeartHandshake, History, MessageCircleHeart } from "lucide-react";
+import { ClipboardList, HeartHandshake, History, MessageCircleHeart, Sparkles } from "lucide-react";
 
 export const metadata = { title: "My Wellbeing" };
 
@@ -78,7 +78,10 @@ export default async function WellbeingPage() {
             </ul>
           )}
           <div className="flex flex-wrap gap-2 pt-1">
-            <Link href="/patient/companion" className={buttonVariants({ size: "sm" })}>
+            <Link href="/patient/wellbeing/explore" className={buttonVariants({ size: "sm" })} data-testid="explore-entry">
+              <Sparkles aria-hidden /> Explore My Mental Wellbeing
+            </Link>
+            <Link href="/patient/companion" className={buttonVariants({ size: "sm", variant: "secondary" })}>
               <MessageCircleHeart aria-hidden /> Continue talking with Sakinah
             </Link>
             <Link href="#history" className={buttonVariants({ size: "sm", variant: "secondary" })}>
