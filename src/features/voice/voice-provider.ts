@@ -95,6 +95,6 @@ export function setVoiceProviderOverride(p: VoiceProvider | null | undefined) {
 export function getVoiceProvider(): VoiceProvider | null {
   if (override !== undefined) return override;
   const env = getEnv();
-  if (!env.OPENAI_API_KEY || env.LLM_PROVIDER === "demo") return null;
+  if (env.VOICE_ENABLED === "false" || !env.OPENAI_API_KEY || env.LLM_PROVIDER === "demo") return null;
   return new OpenAIVoiceProvider(env.OPENAI_API_KEY, env.VOICE_STT_MODEL, env.VOICE_TTS_MODEL, env.VOICE_TTS_VOICE, env.VOICE_LANGUAGE, env.VOICE_TIMEOUT_MS);
 }

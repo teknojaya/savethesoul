@@ -75,6 +75,7 @@ If the API rejects the model or key, replies become the labelled fallback messag
 
 - Migration `20261119091615_voice_processing_consent` adds one enum value (`ALTER TYPE ... ADD VALUE`). It is non-destructive and runs automatically in the pre-deploy step.
 - The security header must keep `microphone=(self)`. With `microphone=()` the browser blocks recording; the E2E suite checks this.
+- **Rollback:** set `VOICE_ENABLED=false` on the web service. This turns Voice Mode off (the panel offers text chat) without touching code or data. Prefer it to redeploying an older build: that build's Prisma client does not know the `VOICE_PROCESSING` consent value, so a full code rollback would first need those consent rows revoked or removed.
 - The welcome audio `public/audio/sakinah-welcome.mp3` is generated once with `pnpm exec tsx scripts/generate-welcome-audio.ts`. Regenerate it if the welcome text, voice or model changes.
 
 ## Rotating DATA_ENCRYPTION_KEY

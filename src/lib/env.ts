@@ -18,6 +18,8 @@ const EnvSchema = z.object({
   ANTHROPIC_API_KEY: z.string().optional(),
   OPENAI_API_KEY: z.string().optional(),
   /** Voice Mode (OpenAI audio). Speech-to-text and text-to-speech models, voice and language. */
+  /** Kill switch: "false" turns Voice Mode off (text chat unaffected) without a code rollback. */
+  VOICE_ENABLED: z.enum(["true", "false"]).default("true"),
   VOICE_STT_MODEL: z.string().trim().min(1).default("gpt-4o-mini-transcribe"),
   VOICE_TTS_MODEL: z.string().trim().min(1).default("gpt-4o-mini-tts"),
   VOICE_TTS_VOICE: z.string().trim().min(1).default("marin"),

@@ -171,6 +171,26 @@ describe("Browser recording support", () => {
   });
 });
 
+describe("Voice kill switch", () => {
+  it("VOICE_ENABLED=false makes Voice Mode unavailable even with a key", async () => {
+    const { getVoiceProvider, setVoiceProviderOverride } = await import("@/features/voice/voice-provider");
+    const { resetEnvCache } = await import("@/lib/env");
+    const saved = { ...process.env };
+    setVoiceProviderOverride(undefined);
+    try {
+      Object.assign(process.env, { OPENAI_API_KEY: "sk-test", LLM_PROVIDER: "openai", VOICE_ENABLED: "true" });
+      resetEnvCache();
+      expect(getVoiceProvider()?.id).toBe("openai");
+      process.env.VOICE_ENABLED = "false";
+      resetEnvCache();
+      expect(getVoiceProvider()).toBeNull();
+    } finally {
+      process.env = saved;
+      resetEnvCache();
+    }
+  });
+});
+
 describe("OpenAIVoiceProvider (real SDK against a local fake API)", () => {
   type Reply = { status?: number; json?: object; body?: Buffer; delayMs?: number };
   let next: Reply = {};
