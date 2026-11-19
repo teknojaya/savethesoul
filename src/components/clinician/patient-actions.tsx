@@ -43,6 +43,19 @@ export function AiDraftCard({
   const [error, setError] = useState<string | null>(null);
   const badge = DECISION_BADGE[status] ?? DECISION_BADGE.UNVERIFIED;
 
+  async function regenerate() {
+    setBusy(true);
+    setError(null);
+    try {
+      await api(`/api/summaries/${summaryId}/regenerate`, { body: {} });
+      router.refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not regenerate the draft");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function decide(decision: "APPROVED" | "CORRECTED" | "REJECTED") {
     setBusy(true);
     setError(null);
@@ -72,7 +85,13 @@ export function AiDraftCard({
       </CardHeader>
       <CardContent className="space-y-3">
         {!draft ? (
-          <p className="text-sm text-muted">No AI draft is available (the AI service was unavailable). Use the structured summary.</p>
+          <div className="space-y-2">
+            <p className="text-sm text-muted">No AI draft is available (the AI service was unavailable). Use the structured summary.</p>
+            {error && <p role="alert" className="text-sm text-safety-700">{error}</p>}
+            <Button size="sm" variant="secondary" disabled={busy} onClick={regenerate} data-testid="draft-regenerate">
+              {busy && <Loader2 className="animate-spin" aria-hidden />} Generate AI draft
+            </Button>
+          </div>
         ) : (
           <>
             {correctedDraft && (
@@ -111,6 +130,9 @@ export function AiDraftCard({
               )}
               <Button size="sm" variant="ghost" disabled={busy} onClick={() => decide("REJECTED")} data-testid="draft-reject">
                 Reject
+              </Button>
+              <Button size="sm" variant="ghost" disabled={busy} onClick={regenerate} data-testid="draft-regenerate" title="Create a new, detailed draft from the same patient-approved data">
+                Regenerate detailed draft
               </Button>
             </div>
           </>

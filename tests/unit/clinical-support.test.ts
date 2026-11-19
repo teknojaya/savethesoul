@@ -48,10 +48,11 @@ describe("Clinical-support validation", () => {
     expect(ClinicianFindingSchema.safeParse({ kind: "RISK_SCORE", content: "x" }).success).toBe(false);
     expect(ReferralCreateSchema.safeParse({ resourceId: "r", urgency: "ROUTINE", careType: "HOSPITAL" }).success).toBe(false);
   });
-  it("labels AI summaries and forbids diagnoses and risk scores in the drafting instructions", () => {
+  it("labels AI summaries; diagnoses only as considerations to assess; no risk scores or medication", () => {
     expect(AI_SUMMARY_LABEL).toBe("Preliminary AI-generated clinical impression — not a confirmed diagnosis. Requires professional assessment.");
     expect(CLINICIAN_SUMMARY_SYSTEM_PROMPT).toContain(AI_SUMMARY_LABEL);
-    expect(CLINICIAN_SUMMARY_SYSTEM_PROMPT).toMatch(/Never add facts, causes, diagnoses, diagnostic labels, risk levels or risk scores/);
+    expect(CLINICIAN_SUMMARY_SYSTEM_PROMPT).toMatch(/Never state or imply that a diagnosis is present, confirmed or that criteria are met\. Never give risk levels or risk scores\. Never mention medication/);
+    expect(CLINICIAN_SUMMARY_SYSTEM_PROMPT).toMatch(/ONLY as possibilities to assess/);
     expect(CLINICIAN_SUMMARY_SYSTEM_PROMPT).toMatch(/Questions the clinician may wish to explore/);
   });
 });

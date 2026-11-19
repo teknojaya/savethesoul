@@ -15,6 +15,7 @@ export const CLINICIAN_SHARE_CATEGORIES = {
   PATIENT_NOTE: "A personal note you write for the clinician",
   REPORTED_CONCERNS: "What you're finding difficult (areas, how long, how often, effect on daily life)",
   REFERRAL_HISTORY: "Your referral and follow-up history",
+  CONVERSATIONS: "Your Sakinah conversations (full chat history, read-only)",
 } as const;
 
 /** Areas a patient can choose to describe (patient-reported; never inferred by the AI). */

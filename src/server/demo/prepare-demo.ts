@@ -311,10 +311,51 @@ async function prepareAiDetectedCase(report: PrepareReport) {
   report.created.push(`emergency case ${AI_CASE_REF} (Sakinah AI-detected, REVIEW_REQUESTED)`);
 }
 
+/** Demo: Hana chooses to share her Sakinah conversations with Dr. Aisha (explicit, revocable consent). */
+const SHARED_CHAT_TITLE = "Worry keeping me up at night";
+async function prepareSharedChat(report: PrepareReport, aisha: { clinicianId: string }) {
+  const u = await prisma.user.findUnique({ where: { email: "hana@demo.savethesoul.app" }, include: { patientProfile: true } });
+  const pid = u?.isDemo ? u.patientProfile?.id : null;
+  if (!pid) return report.skipped.push("shared conversations (Hana not found)");
+  if (await prisma.conversation.findFirst({ where: { patientId: pid, title: SHARED_CHAT_TITLE } })) return report.skipped.push("shared conversations for Hana (exist)");
+  const t0 = Date.now() - 2 * DAY;
+  const turns: ["USER" | "ASSISTANT", string][] = [
+    ["USER", "I can't switch my brain off at night. I keep going over everything that could go wrong at work and with my mum's health."],
+    ["ASSISTANT", "That sounds exhausting, Hana. When worries pile up at night it can feel impossible to rest. How long has it been like this?"],
+    ["USER", "Months, honestly. Since I changed roles in spring. Most nights I'm awake until 2 or 3, then I feel shaky and tense all day."],
+    ["ASSISTANT", "Thank you for telling me. Months of poor sleep and constant worry is a lot to carry. Is it affecting your work or the things you enjoy?"],
+    ["USER", "I keep making small mistakes and I've stopped going to the gym. I get irritable with my husband over nothing. I just feel on edge all the time."],
+    ["ASSISTANT", "That makes sense: when you're running on so little sleep, everything feels harder. You mentioned you're seeing Dr. Aisha. The worry window you've been practising is a good step. Would it help to note down what you'd like to tell her at your next appointment?"],
+    ["USER", "Yes. I don't feel unsafe or anything like that, I just want it to stop. Can you help me write the list?"],
+    ["ASSISTANT", "Of course. Here's a start: worry most days for several months, hard to control; sleep onset 2–3 hours; muscle tension and irritability; mistakes at work; stopped exercising. You might also mention what has helped a little, like the worry window. I'm an AI and can't diagnose, but Dr. Aisha can look at all of this with you."],
+  ];
+  await prisma.conversation.create({
+    data: {
+      patientId: pid,
+      title: SHARED_CHAT_TITLE,
+      createdAt: new Date(t0),
+      messages: { create: turns.map(([role, text], i) => ({ role, contentEnc: encrypt(text), provider: role === "ASSISTANT" ? "openai" : null, createdAt: new Date(t0 + i * 90_000) })) },
+    },
+  });
+  const latest = await prisma.consentRecord.findFirst({
+    where: { patientId: pid, scope: "SHARE_SUMMARY_WITH_CLINICIAN", granteeType: "CLINICIAN", granteeId: aisha.clinicianId, revokedAt: null },
+    orderBy: { grantedAt: "desc" },
+  });
+  if (latest && !latest.categories.includes("CONVERSATIONS")) {
+    await prisma.consentRecord.create({
+      data: { patientId: pid, scope: "SHARE_SUMMARY_WITH_CLINICIAN", granteeType: "CLINICIAN", granteeId: aisha.clinicianId, categories: [...latest.categories, "CONVERSATIONS"], policyVersion: POLICY_VERSION },
+    });
+  }
+  report.created.push("shared conversations: Hana → Dr. Aisha (explicit consent)");
+}
+
 export async function prepareDemo(): Promise<PrepareReport> {
   const report: PrepareReport = { created: [], skipped: [] };
   const aisha = await demoClinician("dr.aisha@demo.savethesoul.app");
-  if (aisha) for (const c of CASES) await prepareClinicalCase(report, c, aisha);
+  if (aisha) {
+    for (const c of CASES) await prepareClinicalCase(report, c, aisha);
+    await prepareSharedChat(report, aisha);
+  }
   else report.skipped.push("clinical cases (demo clinician Dr. Aisha not found)");
   await prepareHospital(report);
   await prepareAiDetectedCase(report);

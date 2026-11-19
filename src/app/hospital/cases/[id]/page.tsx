@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, Lock } from "lucide-react";
+import { ArrowLeft, Lock, MapPin, Navigation } from "lucide-react";
 import { requireHospitalPage } from "@/lib/auth/current-user";
 import { getCase } from "@/server/services/emergency.service";
 import { AppError } from "@/lib/errors";
@@ -8,6 +8,7 @@ import { EmergencyStatusBadge } from "@/components/hospital/status-badge";
 import { CaseActions, FamilyPanel } from "@/components/hospital/case-actions";
 import { allowedNext, STATUS_LABEL } from "@/features/emergency/state-machine";
 import { formatDateTime } from "@/lib/utils";
+import { mapLinks } from "@/features/emergency/location";
 
 export const metadata = { title: "Emergency case" };
 
@@ -74,6 +75,35 @@ export default async function CasePage({ params }: { params: Promise<{ id: strin
           </CardContent>
         </Card>
       </div>
+      {c.coordinates && (() => {
+        const m = mapLinks(c.coordinates);
+        return (
+          <Card data-testid="case-map">
+            <CardHeader>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <CardTitle className="flex items-center gap-2"><MapPin className="size-4 text-safety-600" aria-hidden /> Location and directions</CardTitle>
+                  <CardDescription>
+                    {c.location} · <span className="font-mono text-ink" data-testid="case-coordinates">{m.label}</span>{" "}
+                    {c.coordinates.precision === "area" ? "(approximate: area centre)" : "(device location)"}
+                  </CardDescription>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <a href={m.directions} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-hover" data-testid="map-directions">
+                    <Navigation className="size-4" aria-hidden /> Get directions
+                  </a>
+                  <a href={m.view} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-4 py-2 text-sm font-semibold text-ink hover:bg-primary-subtle" data-testid="map-open">
+                    <MapPin className="size-4" aria-hidden /> Open in Google Maps
+                  </a>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <iframe title={`Map of ${c.location ?? "the case location"}`} src={m.embed} className="h-72 w-full rounded-xl border border-line" loading="lazy" referrerPolicy="no-referrer-when-downgrade" />
+            </CardContent>
+          </Card>
+        );
+      })()}
       {c.patient && (
         <Card>
           <CardHeader>

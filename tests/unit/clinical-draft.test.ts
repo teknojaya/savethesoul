@@ -58,7 +58,7 @@ describe("AI clinical draft grounding (regression)", () => {
     expect(g.kept).toBe(4);
     expect(g.removed).toBe(5);
     expect(g.text).not.toMatch(/major depressive|risk level|trauma|goals|SSRI/i);
-    expect(g.reasons).toEqual(expect.arrayContaining(["no source", "cites data that was not shared", "diagnostic, risk or treatment content"]));
+    expect(g.reasons).toEqual(expect.arrayContaining(["no source", "cites data that was not shared", "diagnostic label outside the considerations section", "definitive diagnosis, risk level or treatment content"]));
     expect(g.text).not.toMatch(/AI-generated clinical support summary/); // the UI shows the label itself
   });
 
@@ -71,3 +71,34 @@ describe("AI clinical draft grounding (regression)", () => {
     expect([...allowedTags(source)].sort()).toEqual(["[Check-ins]", "[Demographics]", "[Patient-reported concerns]", "[WHO-5]"]);
   });
 });
+
+describe("Clinician-only diagnostic considerations (detailed draft)", () => {
+  const src = { reportedConcerns: { areas: ["WORRY", "SLEEP"] }, who5: [{ percentScore: 40 }] };
+  const raw = [
+    "Symptom profile by clinical domain (AI, unverified):",
+    "- Anxiety/worry: patient reports worry nearly every day for more than 3 months [Patient-reported concerns]",
+    "Diagnostic considerations for clinician assessment (AI, unconfirmed):",
+    "- Consider assessing for generalized anxiety disorder (DSM-5-TR; ICD-10 F41.1) given persistent worry and sleep disturbance [Patient-reported concerns]",
+    "- Differential to rule out: insomnia disorder, given reported sleep onset difficulty [Patient-reported concerns]",
+    "- Patient meets criteria for generalized anxiety disorder [Patient-reported concerns]",
+    "- Generalized anxiety disorder is present [Patient-reported concerns]",
+    "Suggested validated assessments:",
+    "- GAD-7 and PHQ-9 to quantify anxiety and mood symptoms; C-SSRS as a direct suicide-risk screen [Patient-reported concerns]",
+    "- Start sertraline 50 mg [Patient-reported concerns]",
+    "Preliminary observations (AI, unverified):",
+    "- Likely generalized anxiety disorder [WHO-5]",
+  ].join("\n");
+  it("keeps labelled considerations to assess, drops conclusions, labels elsewhere and medication", () => {
+    const g = groundClinicalDraft(raw, src as never);
+    expect(g.text).toContain("Consider assessing for generalized anxiety disorder (DSM-5-TR; ICD-10 F41.1)");
+    expect(g.text).toContain("Differential to rule out: insomnia disorder");
+    expect(g.text).toContain("GAD-7 and PHQ-9");
+    expect(g.text).not.toMatch(/meets criteria|is present|sertraline|Likely generalized/);
+    expect(g.removed).toBe(4);
+  });
+  it("the patient-facing Explore never allows diagnostic considerations", () => {
+    const g = groundClinicalDraft(raw, src as never, 1, { considerationsSection: null });
+    expect(g.text ?? "").not.toMatch(/generalized anxiety disorder|insomnia disorder/i);
+  });
+});
+

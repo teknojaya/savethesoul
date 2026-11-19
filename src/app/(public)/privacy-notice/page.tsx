@@ -32,7 +32,7 @@ const SECTIONS: { title: string; body: string[] }[] = [
   {
     title: "Who can see your information",
     body: [
-      "Only you, by default. Your conversations are never shared with clinicians, family members or employers.",
+      "Only you, by default. Your conversations are never shared with family members or employers, and with a clinician only if you explicitly choose to share them (revocable at any time).",
       "A clinician can only see what you choose to share with them, and only while your consent is active. You can preview a summary before sharing and revoke access at any time.",
       "Trusted contacts only receive messages you choose to send, limited to the categories you allow. In the prototype these messages are simulated and never delivered.",
       "SaveTheSoul never shares information with employers.",

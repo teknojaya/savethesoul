@@ -38,5 +38,5 @@ export function groundExplore(raw: string, present: { who5: boolean; checkIns: b
   if (present.ownWords) allowed.add(EXPLORE_TAGS.WORDS);
   if (present.who5) allowed.add(EXPLORE_TAGS.WHO5);
   if (present.checkIns) allowed.add(EXPLORE_TAGS.CHECKINS);
-  return groundClinicalDraft(raw, {}, 3, { sections: EXPLORE_SECTIONS, allowed, concernsSection: "What you told me:", contextSection: "__none__" });
+  return groundClinicalDraft(raw, {}, 3, { sections: EXPLORE_SECTIONS, allowed, concernsSection: "What you told me:", contextSection: "__none__", considerationsSection: null });
 }

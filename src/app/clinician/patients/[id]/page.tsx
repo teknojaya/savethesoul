@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, Lock, ShieldAlert } from "lucide-react";
+import { ArrowLeft, Lock, MessagesSquare, ShieldAlert } from "lucide-react";
 import { requireClinicianPage } from "@/lib/auth/current-user";
 import { getPatientDetail } from "@/server/services/clinician.service";
 import { AppError } from "@/lib/errors";
@@ -59,7 +59,7 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
           {d.sharedCategories.map((c) => (
             <Badge key={c} tone="brand">{CLINICIAN_SHARE_CATEGORIES[c as ClinicianShareCategory] ?? c}</Badge>
           ))}
-          <Badge tone="outline"><Lock className="size-3" aria-hidden /> Conversations are never shared</Badge>
+          {!d.conversations && <Badge tone="outline"><Lock className="size-3" aria-hidden /> Conversations not shared</Badge>}
         </CardContent>
       </Card>
 
@@ -166,6 +166,30 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
         </div>
         <FindingsPanel patientId={id} findings={findings.map((f) => ({ ...f, createdAt: f.createdAt.toISOString() }))} />
       </section>
+      {d.conversations && (
+        <section className="space-y-3" data-testid="shared-conversations">
+          <div>
+            <h2 className="flex items-center gap-2 font-display text-xl text-ink"><MessagesSquare className="size-5 text-brand-600" aria-hidden /> Conversations with Sakinah</h2>
+            <p className="text-sm text-muted">Shared by the patient with you, read-only. The patient can stop sharing at any time; every view is recorded in the audit log.</p>
+          </div>
+          {d.conversations.length === 0 && <p className="text-sm text-muted">No saved conversations yet.</p>}
+          {d.conversations.map((c, i) => (
+            <details key={c.id} open={i === 0} className="rounded-2xl border border-line bg-surface p-4 shadow-soft" data-testid="shared-conversation">
+              <summary className="cursor-pointer text-sm font-semibold text-ink">
+                {c.title} <span className="font-normal text-muted">· {c.messages.length} messages · last {formatDateTime(c.updatedAt)}</span>
+              </summary>
+              <ol className="mt-3 space-y-2">
+                {c.messages.map((m) => (
+                  <li key={m.id} className={m.role === "USER" ? "ms-auto max-w-[85%] rounded-2xl bg-brand-600 px-3 py-2 text-sm text-white" : m.role === "SAFETY" ? "max-w-[85%] rounded-2xl border border-safety-100 bg-safety-50 px-3 py-2 text-sm text-safety-700" : "max-w-[85%] rounded-2xl bg-primary-subtle px-3 py-2 text-sm text-ink-soft"}>
+                    <p className="mb-0.5 text-[11px] font-semibold opacity-80">{m.role === "USER" ? d.patient.preferredName : m.role === "SAFETY" ? "Safety response" : "Sakinah (AI)"} · {formatDateTime(m.createdAt)}</p>
+                    <p className="whitespace-pre-wrap">{m.content}</p>
+                  </li>
+                ))}
+              </ol>
+            </details>
+          ))}
+        </section>
+      )}
       <div className="grid gap-4 lg:grid-cols-2">
         <section className="space-y-3">
           <h2 className="font-display text-xl text-ink">Referrals & follow-up</h2>

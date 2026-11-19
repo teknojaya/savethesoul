@@ -74,7 +74,7 @@ export async function buildSummaryContent(
       WHO5_LIMITATIONS[2],
     ],
     excluded: [
-      "Private AI companion conversations are never included.",
+      ...(has("CONVERSATIONS") ? ["Conversations are shared separately as read-only history and are never sent to the AI draft."] : ["Private AI companion conversations are not included."]),
       ...Object.entries(CLINICIAN_SHARE_CATEGORIES)
         .filter(([k]) => !has(k as ClinicianShareCategory))
         .map(([, label]) => `Not shared: ${label}`),
@@ -312,6 +312,26 @@ export async function reviewDraft(
     },
     select: { id: true, aiDraftStatus: true, reviewedAt: true },
   });
+}
+
+/**
+ * Clinician asks for a fresh AI draft from the SAME patient-approved snapshot (e.g. after the
+ * drafting format improved). Never uses conversations. The new draft starts unverified again;
+ * the previous decision stays in the audit log.
+ */
+export async function regenerateDraft(actor: Actor, summaryId: string) {
+  const s = await prisma.clinicalSummary.findUnique({ where: { id: summaryId } });
+  if (!s || s.status !== "SHARED") throw notFound("Summary not found");
+  const { clinicianId } = await requireClinicianAccess(actor, s.patientId, "REGENERATE_AI_DRAFT");
+  if (s.clinicianId !== clinicianId) throw new AppError("FORBIDDEN", "This summary was not shared with you");
+  const draft = await generateAiDraft(decryptJson<SummaryContent>(s.contentEnc));
+  if (!draft) throw new AppError("VALIDATION", "The AI service could not produce a grounded draft right now");
+  await audit(actor, { action: "REGENERATE_AI_DRAFT", resourceType: "ClinicalSummary", resourceId: summaryId, subjectPatientId: s.patientId });
+  await prisma.clinicalSummary.update({
+    where: { id: summaryId },
+    data: { aiDraftEnc: encrypt(draft.text), aiDraftStatus: "UNVERIFIED", reviewedAt: null, reviewedByUserId: null, correctedDraftEnc: null, reviewNoteEnc: null },
+  });
+  return { id: summaryId, regenerated: true };
 }
 
 /** Back-compat wrapper: "I have reviewed this draft". */

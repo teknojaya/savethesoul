@@ -1,5 +1,6 @@
 import { setProviderOverride } from "@/features/ai/provider-factory";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import { encrypt } from "@/lib/crypto";
 import { prisma } from "@/lib/db/prisma";
 import { AppError } from "@/lib/errors";
 import { getPatientDetail, addClinicianNote, listAssignedPatients } from "@/server/services/clinician.service";
@@ -123,12 +124,25 @@ describe("Clinician access restrictions", () => {
     await expectCode(markDraftReviewed(other, s.id), "FORBIDDEN");
   });
 
-  it("never exposes conversations to clinicians", async () => {
+  it("conversations are visible ONLY with the patient's explicit, revocable consent to that clinician", async () => {
     const patient = await makePatient();
     const doc = await makeClinician();
+    const other = await makeClinician("Dr Other");
+    const convo = await startConversation(patient.patientId);
+    await prisma.chatMessage.create({ data: { conversationId: convo.id, role: "USER", contentEnc: encrypt("SYNTHETIC-CHAT-LINE") } });
     await shareSummary(patient.patientId, doc.clinicianId, ["WHO5_HISTORY", "MOOD_TRENDS", "SLEEP_STRESS", "FUNCTIONING", "GOALS", "PHYSICAL_HEALTH_CONTEXT", "PATIENT_NOTE"], "note");
-    const d = await getPatientDetail(doc, patient.patientId);
-    expect(Object.keys(d)).not.toContain("conversations");
+    const without = await getPatientDetail(doc, patient.patientId);
+    expect(without.conversations).toBeNull();
+    expect(JSON.stringify(without)).not.toContain("SYNTHETIC-CHAT-LINE");
+
+    await shareSummary(patient.patientId, doc.clinicianId, ["WHO5_HISTORY", "CONVERSATIONS"], "note");
+    const withConsent = await getPatientDetail(doc, patient.patientId);
+    expect(withConsent.conversations?.[0].messages[0].content).toBe("SYNTHETIC-CHAT-LINE");
+    expect(await prisma.auditLog.count({ where: { action: "VIEW_SHARED_CONVERSATIONS", subjectPatientId: patient.patientId } })).toBe(1);
+    await expectCode(getPatientDetail(other, patient.patientId), "FORBIDDEN"); // not shared with this clinician
+
+    await prisma.consentRecord.updateMany({ where: { patientId: patient.patientId, granteeId: doc.clinicianId }, data: { revokedAt: new Date() } });
+    await expectCode(getPatientDetail(doc, patient.patientId), "FORBIDDEN");
   });
 });
 

@@ -192,7 +192,7 @@ export function ShareFlow({ clinicians, summaries }: { clinicians: Clinician[]; 
             <div className="grid gap-2 sm:grid-cols-2">
               {(Object.keys(CLINICIAN_SHARE_CATEGORIES) as ClinicianShareCategory[]).map((c) => (
                 <label key={c} className={cn("flex cursor-pointer items-start gap-2.5 rounded-xl border p-3 text-sm", cats.includes(c) ? "border-brand-200 bg-brand-50/60" : "border-line")}>
-                  <input type="checkbox" className="mt-0.5 accent-brand-600" checked={cats.includes(c)} onChange={() => toggle(c)} />
+                  <input type="checkbox" className="mt-0.5 accent-brand-600" checked={cats.includes(c)} onChange={() => toggle(c)} data-testid={`share-cat-${c}`} />
                   {CLINICIAN_SHARE_CATEGORIES[c]}
                 </label>
               ))}
@@ -210,7 +210,14 @@ export function ShareFlow({ clinicians, summaries }: { clinicians: Clinician[]; 
             {cats.includes("PATIENT_NOTE") && (
               <Textarea rows={3} maxLength={1000} placeholder="Anything you'd like the clinician to know…" value={note} onChange={(e) => { setNote(e.target.value); setPreview(null); }} />
             )}
-            <p className="flex items-center gap-1.5 text-xs text-muted"><Lock className="size-3.5" aria-hidden /> Your AI companion conversations are never included.</p>
+            {cats.includes("CONVERSATIONS") ? (
+              <p className="rounded-xl border border-amber-500/30 bg-amber-50 px-3 py-2 text-xs text-amber-700" data-testid="conversations-warning">
+                Your clinician will be able to read your full conversation history with Sakinah (read-only) until you stop sharing. Only this clinician, every view is recorded,
+                and your conversations are never sent to the AI summary.
+              </p>
+            ) : (
+              <p className="flex items-center gap-1.5 text-xs text-muted"><Lock className="size-3.5" aria-hidden /> Your conversations with Sakinah stay private unless you tick the option above.</p>
+            )}
           </CardContent>
         </Card>
 

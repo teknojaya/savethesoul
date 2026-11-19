@@ -18,6 +18,7 @@ vi.mock("@/lib/auth/current-user", () => ({ getCurrentActor: async () => current
 const summaries = await import("@/app/api/summaries/route");
 const preview = await import("@/app/api/summaries/preview/route");
 const review = await import("@/app/api/summaries/[id]/review/route");
+const regenerate = await import("@/app/api/summaries/[id]/regenerate/route");
 const revokeSummary = await import("@/app/api/summaries/[id]/revoke/route");
 const findings = await import("@/app/api/clinician/patients/[id]/findings/route");
 const referrals = await import("@/app/api/referrals/route");
@@ -234,3 +235,37 @@ describe("Patient-controlled referral requests", () => {
     expect(withIt.body.preview.referralHistory).toEqual([expect.objectContaining({ status: "REQUESTED", careType: "PSYCHOLOGIST", with: "Dr Aisha" })]);
   });
 });
+
+describe("Regenerate a detailed AI draft (clinician)", () => {
+  it("only the clinician it was shared with can regenerate; the new draft starts unverified and never sees conversations", async () => {
+    const seen = fakeDraftModel();
+    const { patient, aisha } = await setup();
+    const convo = await prisma.conversation.create({ data: { patientId: patient.patientId, title: "x" } });
+    await prisma.chatMessage.create({ data: { conversationId: convo.id, role: "USER", contentEnc: encrypt("SECRET-CHAT-TEXT") } });
+    const r = await share(patient, aisha.clinicianId, ["REPORTED_CONCERNS", "CONVERSATIONS"], { reportedConcerns: CONCERNS });
+    const id = r.body.summary.id;
+    current.actor = aisha;
+    await call(review.POST, "/x", { decision: "APPROVED" }, idCtx(id));
+    fakeDraftModel(
+      [
+        "Diagnostic considerations for clinician assessment (AI, unconfirmed):",
+        "- Consider assessing for generalized anxiety disorder (ICD-10 F41.1) given daily stress and poor sleep [Patient-reported concerns]",
+        "Suggested validated assessments:",
+        "- GAD-7 and PHQ-9 [Patient-reported concerns]",
+      ].join("\n"),
+    );
+    const other = await makeClinician("Dr Other");
+    current.actor = other;
+    expect((await call(regenerate.POST, "/x", {}, idCtx(id))).status).toBe(403);
+    current.actor = aisha;
+    const ok = await call(regenerate.POST, "/x", {}, idCtx(id));
+    expect(ok.status).toBe(200);
+    const row = await prisma.clinicalSummary.findUniqueOrThrow({ where: { id } });
+    const { decrypt } = await import("@/lib/crypto");
+    expect(row.aiDraftStatus).toBe("UNVERIFIED");
+    expect(decrypt(row.aiDraftEnc!)).toContain("Consider assessing for generalized anxiety disorder");
+    expect(JSON.stringify(seen)).not.toContain("SECRET-CHAT-TEXT");
+    expect(await prisma.auditLog.count({ where: { action: "REGENERATE_AI_DRAFT", resourceId: id } })).toBe(1);
+  });
+});
+

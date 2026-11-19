@@ -51,8 +51,11 @@ test("Sakinah AI-detected indirect warning signs reach the hospital with a risk 
   await expect(page.getByTestId("ai-alert-banner")).toBeVisible();
   await expect(page.getByTestId("case-context")).toContainText("Sakinah AI risk report");
   await expect(page.getByTestId("case-context")).toContainText("Emergency contact: Huda");
-  await expect(page.getByText("Al Reem Island")).toBeVisible();
+  await expect(page.getByText("Al Reem Island").first()).toBeVisible();
   await expect(page.getByTestId("case-timeline")).toContainText("Sakinah AI detected warning signs");
+  await expect(page.getByTestId("case-map")).toBeVisible();
+  await expect(page.getByTestId("case-coordinates")).toHaveText("24.49900,54.40600");
+  await expect(page.getByTestId("map-directions")).toHaveAttribute("href", /google\.com\/maps\/dir\/\?api=1&destination=24\.49900,54\.40600/);
   await page.getByTestId("case-action-ACKNOWLEDGED").click();
   await expect(page.getByTestId("ai-alert-banner")).toHaveCount(0);
 });
@@ -72,6 +75,9 @@ test("Clinician sees the fictional clinician-authored diagnosis separated from A
   await expect(page.getByText("B · AI preliminary assessment")).toBeVisible();
   await expect(page.getByText("C · Clinician-confirmed findings")).toBeVisible();
   await expect(page.getByTestId("finding").filter({ hasText: "Generalized Anxiety Disorder" })).toContainText("Dr. Aisha Al Mansoori");
+  // Hana chose to share her conversations with Dr. Aisha (explicit, revocable consent).
+  await expect(page.getByTestId("shared-conversations")).toContainText("Worry keeping me up at night");
+  await expect(page.getByTestId("shared-conversation").first()).toContainText("I can't switch my brain off at night");
 });
 
 test.describe("Explore My Mental Wellbeing", () => {
@@ -95,6 +101,10 @@ test.describe("Explore My Mental Wellbeing", () => {
 
     await page.getByTestId("explore-prepare-summary").click();
     await expect(page).toHaveURL(/\/patient\/support\/share\?from=explore/);
+    // Conversations are off by default; ticking them shows a clear warning.
+    await expect(page.getByTestId("share-cat-CONVERSATIONS")).not.toBeChecked();
+    await page.getByTestId("share-cat-CONVERSATIONS").check();
+    await expect(page.getByTestId("conversations-warning")).toContainText("full conversation history");
   });
 
   test("words that indicate danger get safety guidance instead of an assessment", async ({ page }) => {

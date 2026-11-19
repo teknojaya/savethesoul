@@ -168,7 +168,7 @@ export function OnboardingWizard({ name }: { name: string }) {
           <h1 className="font-display text-[30px] leading-tight text-ink">What stays private</h1>
           <ul className="mt-5 space-y-3 text-[15px] text-ink-soft">
             {[
-              "Your conversations are never shown to clinicians, family or employers.",
+              "Your conversations are never shown to clinicians, family or employers unless you choose to share them with your own clinician.",
               "A clinician only sees a summary you've previewed and approved — and loses access when you revoke it.",
               "Trusted contacts are only messaged when you choose, with the categories you allow.",
               "We never contact police, hospitals or family automatically because of something you typed.",

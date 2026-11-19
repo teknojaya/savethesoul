@@ -109,7 +109,31 @@ export async function getPatientDetail(actor: Actor, patientId: string) {
     referrals: referrals.map((r) => ({ ...r, reason: cleanDemoText(decryptOptional(r.reasonEnc)), reasonEnc: undefined })),
     followUps,
     alerts,
+    conversations: has("CONVERSATIONS") ? await sharedConversations(actor, patientId) : null,
   };
+}
+
+/**
+ * Full chat history, ONLY when the patient explicitly shared "Your Sakinah conversations" with
+ * this clinician (active, revocable consent checked by the caller). Read-only, audited separately,
+ * and never sent to any AI.
+ */
+async function sharedConversations(actor: Actor, patientId: string) {
+  await audit(actor, { action: "VIEW_SHARED_CONVERSATIONS", resourceType: "Conversation", subjectPatientId: patientId });
+  const rows = await prisma.conversation.findMany({
+    where: { patientId, ephemeral: false },
+    orderBy: { updatedAt: "desc" },
+    take: 20,
+    include: { messages: { orderBy: { createdAt: "asc" }, take: 200 } },
+  });
+  return rows
+    .filter((c) => c.messages.length)
+    .map((c) => ({
+      id: c.id,
+      title: c.title,
+      updatedAt: c.updatedAt,
+      messages: c.messages.map((m) => ({ id: m.id, role: m.role, content: decrypt(m.contentEnc), createdAt: m.createdAt })),
+    }));
 }
 
 export async function addClinicianNote(actor: Actor, patientId: string, content: string) {

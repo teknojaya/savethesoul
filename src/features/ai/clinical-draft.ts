@@ -27,7 +27,12 @@ export const DRAFT_SECTIONS = [
   "Patient-reported concerns:",
   "Assessment results and changes over time:",
   "Duration and effect on daily functioning:",
+  "Symptom profile by clinical domain (AI, unverified):",
+  "Diagnostic considerations for clinician assessment (AI, unconfirmed):",
+  "Suggested validated assessments:",
+  "Risk and protective factors reported:",
   "Other shared context:",
+  "Information still needed before any diagnosis:",
   "Preliminary observations (AI, unverified):",
   "Questions the clinician may wish to explore:",
   "Referral and follow-up history:",
@@ -76,8 +81,14 @@ export function allowedTags(c: DraftSource): Set<string> {
 }
 
 const DEMOGRAPHIC = /\b(age band|aged?\b|years? old|\d{2}\s?[-–]\s?\d{2}\b|\d{2}\+|region|nationality|expat(riate)?|gender|male|female)\b/i;
-const DIAGNOSTIC_OR_TREATMENT =
-  /\b(major depressi\w*|depressive (episode|disorder)|(generali[sz]ed )?anxiety disorder|panic disorder|bipolar|ptsd|ocd|adhd|schizophren\w*|psychosis|personality disorder|eating disorder|meets? (the )?criteria|consistent with (an? )?(diagnosis|disorder)|diagnos(is|ed|e)\s+(of|with)|(suicid\w*|self-harm) risk (is|level|score)|risk (level|score|rating)|(high|moderate|low|elevated)[- ]risk|ssri|snri|antidepressant|sertraline|fluoxetine|escitalopram|medication (should|change|increase|decrease)|prescri\w+)\b/i;
+/** Diagnostic labels: allowed ONLY as "consider assessing for…" in the clinician-only considerations section. */
+const DIAGNOSTIC_LABEL =
+  /\b(major depressi\w*|depressive (episode|disorder)|dysthymi\w*|persistent depressive|(generali[sz]ed )?anxiety disorder|panic disorder|social anxiety|bipolar|ptsd|post-traumatic|ocd|obsessive|adhd|schizophren\w*|psychosis|psychotic|personality disorder|eating disorder|insomnia disorder|adjustment disorder|substance use disorder|f\d{2}(\.\d)?|6[a-z]\d{2})\b/i;
+/** Never allowed anywhere: definitive diagnosis, risk levels/scores, medication or prescribing. */
+const DEFINITIVE_RISK_OR_TREATMENT =
+  /\b(meets? (the )?(dsm|icd|diagnostic )?criteria|consistent with (an? )?(diagnosis|disorder)|diagnos(is|ed|e)\s+(of|with|is)|confirms?|confirmed|(suicid\w*|self-harm) risk (is|level|score)|risk (level|score|rating)|(high|moderate|low|elevated)[- ]risk|ssri|snri|antidepressant|sertraline|fluoxetine|escitalopram|benzodiazepine|antipsychotic|medication (should|change|increase|decrease|start)|prescri\w+|dose|dosage|mg\b)\b/i;
+const CONSIDERATION = /\b(consider|assess|screen|rule out|differential|evaluat\w*|explore|warrant)\b/i;
+export const CONSIDERATIONS_SECTION = "Diagnostic considerations for clinician assessment (AI, unconfirmed):";
 const TAG = /\[[^\]]+\]/g;
 
 export interface GroundingResult {
@@ -98,6 +109,8 @@ export interface GroundingConfig {
   concernsSection?: string;
   /** The only section where demographic context is allowed. */
   contextSection?: string;
+  /** Clinician-only section where diagnostic labels may appear as considerations to assess (never as conclusions). */
+  considerationsSection?: string | null;
 }
 
 export function groundClinicalDraft(raw: string, source: DraftSource, minStatements = 2, config: GroundingConfig = {}): GroundingResult {
@@ -105,6 +118,7 @@ export function groundClinicalDraft(raw: string, source: DraftSource, minStateme
   const sections = config.sections ?? DRAFT_SECTIONS;
   const concernsSection = config.concernsSection ?? "Patient-reported concerns:";
   const contextSection = config.contextSection ?? "Other shared context:";
+  const considerationsSection = config.considerationsSection === undefined ? CONSIDERATIONS_SECTION : config.considerationsSection;
   const reasons: string[] = [];
   const out: string[] = [];
   let section = "";
@@ -138,8 +152,13 @@ export function groundClinicalDraft(raw: string, source: DraftSource, minStateme
       drop("cites data that was not shared");
       continue;
     }
-    if (DIAGNOSTIC_OR_TREATMENT.test(trimmed.replace(/not a confirmed diagnosis|cannot (confirm|establish)[^.]*diagnosis/gi, ""))) {
-      drop("diagnostic, risk or treatment content");
+    const body = trimmed.replace(/not a confirmed diagnosis|cannot (confirm|establish)[^.]*diagnosis|(is|are) not (confirmed|diagnostic)[^.]*/gi, "");
+    if (DEFINITIVE_RISK_OR_TREATMENT.test(body)) {
+      drop("definitive diagnosis, risk level or treatment content");
+      continue;
+    }
+    if (DIAGNOSTIC_LABEL.test(body) && !(considerationsSection && section === considerationsSection && CONSIDERATION.test(body))) {
+      drop("diagnostic label outside the considerations section");
       continue;
     }
     if (checkModelOutput(trimmed).length) {

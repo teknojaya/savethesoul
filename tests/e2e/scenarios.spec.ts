@@ -76,7 +76,7 @@ test("Scenario 2 — declining wellbeing, approved summary shared and reviewed b
   await page.getByTestId("preview-summary").click();
   const preview = page.getByTestId("summary-preview");
   await expect(preview).toContainText("72 → ");
-  await expect(preview).toContainText("Private AI companion conversations are never included");
+  await expect(preview).toContainText("Private AI companion conversations are not included");
   await expect(page.getByTestId("confirm-share")).toBeDisabled();
   await preview.getByRole("checkbox").check();
   await page.getByTestId("confirm-share").click();

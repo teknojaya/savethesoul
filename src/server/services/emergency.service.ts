@@ -6,6 +6,7 @@ import { getEnv } from "@/lib/env";
 import type { Actor } from "@/lib/auth/session";
 import { buildContactMessage, findCoveringConsent } from "@/features/consent/policy";
 import { canTransition, type EmergencyStatus } from "@/features/emergency/state-machine";
+import { resolveCoordinates } from "@/features/emergency/location";
 import { audit } from "./audit.service";
 import { cleanDemoText } from "@/lib/demo-text";
 
@@ -81,6 +82,7 @@ export async function getCase(actor: Actor, caseId: string) {
     concernType: c.concernType,
     context: cleanDemoText(decrypt(c.contextEnc)),
     location: cleanDemoText(decryptOptional(c.locationEnc)),
+    coordinates: resolveCoordinates(decryptOptional(c.locationEnc)),
     authorizationStatus: cleanDemoText(c.authorizationStatus),
     assignedResponder: cleanDemoText(c.assignedResponder),
     isSimulated: c.isSimulated,
