@@ -237,8 +237,35 @@ const OUTPUT_RULES: { violation: OutputViolation; pattern: RegExp }[] = [
   { violation: "DISCOURAGES_HELP", pattern: /\b(?:you )?(?:don'?t|do not) need (?:a |to see a |to call )?(?:therapist|doctor|professional|psychiatrist|help|emergency services)\b/ },
 ];
 
+/**
+ * Words that, shortly before a diagnosis/medication phrase in the same clause, mean the model
+ * is declining rather than asserting ("I can't tell you whether you have depression",
+ * "I can't tell you to start sertraline"). Deliberately narrow: bare "not"/"don't" are not
+ * included, so "it's not a bad idea to start sertraline" is still blocked.
+ */
+const REFUSAL_CUE = /\b(?:can't|cannot|can not|won't|unable to|not able to|not in a position to|whether|if|don't know|not sure)\b/g;
+/** A contrast after the cue re-opens the assertion: "I can't be sure, but you have depression". */
+const CONTRAST = /\b(?:but|however|although|though|yet)\b/;
+const NEGATABLE: ReadonlySet<OutputViolation> = new Set(["DIAGNOSIS", "MEDICATION_INSTRUCTION"]);
+
+function declinedAt(t: string, index: number): boolean {
+  const clause = t.slice(Math.max(0, index - 120), index).split(/[.!?;:\n]/).pop() ?? "";
+  const window = clause.trim().split(/\s+/).slice(-10).join(" ");
+  const cues = [...window.matchAll(REFUSAL_CUE)];
+  const last = cues[cues.length - 1];
+  if (!last) return false;
+  return !CONTRAST.test(window.slice(last.index! + last[0].length));
+}
+
+function violates(rule: (typeof OUTPUT_RULES)[number], t: string): boolean {
+  if (!NEGATABLE.has(rule.violation)) return rule.pattern.test(t);
+  const global = new RegExp(rule.pattern.source, rule.pattern.flags.includes("g") ? rule.pattern.flags : rule.pattern.flags + "g");
+  for (const m of t.matchAll(global)) if (!declinedAt(t, m.index!)) return true;
+  return false;
+}
+
 /** Checks model output before it is shown. Any violation replaces the reply with a safe template. */
 export function checkModelOutput(text: string): OutputViolation[] {
   const t = normalise(text);
-  return [...new Set(OUTPUT_RULES.filter((r) => r.pattern.test(t)).map((r) => r.violation))];
+  return [...new Set(OUTPUT_RULES.filter((r) => violates(r, t)).map((r) => r.violation))];
 }
