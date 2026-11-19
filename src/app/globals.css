@@ -47,11 +47,11 @@
   --color-sage-500: #16865d;
   --color-sage-700: #0f5e41;
 
-  /* Information (distinct cyan-blue, for neutral notices like the safety check-in) */
-  --color-sky-50: #ecf7fb;
-  --color-sky-100: #d3eef7;
-  --color-sky-500: #1b7fa6;
-  --color-sky-700: #0f5975;
+  /* Information (neutral notices like the safety check-in): mapped onto the brand blue */
+  --color-sky-50: #eaf3ff;
+  --color-sky-100: #d5e6ff;
+  --color-sky-500: #1868db;
+  --color-sky-700: #124fa8;
 
   /* Warning */
   --color-amber-50: #fdf3e6;

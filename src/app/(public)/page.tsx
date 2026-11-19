@@ -48,7 +48,7 @@ export default function LandingPage() {
       {/* Hero */}
       <section className="relative overflow-hidden">
         <div aria-hidden className="pointer-events-none absolute -end-32 -top-32 size-[28rem] rounded-full bg-brand-100/60 blur-3xl" />
-        <div aria-hidden className="pointer-events-none absolute -start-24 top-40 size-72 rounded-full bg-sage-100/70 blur-3xl" />
+        <div aria-hidden className="pointer-events-none absolute -start-24 top-40 size-72 rounded-full bg-brand-100/70 blur-3xl" />
         <div className="relative mx-auto grid max-w-6xl gap-12 px-4 pb-16 pt-12 sm:px-6 md:grid-cols-[1.1fr_0.9fr] md:items-center md:pt-20">
           <div className="animate-fade-up">
             <p className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-brand-100 bg-surface px-3 py-1 text-xs font-medium text-brand-700">
@@ -101,7 +101,7 @@ export default function LandingPage() {
                   <p className="text-xs font-semibold text-sky-700">WHO-5 wellbeing · last 8 weeks</p>
                   <div className="mt-2 flex h-14 items-end gap-1.5" aria-hidden>
                     {[72, 64, 52, 44, 36].map((v, i) => (
-                      <div key={i} className="flex-1 rounded-t-md bg-sky-500/70" style={{ height: `${v}%` }} />
+                      <div key={i} className="flex-1 rounded-t-md bg-brand-600/80" style={{ height: `${v}%` }} />
                     ))}
                   </div>
                   <p className="mt-2 text-xs text-sky-700">A steady decline — talking with a professional may help.</p>
