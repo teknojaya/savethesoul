@@ -116,7 +116,7 @@ describe("Clinical summary: patient-controlled sources", () => {
     const sent = JSON.stringify(seen[0]);
     expect(sent).not.toContain("SECRET-CHAT-TEXT");
     expect(sent).toContain("Stress or pressure");
-    expect(seen[0].system).toMatch(/Not a confirmed diagnosis/);
+    expect(seen[0].system).toMatch(/not a confirmed diagnosis/);
   });
 });
 
