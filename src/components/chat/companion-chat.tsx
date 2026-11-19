@@ -18,11 +18,15 @@ import {
   X,
   HeartHandshake,
   Check,
+  Mic,
+  Keyboard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge, Callout } from "@/components/ui/primitives";
 import { CrisisPanel } from "@/components/safety/crisis-panel";
 import { RichText } from "./rich-text";
+import { VoiceMode, type VoiceSendResult } from "./voice-mode";
+import { SAKINA_NAME, SAKINA_WELCOME_TEXT } from "@/features/voice/sakina";
 import { api } from "@/lib/api-client";
 import { cn, formatDateTime } from "@/lib/utils";
 
@@ -79,6 +83,7 @@ export function CompanionChat(props: {
   const [remembering, setRemembering] = useState<{ id: string; text: string } | null>(null);
   const [remembered, setRemembered] = useState<Set<string>>(new Set());
   const [notice, setNotice] = useState<string | null>(null);
+  const [voiceMode, setVoiceMode] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -94,9 +99,10 @@ export function CompanionChat(props: {
     return conversation.id;
   }
 
-  async function send(text: string) {
+  /** Sends one message (typed or transcribed) through the normal, safety-checked chat route. */
+  async function send(text: string, inputMode: "text" | "voice" = "text"): Promise<VoiceSendResult | null> {
     const content = text.trim();
-    if (!content || busy) return;
+    if (!content || busy) return null;
     setBusy(true);
     setInput("");
     setNotice(null);
@@ -109,7 +115,7 @@ export function CompanionChat(props: {
       const res = await fetch(`/api/conversations/${id}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content }),
+        body: JSON.stringify({ content, inputMode }),
       });
       if (!res.ok || !res.body) {
         const data = await res.json().catch(() => null);
@@ -119,7 +125,7 @@ export function CompanionChat(props: {
       const decoder = new TextDecoder();
       let buffer = "";
       let mode: "crisis" | "safety-check" | "normal" = "normal";
-      let assistantId = tempAsst;
+      let assistantId: string | null = null;
       for (;;) {
         const { value, done } = await reader.read();
         if (done) break;
@@ -141,16 +147,17 @@ export function CompanionChat(props: {
           } else if (ev.type === "done") {
             setMessages((m) => m.map((x) => (x.id === tempAsst ? { ...x, content: ev.text, provider: ev.producedBy, pending: false } : x)));
           } else if (ev.type === "saved") {
-            assistantId = ev.assistantMessageId;
+            assistantId = ev.assistantMessageId as string;
             setMessages((m) =>
               m.map((x) => (x.id === tempUser ? { ...x, id: ev.userMessageId } : x.id === tempAsst ? { ...x, id: ev.assistantMessageId } : x)),
             );
-            if (mode === "crisis") setSafety({ kind: "crisis", afterId: assistantId, safetyEventId: ev.safetyEventId });
-            else if (mode === "safety-check") setSafety({ kind: "check", afterId: assistantId, safetyEventId: ev.safetyEventId });
+            if (mode === "crisis") setSafety({ kind: "crisis", afterId: ev.assistantMessageId, safetyEventId: ev.safetyEventId });
+            else if (mode === "safety-check") setSafety({ kind: "check", afterId: ev.assistantMessageId, safetyEventId: ev.safetyEventId });
           }
         }
       }
       refreshConversations();
+      return { assistantMessageId: assistantId, mode };
     } catch (e) {
       setMessages((m) =>
         m.map((x) =>
@@ -166,9 +173,10 @@ export function CompanionChat(props: {
         ),
       );
       setNotice(e instanceof Error ? e.message : "Something went wrong.");
+      return null;
     } finally {
       setBusy(false);
-      inputRef.current?.focus();
+      if (!voiceMode) inputRef.current?.focus();
     }
   }
 
@@ -291,9 +299,19 @@ export function CompanionChat(props: {
             <Bot className="size-5" aria-hidden />
           </span>
           <div className="min-w-0 flex-1 leading-tight">
-            <p className="font-semibold text-ink">Wellbeing companion</p>
+            <p className="font-semibold text-ink">{SAKINA_NAME} · wellbeing companion</p>
             <p className="truncate text-xs text-muted">AI · not a clinician · {isDemoProvider ? "offline demo responses" : props.provider.label}</p>
           </div>
+          <Button
+            variant={voiceMode ? "soft" : "ghost"}
+            size="sm"
+            onClick={() => setVoiceMode((v) => !v)}
+            aria-pressed={voiceMode}
+            data-testid="voice-toggle"
+            aria-label={voiceMode ? "Switch to text chat" : "Switch to voice mode"}
+          >
+            {voiceMode ? <Keyboard aria-hidden /> : <Mic aria-hidden />} <span className="hidden sm:inline">{voiceMode ? "Text" : "Voice"}</span>
+          </Button>
           <Button variant="ghost" size="sm" onClick={newConversation} className="hidden sm:inline-flex">
             <Plus aria-hidden /> New
           </Button>
@@ -368,6 +386,15 @@ export function CompanionChat(props: {
           </div>
         </div>
 
+        {voiceMode ? (
+          <VoiceMode
+            onSend={(t) => send(t, "voice")}
+            onWelcome={() =>
+              setMessages((m) => (m.some((x) => x.provider === "voice-welcome") ? m : [...m, { id: `w-${Date.now()}`, role: "assistant", content: SAKINA_WELCOME_TEXT, provider: "voice-welcome" }]))
+            }
+            onExit={() => setVoiceMode(false)}
+          />
+        ) : (
         <footer className="border-t border-line/70 bg-surface/80 px-4 pb-safe pt-3 backdrop-blur">
           <form
             className="mx-auto flex max-w-2xl items-end gap-2"
@@ -406,6 +433,7 @@ export function CompanionChat(props: {
             <a href="tel:998" className="font-semibold text-safety-700">998</a>; elsewhere, your local emergency number.
           </p>
         </footer>
+        )}
       </section>
     </div>
   );
@@ -454,6 +482,7 @@ function MessageBubble({ m, canRemember, remembered, onRemember }: { m: Msg; can
           {isSafety && <Badge tone="safety">Safety response · pre-written, not AI-generated</Badge>}
           {m.provider === "fallback" && <Badge tone="neutral">Safe fallback response</Badge>}
           {m.provider === "demo" && <Badge tone="amber">Pre-written demo response</Badge>}
+          {m.provider === "voice-welcome" && <Badge tone="neutral">Sakina · pre-recorded AI voice welcome</Badge>}
           {(m.provider === "openai" || m.provider === "anthropic") && <Badge tone="neutral">AI-generated · not medical advice</Badge>}
         </div>
       </div>

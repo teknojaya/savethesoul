@@ -109,3 +109,9 @@ body {
 .prose-chat strong { font-weight: 650; }
 
 .pb-safe { padding-bottom: max(env(safe-area-inset-bottom), 0.5rem); }
+
+/* Voice Mode waveform (Sakina speaking). Disabled for reduced motion via motion-safe:. */
+@keyframes sts-wave {
+  0%, 100% { transform: scaleY(0.35); }
+  50% { transform: scaleY(1); }
+}
