@@ -96,6 +96,22 @@ describe("Safety Guardian — common false positives are avoided", () => {
   });
 });
 
+describe("Safety Guardian — overdose phrasings (UAT regression, 19 Nov 2026)", () => {
+  it.each([
+    "I took a whole bottle of pills",
+    "i just swallowed an entire packet of paracetamol",
+    "I've taken a handful of my tablets",
+    "I took a full box of panadol",
+    "I swallowed half a bottle of my meds",
+    "I took every pill I had",
+  ])("IMMEDIATE: %s", (text) => {
+    expect(assessMessage(text).level).toBe("IMMEDIATE_DANGER");
+  });
+  it("ordinary medication talk is not escalated", () => {
+    expect(assessMessage("I took my vitamins this morning").level).toBe("NO_FLAG");
+  });
+});
+
 describe("Safety Guardian — known false negatives (documented limitations)", () => {
   // These indirect expressions are NOT caught by rules-v1. They are kept as tests so any
   // future detector change is measured against them, and so the limitation stays visible.

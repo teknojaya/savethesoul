@@ -1,6 +1,6 @@
 "use client";
 
-import { Phone, ShieldAlert, HeartHandshake, ExternalLink } from "lucide-react";
+import { Phone, ShieldAlert, HeartHandshake, ExternalLink, Globe } from "lucide-react";
 import { EMERGENCY_RESOURCES, type SupportResourceData } from "@/features/safety/resources";
 import { cn } from "@/lib/utils";
 
@@ -21,6 +21,13 @@ export function EmergencyContacts({ compact = false, className }: { compact?: bo
   const lines = EMERGENCY_RESOURCES.filter((r) => r.category === "CRISIS_LINE");
   return (
     <div className={cn("flex flex-col gap-3", className)}>
+      <p data-testid="service-area-note" className="flex items-start gap-1.5 rounded-xl bg-surface px-3 py-2 text-xs text-ink-soft">
+        <Globe className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+        <span>
+          <strong className="font-semibold text-ink">These are United Arab Emirates numbers</strong> (SaveTheSoul is built for Abu Dhabi). Outside the UAE? Call
+          your local emergency number instead, for example 112 in the EU, 911 in the US and Canada, or 999 in the UK.
+        </span>
+      </p>
       <div className="grid grid-cols-2 gap-3">
         {emergency.map((r) => (
           <CallTile key={r.slug} r={r} tone="safety" compact={compact} />
@@ -79,7 +86,7 @@ export function SourceNote() {
   return (
     <p className="flex items-start gap-1.5 text-xs text-muted">
       <ExternalLink className="mt-0.5 size-3 shrink-0" aria-hidden />
-      Numbers verified on 18 Nov 2026 against the UAE Government portal (u.ae) and Department of Health – Abu Dhabi announcements. Always call 999 / 998 in an emergency.
+      Numbers verified on 18 Nov 2026 against the UAE Government portal (u.ae) and Department of Health – Abu Dhabi announcements. In the UAE, always call 999 / 998 in an emergency.
     </p>
   );
 }

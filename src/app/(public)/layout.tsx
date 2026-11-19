@@ -29,7 +29,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
         <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-8 text-sm text-muted sm:flex-row sm:justify-between sm:px-6">
           <div className="max-w-md space-y-1.5">
             <p className="font-medium text-ink-soft">SaveTheSoul is an AI wellbeing companion, not a medical service.</p>
-            <p>It does not diagnose, treat or replace professional care. In an emergency call 999 (Police) or 998 (Ambulance).</p>
+            <p>It does not diagnose, treat or replace professional care. Built for Abu Dhabi, UAE: in an emergency in the UAE call 999 (Police) or 998 (Ambulance); elsewhere, call your local emergency number.</p>
             <p className="text-xs">Prototype for the Future Health Digital Innovation Challenge 2026. All people and records in the demo are synthetic.</p>
           </div>
           <div className="flex gap-4">

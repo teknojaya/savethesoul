@@ -50,7 +50,7 @@ const RULES: Rule[] = [
     category: "OVERDOSE_OR_ACT_IN_PROGRESS",
     level: "IMMEDIATE_DANGER",
     patterns: [
-      /\bi(?:'ve| have)? (?:just )?(?:taken|took|swallowed) (?:all|a lot|too many|loads|a bottle|the whole|\d+)[\w\s]{0,20}(?:pills|tablets|meds|medication|paracetamol|panadol)\b/,
+      /\bi(?:'ve| have)? (?:just )?(?:taken|took|swallowed) (?:all|a lot|too many|loads|a bottle|the whole|a whole|an entire|the entire|a full|half a|a handful|a pack|a box|a packet|a strip|my whole|every|\d+)[\w\s]{0,20}(?:pills?|tablets?|meds|medication|paracetamol|panadol)\b/,
       /\bi(?:'ve| have| just)? ?(?:overdosed|od'?d)\b/,
       /\bi(?:'ve| have)? (?:just )?(?:cut|slit) my (?:wrists?|arms?|throat)\b/,
       /\bi(?:'m| am) (?:bleeding|losing (?:a lot of )?blood) (?:a lot|badly|heavily)\b/,

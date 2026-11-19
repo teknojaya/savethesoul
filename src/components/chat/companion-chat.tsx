@@ -402,8 +402,8 @@ export function CompanionChat(props: {
             </Button>
           </form>
           <p className="mx-auto mt-2 max-w-2xl pb-1 text-center text-[11px] text-muted">
-            AI wellbeing companion — general support, not medical advice. In an emergency call <a href="tel:999" className="font-semibold text-safety-700">999</a> or{" "}
-            <a href="tel:998" className="font-semibold text-safety-700">998</a>.
+            AI wellbeing companion — general support, not medical advice. In an emergency in the UAE call <a href="tel:999" className="font-semibold text-safety-700">999</a> or{" "}
+            <a href="tel:998" className="font-semibold text-safety-700">998</a>; elsewhere, your local emergency number.
           </p>
         </footer>
       </section>

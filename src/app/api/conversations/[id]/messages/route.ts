@@ -8,7 +8,7 @@ import { LLM_UNAVAILABLE_RESPONSE } from "@/features/safety/responses";
 import { assessMessage } from "@/features/safety/classifier";
 import { hasAiProcessingConsent } from "@/server/services/consent.service";
 
-const URGENT_HELP = "If you need urgent help, call 998 (ambulance), 999 (police) or 800-SAKINA (800 725462), or open the Help page.";
+const URGENT_HELP = "If you need urgent help in the UAE, call 998 (ambulance), 999 (police) or 800-SAKINA (800 725462); elsewhere, call your local emergency number. The Help page is always available.";
 /** Ordinary AI replies per patient per minute (cost and abuse control). */
 const AI_LIMIT_PER_MIN = 30;
 /** Safety-flagged messages are answered without the AI, under a separate, higher limit. */
