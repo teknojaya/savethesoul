@@ -33,6 +33,8 @@ export default defineConfig({
       DEMO_MODE: "true",
       LLM_PROVIDER: "demo",
       NEXT_DIST_DIR: ".next-e2e",
+      // The isolated-account E2E specs register one synthetic patient per test.
+      REGISTER_RATE_LIMIT_PER_HOUR: "200",
     },
   },
 });

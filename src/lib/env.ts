@@ -19,6 +19,8 @@ const EnvSchema = z.object({
   OPENAI_API_KEY: z.string().optional(),
   /** Voice Mode (OpenAI audio). Speech-to-text and text-to-speech models, voice and language. */
   /** Kill switch: "false" turns Voice Mode off (text chat unaffected) without a code rollback. */
+  /** Sign-ups allowed per IP per hour (abuse control). Raised only for automated test servers. */
+  REGISTER_RATE_LIMIT_PER_HOUR: z.coerce.number().int().positive().default(10),
   VOICE_ENABLED: z.enum(["true", "false"]).default("true"),
   VOICE_STT_MODEL: z.string().trim().min(1).default("gpt-4o-mini-transcribe"),
   VOICE_TTS_MODEL: z.string().trim().min(1).default("gpt-4o-mini-tts"),
