@@ -1,12 +1,14 @@
 /**
  * Live AI check with SYNTHETIC conversations only. Spends a few cents of API credit.
  *
- *   railway run -s savethesoul-web -- pnpm exec tsx scripts/ai-live-check.ts [--models]
+ *   pnpm ai:live-check             (uses OPENAI_API_KEY from .env)
+ *   pnpm ai:live-check --models    (lists GPT models available to the key)
  *
  * Reads OPENAI_API_KEY / LLM_* from the environment (never prints them), confirms the
  * configured model is available to the account, then runs each prompt through the real
  * companion pipeline (Safety Guardian → model → output guard) and prints the replies.
  */
+import "dotenv/config";
 import OpenAI from "openai";
 import { getChatProvider } from "../src/features/ai/provider-factory";
 import { runCompanionTurn, type PipelineEvent } from "../src/features/ai/companion-pipeline";
@@ -28,6 +30,11 @@ async function main() {
   const env = getEnv();
   const provider = getChatProvider();
   console.log(`provider=${provider.id} label="${provider.label}" generative=${provider.isGenerative}`);
+  if (!provider.isGenerative) {
+    console.log("No live AI provider is configured (OPENAI_API_KEY missing or LLM_PROVIDER=demo). Nothing was sent.");
+    process.exitCode = 1;
+    return;
+  }
 
   if (env.OPENAI_API_KEY) {
     const client = new OpenAI({ apiKey: env.OPENAI_API_KEY });
@@ -64,7 +71,17 @@ async function main() {
     console.log(`producedBy=${done.producedBy} safety=${safety?.assessment.level ?? "NO_FLAG"} streamedChunks=${deltas} ms=${Date.now() - started}${done.providerError ? ` providerError=${done.providerError}` : ""}${done.outputViolations?.length ? ` outputGuard=${done.outputViolations.join(",")}` : ""}${flagged ? " DIAGNOSIS/IMPERSONATION-PATTERN" : ""}`);
     console.log(done.text);
   }
-  console.log(`\n${PROMPTS.length - failures}/${PROMPTS.length} live checks passed`);
+  // Timeout behaviour against the real API: a 50 ms budget must yield the labelled fallback.
+  {
+    const events: PipelineEvent[] = [];
+    for await (const e of runCompanionTurn({ provider, history: [], userText: "Can you suggest a short breathing exercise?", memories: [], recentImmediateEvent: false, timeoutMs: 50 })) events.push(e);
+    const done = events.find((e) => e.type === "done") as Extract<PipelineEvent, { type: "done" }>;
+    const ok = done.producedBy === "fallback" && done.providerError === "TIMEOUT";
+    if (!ok) failures++;
+    console.log(`\n=== timeout → labelled fallback — ${ok ? "PASS" : "FAIL"} ===\nproducedBy=${done.producedBy} providerError=${done.providerError ?? "none"}`);
+  }
+  const total = PROMPTS.length + 1;
+  console.log(`\n${total - failures}/${total} live checks passed`);
   if (failures) process.exitCode = 1;
 }
 
