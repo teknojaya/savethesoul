@@ -200,6 +200,17 @@ describe("Speech text", () => {
     expect(buildCompanionSystem({ memories: [], safetyMode: false })).toMatch(/You are Sakinah.*independent AI companion.*not affiliated with the official 800-SAKINA/);
   });
 
+  it("gives Sakinah structured, evidence-informed support without loosening clinical boundaries", () => {
+    const sys = buildCompanionSystem({ memories: [], safetyMode: false });
+    expect(sys).toMatch(/Psychologically informed support/);
+    expect(sys).toMatch(/Never invent studies, statistics, quotations, guideline names, page titles or links/);
+    expect(sys).toMatch(/Do not name a diagnosis for them/);
+    expect(sys).toMatch(/never contradict or suggest changing their treatment/);
+    expect(sys).toMatch(/Never diagnose any condition/); // existing boundaries kept
+    expect(sys).toMatch(/Never give medication advice/);
+    expect(sys).toMatch(/Never predict whether someone will harm themselves/);
+  });
+
   it("caps very long replies at a sentence boundary", () => {
     const t = toSpeakableText("This is a sentence. ".repeat(400));
     expect(t.length).toBeLessThanOrEqual(MAX_SPEECH_CHARS);
