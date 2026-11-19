@@ -6,8 +6,8 @@
  *  - API responses and authenticated pages (/patient, /clinician) are NEVER stored.
  *  - When offline, any navigation falls back to /offline, which shows emergency numbers.
  */
-const CACHE = "sts-public-v1";
-const PRECACHE = ["/help", "/offline", "/icon.svg", "/pwa-icon/192"];
+const CACHE = "sts-public-v2";
+const PRECACHE = ["/help", "/offline", "/icon.png", "/brand/logo-mark.png", "/brand/icon-192.png"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((c) => c.addAll(PRECACHE)).then(() => self.skipWaiting()));

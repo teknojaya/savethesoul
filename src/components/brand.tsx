@@ -1,25 +1,21 @@
 import Link from "next/link";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 
+/** The SaveTheSoul mark: a heart held by caring hands, with a person and a conversation. */
 export function LogoMark({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 40 40" aria-hidden className={cn("size-8", className)}>
-      <rect width="40" height="40" rx="12" fill="#1868db" />
-      <path
-        d="M20 30.5c-.5 0-1-.2-1.4-.5C13.4 25.8 10 22.6 10 18.4 10 15.4 12.3 13 15.2 13c1.9 0 3.5 1 4.8 2.7C21.3 14 22.9 13 24.8 13c2.9 0 5.2 2.4 5.2 5.4 0 4.2-3.4 7.4-8.6 11.6-.4.3-.9.5-1.4.5Z"
-        fill="#ffffff"
-      />
-      <path d="M15 19.5c1.6 2.2 3.3 3.3 5 3.3s3.4-1.1 5-3.3" stroke="#84b2f2" strokeWidth="1.8" fill="none" strokeLinecap="round" />
-    </svg>
-  );
+  return <Image src="/brand/logo-mark.png" alt="" width={128} height={128} priority className={cn("size-9 shrink-0", className)} aria-hidden />;
 }
 
 export function Logo({ href = "/", className, subtitle }: { href?: string; className?: string; subtitle?: string }) {
   return (
-    <Link href={href} className={cn("flex items-center gap-2.5", className)} aria-label="SaveTheSoul home">
+    <Link href={href} className={cn("flex items-center gap-2", className)} aria-label="SaveTheSoul home">
       <LogoMark />
       <span className="flex flex-col leading-none">
-        <span className="font-display text-[19px] text-ink">SaveTheSoul</span>
+        <span className="font-display text-[20px] tracking-[-0.02em]">
+          <span className="text-brand-900">Save</span>
+          <span className="text-brand-600">TheSoul</span>
+        </span>
         {subtitle && <span className="mt-0.5 text-[11px] font-medium uppercase tracking-[0.12em] text-muted">{subtitle}</span>}
       </span>
     </Link>
