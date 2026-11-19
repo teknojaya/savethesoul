@@ -35,9 +35,17 @@ test("Scenario 1 — everyday support, then a non-diagnostic WHO-5 result", asyn
   await demoLogin(page, "omar");
   await page.goto("/patient/companion");
   await expect(page.getByText(/AI · not a clinician/)).toBeVisible();
+  const demoCompanion = await page.getByText(/offline demo responses/).isVisible();
   await sendChat(page, "Work has been really stressful, my manager keeps adding deadlines");
-  await expect(page.getByText(/pressure at work|stretched/)).toBeVisible();
-  await expect(page.getByText("Pre-written demo response").first()).toBeVisible();
+  if (demoCompanion) {
+    await expect(page.getByText(/pressure at work|stretched/)).toBeVisible();
+    await expect(page.getByText("Pre-written demo response").first()).toBeVisible();
+  } else {
+    // Live model: the reply streams in, is labelled as AI, and is not the outage fallback.
+    await expect(page.getByText("AI-generated · not medical advice").first()).toBeVisible({ timeout: 45_000 });
+    await expect(page.getByText("Safe fallback response")).toHaveCount(0);
+    await expect(page.getByText("Pre-written demo response")).toHaveCount(0);
+  }
 
   await page.goto("/patient/wellbeing/who5");
   await page.getByRole("button", { name: "See my result" }).click();

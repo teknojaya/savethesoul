@@ -454,6 +454,7 @@ function MessageBubble({ m, canRemember, remembered, onRemember }: { m: Msg; can
           {isSafety && <Badge tone="safety">Safety response · pre-written, not AI-generated</Badge>}
           {m.provider === "fallback" && <Badge tone="neutral">Safe fallback response</Badge>}
           {m.provider === "demo" && <Badge tone="amber">Pre-written demo response</Badge>}
+          {(m.provider === "openai" || m.provider === "anthropic") && <Badge tone="neutral">AI-generated · not medical advice</Badge>}
         </div>
       </div>
     </div>
