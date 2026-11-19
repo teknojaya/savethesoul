@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { ProviderError, type ChatProvider, type GenerateInput } from "./types";
+import { recordProviderFailure, recordProviderSuccess } from "./provider-status";
 
 /**
  * Claude via the official Anthropic SDK (server-side only).
@@ -17,7 +18,7 @@ export class AnthropicProvider implements ChatProvider {
 
   constructor(
     apiKey: string,
-    private model: string,
+    readonly model: string,
     timeoutMs: number,
   ) {
     this.client = new Anthropic({ apiKey, timeout: timeoutMs, maxRetries: 1 });
@@ -49,8 +50,12 @@ export class AnthropicProvider implements ChatProvider {
       if (final.stop_reason === "refusal" && !emitted) {
         throw new ProviderError("REFUSAL", "Model declined to respond");
       }
+      recordProviderSuccess(this.id, this.model);
     } catch (err) {
-      throw mapError(err);
+      const mapped = mapError(err);
+      if (mapped.code === "REFUSAL") recordProviderSuccess(this.id, this.model);
+      else recordProviderFailure(this.id, this.model, mapped.code);
+      throw mapped;
     }
   }
 

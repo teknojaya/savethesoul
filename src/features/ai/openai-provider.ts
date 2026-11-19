@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { ProviderError, type ChatProvider, type GenerateInput } from "./types";
+import { recordProviderFailure, recordProviderSuccess } from "./provider-status";
 
 export const OPENAI_DEFAULT_MODEL = "gpt-5.4-mini";
 
@@ -21,7 +22,7 @@ export class OpenAIProvider implements ChatProvider {
 
   constructor(
     apiKey: string,
-    private model: string,
+    readonly model: string,
     timeoutMs: number,
     client?: OpenAI,
   ) {
@@ -64,13 +65,18 @@ export class OpenAIProvider implements ChatProvider {
             throw new ProviderError("UNAVAILABLE", "Model stream error");
         }
       }
+      if (!emitted) {
+        throw refused
+          ? new ProviderError("REFUSAL", "Model declined to respond")
+          : new ProviderError("UNAVAILABLE", "Model returned no text");
+      }
+      recordProviderSuccess(this.id, this.model);
     } catch (err) {
-      throw mapError(err);
-    }
-    if (!emitted) {
-      throw refused
-        ? new ProviderError("REFUSAL", "Model declined to respond")
-        : new ProviderError("UNAVAILABLE", "Model returned no text");
+      const mapped = mapError(err);
+      // A refusal is a policy decision, not an outage; the service still answered.
+      if (mapped.code === "REFUSAL") recordProviderSuccess(this.id, this.model);
+      else recordProviderFailure(this.id, this.model, mapped.code);
+      throw mapped;
     }
   }
 

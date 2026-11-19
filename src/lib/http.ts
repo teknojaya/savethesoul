@@ -71,8 +71,9 @@ export function errorResponse(err: unknown): Response {
       { status: 400, headers: noStore },
     );
   }
-  // Log only the error class/message — never request payloads.
-  console.error("[api] unhandled error:", err instanceof Error ? `${err.name}: ${err.message}` : "unknown");
+  // Name and code only: error messages (e.g. from the database driver) can contain request data.
+  const code = err && typeof err === "object" && "code" in err ? String((err as { code: unknown }).code) : "";
+  console.error("[api] unhandled error:", err instanceof Error ? `${err.name}${code ? ` (${code})` : ""}` : "unknown");
   return NextResponse.json(
     { error: { code: "INTERNAL", message: "Something went wrong. Please try again." } },
     { status: 500, headers: noStore },

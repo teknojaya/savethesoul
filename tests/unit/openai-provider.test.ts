@@ -3,7 +3,8 @@ import type { AddressInfo } from "node:net";
 import OpenAI from "openai";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { OpenAIProvider, isReasoningModel } from "@/features/ai/openai-provider";
-import { getChatProvider } from "@/features/ai/provider-factory";
+import { describeProvider, getChatProvider } from "@/features/ai/provider-factory";
+import { resetProviderStatus } from "@/features/ai/provider-status";
 import { runCompanionTurn, CHAT_MAX_OUTPUT_TOKENS, type PipelineEvent } from "@/features/ai/companion-pipeline";
 import { ProviderError } from "@/features/ai/types";
 import { resetEnvCache } from "@/lib/env";
@@ -164,5 +165,61 @@ describe("provider selection", () => {
   });
   it("falls back to the labelled demo when OpenAI is selected without a key", () => {
     expect(select({ LLM_PROVIDER: "openai" }).id).toBe("demo");
+  });
+});
+
+describe("AI status reporting (/api/health)", () => {
+  const saved = { ...process.env };
+  afterEach(() => {
+    process.env = { ...saved };
+    resetEnvCache();
+    resetProviderStatus();
+  });
+  function configure(env: Record<string, string>) {
+    for (const k of ["LLM_PROVIDER", "LLM_MODEL", "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "OPENAI_BASE_URL"]) delete process.env[k];
+    Object.assign(process.env, env);
+    resetEnvCache();
+  }
+  const real = () => ({ LLM_PROVIDER: "openai", OPENAI_API_KEY: "sk-test-not-real", LLM_MODEL: "gpt-5.4-mini", OPENAI_BASE_URL: baseURL });
+
+  it("reports an explicit demo choice as demo", () => {
+    configure({ LLM_PROVIDER: "demo" });
+    expect(describeProvider()).toMatchObject({ selected: "demo", id: "demo", status: "demo", isGenerative: false });
+  });
+
+  it("reports OpenAI selected without a key as missing_key (labelled demo fallback, never Anthropic)", () => {
+    configure({ LLM_PROVIDER: "openai", ANTHROPIC_API_KEY: "y" });
+    expect(describeProvider()).toMatchObject({ selected: "openai", id: "demo", status: "missing_key" });
+  });
+
+  it("does not treat a configured key as proof: configured_untested until a real reply succeeds", () => {
+    configure(real());
+    expect(describeProvider()).toMatchObject({ id: "openai", model: "gpt-5.4-mini", status: "configured_untested", lastSuccessAt: null });
+  });
+
+  it("becomes verified after a successful streamed reply, and unavailable after a failure", async () => {
+    configure(real());
+    next = { events: [delta("Hello"), completed] };
+    await collect(getChatProvider().stream(input));
+    expect(describeProvider()).toMatchObject({ status: "verified", lastFailureCode: null });
+    expect(describeProvider().lastSuccessAt).toEqual(expect.any(String));
+
+    next = { status: 401 };
+    await collect(getChatProvider().stream(input)).catch(() => {});
+    expect(describeProvider()).toMatchObject({ status: "unavailable", lastFailureCode: "CONFIG" });
+
+    next = { events: [delta("Back"), completed] };
+    await collect(getChatProvider().stream(input));
+    expect(describeProvider().status).toBe("verified");
+  });
+
+  it("never exposes the API key", () => {
+    configure(real());
+    expect(JSON.stringify(describeProvider())).not.toContain("sk-test-not-real");
+  });
+
+  it("demo data mode does not force demo AI: DEMO_MODE=true with a key still uses OpenAI", () => {
+    configure({ ...real(), DEMO_MODE: "true" });
+    expect(getChatProvider().id).toBe("openai");
   });
 });

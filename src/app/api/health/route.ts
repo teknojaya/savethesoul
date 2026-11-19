@@ -12,10 +12,19 @@ export async function GET() {
   } catch {
     database = "error";
   }
-  let ai: { provider: string; label: string; generative: boolean } | { provider: "misconfigured" };
+  // Provider, model and live status only: never keys, prompts, replies or error details.
+  let ai: Record<string, unknown>;
   try {
     const p = describeProvider();
-    ai = { provider: p.id, label: p.label, generative: p.isGenerative };
+    ai = {
+      selected: p.selected,
+      provider: p.id,
+      model: p.model,
+      generative: p.isGenerative,
+      status: p.status,
+      lastSuccessAt: p.lastSuccessAt,
+      lastFailureCode: p.lastFailureCode,
+    };
   } catch {
     ai = { provider: "misconfigured" };
   }
