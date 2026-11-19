@@ -26,7 +26,7 @@ import { Badge, Callout } from "@/components/ui/primitives";
 import { CrisisPanel } from "@/components/safety/crisis-panel";
 import { RichText } from "./rich-text";
 import { VoiceMode, type VoiceSendResult } from "./voice-mode";
-import { SAKINA_NAME, SAKINA_WELCOME_TEXT } from "@/features/voice/sakina";
+import { SAKINAH_NAME, SAKINAH_WELCOME_TEXT } from "@/features/voice/sakinah";
 import { api } from "@/lib/api-client";
 import { cn, formatDateTime } from "@/lib/utils";
 
@@ -299,7 +299,7 @@ export function CompanionChat(props: {
             <Bot className="size-5" aria-hidden />
           </span>
           <div className="min-w-0 flex-1 leading-tight">
-            <p className="font-semibold text-ink">{SAKINA_NAME} · wellbeing companion</p>
+            <p className="font-semibold text-ink">{SAKINAH_NAME} · wellbeing companion</p>
             <p className="truncate text-xs text-muted">AI · not a clinician · {isDemoProvider ? "offline demo responses" : props.provider.label}</p>
           </div>
           <Button
@@ -390,7 +390,7 @@ export function CompanionChat(props: {
           <VoiceMode
             onSend={(t) => send(t, "voice")}
             onWelcome={() =>
-              setMessages((m) => (m.some((x) => x.provider === "voice-welcome") ? m : [...m, { id: `w-${Date.now()}`, role: "assistant", content: SAKINA_WELCOME_TEXT, provider: "voice-welcome" }]))
+              setMessages((m) => (m.some((x) => x.provider === "voice-welcome") ? m : [...m, { id: `w-${Date.now()}`, role: "assistant", content: SAKINAH_WELCOME_TEXT, provider: "voice-welcome" }]))
             }
             onExit={() => setVoiceMode(false)}
           />
@@ -482,7 +482,7 @@ function MessageBubble({ m, canRemember, remembered, onRemember }: { m: Msg; can
           {isSafety && <Badge tone="safety">Safety response · pre-written, not AI-generated</Badge>}
           {m.provider === "fallback" && <Badge tone="neutral">Safe fallback response</Badge>}
           {m.provider === "demo" && <Badge tone="amber">Pre-written demo response</Badge>}
-          {m.provider === "voice-welcome" && <Badge tone="neutral">Sakina · pre-recorded AI voice welcome</Badge>}
+          {m.provider === "voice-welcome" && <Badge tone="neutral">Sakinah · pre-recorded AI voice welcome</Badge>}
           {(m.provider === "openai" || m.provider === "anthropic") && <Badge tone="neutral">AI-generated · not medical advice</Badge>}
         </div>
       </div>

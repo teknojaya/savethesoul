@@ -29,6 +29,8 @@ test("Help page works without signing in and shows real emergency numbers", asyn
   await expect(page.locator('a[href="tel:998"]').first()).toBeVisible();
   await expect(page.locator('a[href="tel:999"]').first()).toBeVisible();
   await expect(page.locator('a[href="tel:800725462"]').first()).toBeVisible();
+  // The official helpline is clearly distinguished from the app's AI companion, Sakinah.
+  await expect(page.getByTestId("sakina-line-note")).toContainText("separate service and is not part of SaveTheSoul or its AI companion, Sakinah");
 });
 
 test("Scenario 1 — everyday support, then a non-diagnostic WHO-5 result", async ({ page }) => {

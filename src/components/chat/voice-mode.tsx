@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { initialVoiceState, STATUS_LABEL, voiceReducer, type VoiceEvent, type VoiceStatus } from "@/features/voice/voice-state";
 import { detectVoiceSupport, microphoneErrorMessage, PushToTalkRecorder } from "@/features/voice/recorder";
-import { SAKINA_NAME, SAKINA_NON_AFFILIATION, SAKINA_SUBTITLE, SAKINA_WELCOME_AUDIO_PATH } from "@/features/voice/sakina";
+import { SAKINAH_NAME, SAKINAH_NON_AFFILIATION, SAKINAH_SUBTITLE, SAKINAH_WELCOME_AUDIO_PATH } from "@/features/voice/sakinah";
 import { MAX_RECORDING_SECONDS, MIN_AUDIO_BYTES } from "@/features/voice/audio-validation";
 
 export interface VoiceSendResult {
@@ -79,7 +79,7 @@ export function VoiceMode({ onSend, onWelcome, onExit }: Props) {
         a.onerror = () => resolve(false);
         a.src = url;
         a.play().catch((err) => {
-          setNotice(err instanceof DOMException && err.name === "NotAllowedError" ? "Your browser blocked audio. Tap Replay to hear Sakina." : "Audio couldn't play. The reply is shown as text; tap Replay to try again.");
+          setNotice(err instanceof DOMException && err.name === "NotAllowedError" ? "Your browser blocked audio. Tap Replay to hear Sakinah." : "Audio couldn't play. The reply is shown as text; tap Replay to try again.");
           resolve(false);
         });
       }),
@@ -95,7 +95,7 @@ export function VoiceMode({ onSend, onWelcome, onExit }: Props) {
         try {
           url = await clip;
         } catch (e) {
-          if (token === playToken.current) act({ type: "ERROR", message: e instanceof Error ? e.message : "Sakina's voice isn't available just now." });
+          if (token === playToken.current) act({ type: "ERROR", message: e instanceof Error ? e.message : "Sakinah's voice isn't available just now." });
           return;
         }
         if (token !== playToken.current) return;
@@ -117,7 +117,7 @@ export function VoiceMode({ onSend, onWelcome, onExit }: Props) {
     const fetchPart = async (part: number) => {
       const res = await fetch("/api/voice/speech", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messageId, part }) });
       if (res.status === 204) return null;
-      if (!res.ok) throw new Error((await res.json().catch(() => null))?.error?.message ?? "Sakina's voice isn't available just now. The reply is shown as text.");
+      if (!res.ok) throw new Error((await res.json().catch(() => null))?.error?.message ?? "Sakinah's voice isn't available just now. The reply is shown as text.");
       return URL.createObjectURL(await res.blob());
     };
     const parts = [fetchPart(0), fetchPart(1).catch(() => null)];
@@ -168,7 +168,7 @@ export function VoiceMode({ onSend, onWelcome, onExit }: Props) {
   async function start() {
     setNotice(null);
     // Play inside the tap so mobile browsers allow audio (and unlock it for later replies).
-    if (!state.muted) void playClips([Promise.resolve(SAKINA_WELCOME_AUDIO_PATH)]);
+    if (!state.muted) void playClips([Promise.resolve(SAKINAH_WELCOME_AUDIO_PATH)]);
     act({ type: "START" });
     onWelcome();
     if (server && !server.consented) {
@@ -255,7 +255,7 @@ export function VoiceMode({ onSend, onWelcome, onExit }: Props) {
     if (!id) return;
     setNotice(null);
     act({ type: "REPLAY", replyId: id });
-    if (id === "welcome") void playClips([Promise.resolve(SAKINA_WELCOME_AUDIO_PATH)]);
+    if (id === "welcome") void playClips([Promise.resolve(SAKINAH_WELCOME_AUDIO_PATH)]);
     else void speakReply(id);
   }
 
@@ -282,18 +282,18 @@ export function VoiceMode({ onSend, onWelcome, onExit }: Props) {
   const busy = state.status === "TRANSCRIBING" || state.status === "GENERATING_RESPONSE";
 
   return (
-    <section aria-label="Voice conversation with Sakina" data-testid="voice-mode" className="border-t border-line/70 bg-gradient-to-b from-surface/80 to-teal-50/40 px-4 pb-[max(env(safe-area-inset-bottom),1rem)] pt-4">
+    <section aria-label="Voice conversation with Sakinah" data-testid="voice-mode" className="border-t border-line/70 bg-gradient-to-b from-surface/80 to-teal-50/40 px-4 pb-[max(env(safe-area-inset-bottom),1rem)] pt-4">
       <div className="mx-auto flex max-w-2xl flex-col items-center gap-3">
         <div className="flex items-center gap-3">
           <VoiceOrb status={state.status} level={level} />
           <div className="leading-tight">
-            <p className="font-display text-xl text-ink">{SAKINA_NAME}</p>
-            <p className="text-xs text-muted">{SAKINA_SUBTITLE} · AI voice, not a clinician</p>
+            <p className="font-display text-xl text-ink">{SAKINAH_NAME}</p>
+            <p className="text-xs text-muted">{SAKINAH_SUBTITLE} · AI voice, not a clinician</p>
           </div>
         </div>
 
         <p role="status" aria-live="polite" data-testid="voice-status" className={cn("text-sm font-medium", state.status === "ERROR" ? "text-safety-700" : "text-teal-800")}>
-          {state.started || state.status !== "IDLE" ? STATUS_LABEL[state.status] : "Talk with Sakina instead of typing"}
+          {state.started || state.status !== "IDLE" ? STATUS_LABEL[state.status] : "Talk with Sakinah instead of typing"}
           {state.status === "LISTENING" && <span className="ms-1 tabular-nums text-muted">{seconds}s / {MAX_RECORDING_SECONDS}s</span>}
         </p>
 
@@ -302,7 +302,7 @@ export function VoiceMode({ onSend, onWelcome, onExit }: Props) {
             <p className="font-semibold">If you are in danger, call now.</p>
             <p className="mt-1">
               In the UAE: <a className="font-semibold underline" href="tel:998">998</a> (Ambulance) · <a className="font-semibold underline" href="tel:999">999</a> (Police) ·{" "}
-              <a className="font-semibold underline" href="tel:800725462">800-SAKINA</a> (support line). Outside the UAE, call your local emergency number.
+              <a className="font-semibold underline" href="tel:800725462">800-SAKINA</a> (the official support line, answered by people; separate from Sakinah). Outside the UAE, call your local emergency number.
             </p>
           </div>
         )}
@@ -327,7 +327,7 @@ export function VoiceMode({ onSend, onWelcome, onExit }: Props) {
               <label data-testid="voice-consent" className="flex max-w-md items-start gap-2 rounded-2xl border border-line bg-surface p-3 text-xs text-ink-soft">
                 <input type="checkbox" className="mt-0.5 size-4 accent-teal-600" checked={consentTicked} onChange={(e) => setConsentTicked(e.target.checked)} />
                 <span>
-                  I agree that my voice recordings are sent from SaveTheSoul&apos;s server to OpenAI to be transcribed, and that Sakina&apos;s replies are turned into speech by OpenAI. SaveTheSoul doesn&apos;t
+                  I agree that my voice recordings are sent from SaveTheSoul&apos;s server to OpenAI to be transcribed, and that Sakinah&apos;s replies are turned into speech by OpenAI. SaveTheSoul doesn&apos;t
                   store the recordings. I can turn this off in Profile &amp; Privacy.
                 </span>
               </label>
@@ -335,7 +335,7 @@ export function VoiceMode({ onSend, onWelcome, onExit }: Props) {
             <Button size="lg" onClick={start} disabled={server === null || (needsConsent && !consentTicked)} data-testid="voice-start" className="h-14 rounded-full px-7 text-base">
               <Mic aria-hidden /> Start Voice Conversation
             </Button>
-            <p className="max-w-md text-center text-[11px] text-muted">The microphone only turns on when you tap it. {SAKINA_NON_AFFILIATION}</p>
+            <p className="max-w-md text-center text-[11px] text-muted">The microphone only turns on when you tap it. {SAKINAH_NON_AFFILIATION}</p>
           </div>
         ) : (
           <>
@@ -389,7 +389,7 @@ export function VoiceMode({ onSend, onWelcome, onExit }: Props) {
                   </>
                 ) : (
                   <>
-                    {(state.status === "WELCOME_PLAYING" || state.status === "SAKINA_SPEAKING") && (
+                    {(state.status === "WELCOME_PLAYING" || state.status === "SAKINAH_SPEAKING") && (
                       <Button variant="secondary" onClick={stopSpeaking} data-testid="voice-stop-speaking" className="rounded-full">
                         <Square aria-hidden /> Stop speaking
                       </Button>
@@ -397,7 +397,7 @@ export function VoiceMode({ onSend, onWelcome, onExit }: Props) {
                     <BigButton label={state.status === "ERROR" ? "Try speaking again" : "Tap to speak"} onClick={startRecording} testId="voice-mic">
                       <Mic className="size-8" aria-hidden />
                     </BigButton>
-                    {state.replyId && state.status !== "WELCOME_PLAYING" && state.status !== "SAKINA_SPEAKING" && (
+                    {state.replyId && state.status !== "WELCOME_PLAYING" && state.status !== "SAKINAH_SPEAKING" && (
                       <Button variant="secondary" onClick={replay} data-testid="voice-replay" className="rounded-full">
                         <RotateCcw aria-hidden /> Replay
                       </Button>
@@ -411,7 +411,7 @@ export function VoiceMode({ onSend, onWelcome, onExit }: Props) {
 
         <div className="flex w-full flex-wrap items-center justify-center gap-1.5 border-t border-line/60 pt-3 text-sm">
           <Button variant="ghost" size="sm" onClick={toggleMute} aria-pressed={state.muted} data-testid="voice-mute">
-            {state.muted ? <VolumeX aria-hidden /> : <Volume2 aria-hidden />} {state.muted ? "Unmute Sakina" : "Mute Sakina"}
+            {state.muted ? <VolumeX aria-hidden /> : <Volume2 aria-hidden />} {state.muted ? "Unmute Sakinah" : "Mute Sakinah"}
           </Button>
           <Button variant="ghost" size="sm" onClick={exit} data-testid="voice-to-text">
             <Keyboard aria-hidden /> Switch to text
@@ -451,9 +451,9 @@ function BigButton({ label, onClick, disabled, testId, tone, children }: { label
   );
 }
 
-/** Glowing orb: pulses with the microphone level while listening, waveform while Sakina speaks. */
+/** Glowing orb: pulses with the microphone level while listening, waveform while Sakinah speaks. */
 function VoiceOrb({ status, level }: { status: VoiceStatus; level: number }) {
-  const speaking = status === "WELCOME_PLAYING" || status === "SAKINA_SPEAKING";
+  const speaking = status === "WELCOME_PLAYING" || status === "SAKINAH_SPEAKING";
   const listening = status === "LISTENING";
   return (
     <div className="relative flex size-16 items-center justify-center" aria-hidden data-state={status}>

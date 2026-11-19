@@ -1,7 +1,7 @@
 import "server-only";
 import OpenAI, { toFile } from "openai";
 import { getEnv } from "@/lib/env";
-import { SAKINA_VOICE_INSTRUCTIONS } from "./sakina";
+import { SAKINAH_VOICE_INSTRUCTIONS } from "./sakinah";
 
 export class VoiceError extends Error {
   constructor(
@@ -65,7 +65,7 @@ export class OpenAIVoiceProvider implements VoiceProvider {
         input: text,
         response_format: "mp3",
         // Only the newer TTS models accept delivery instructions.
-        ...(this.ttsModel.startsWith("gpt-") ? { instructions: SAKINA_VOICE_INSTRUCTIONS } : {}),
+        ...(this.ttsModel.startsWith("gpt-") ? { instructions: SAKINAH_VOICE_INSTRUCTIONS } : {}),
       });
       return await res.arrayBuffer();
     } catch (err) {

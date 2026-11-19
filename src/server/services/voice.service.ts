@@ -48,7 +48,7 @@ function voiceFailure(err: unknown, what: "STT" | "TTS"): never {
   void recordSystemEvent("VOICE_ERROR", `${what}_${code}`);
   if (code === "EMPTY") throw new AppError("VALIDATION", "I couldn't hear any speech in that recording. Please try again, or type instead.");
   if (code === "RATE_LIMITED") throw new AppError("RATE_LIMITED", "Voice is busy right now. Please try again in a moment, or type instead.");
-  throw new AppError("UNAVAILABLE", what === "STT" ? "I couldn't transcribe that just now. Please try again, or type instead." : "Sakina's voice isn't available just now. The reply is shown as text.");
+  throw new AppError("UNAVAILABLE", what === "STT" ? "I couldn't transcribe that just now. Please try again, or type instead." : "Sakinah's voice isn't available just now. The reply is shown as text.");
 }
 
 /**
@@ -88,7 +88,7 @@ export async function speakMessage(patientId: string, messageId: string, part = 
     select: { role: true, contentEnc: true },
   });
   if (!msg) throw notFound("Message not found");
-  if (msg.role === "USER") throw new AppError("VALIDATION", "Only Sakina's replies can be spoken.");
+  if (msg.role === "USER") throw new AppError("VALIDATION", "Only Sakinah's replies can be spoken.");
   const parts = splitForSpeech(toSpeakableText(decrypt(msg.contentEnc)));
   if (!parts.length) throw new AppError("VALIDATION", "Nothing to speak.");
   if (part >= parts.length) return { audio: null, parts: parts.length };

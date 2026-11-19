@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 const SpeechSchema = z.object({ messageId: z.string().min(1).max(64), part: z.number().int().min(0).max(1).default(0) });
 
 /**
- * Returns MP3 audio of one of Sakina's saved replies. Only a message id is accepted, never free
+ * Returns MP3 audio of one of Sakinah's saved replies. Only a message id is accepted, never free
  * text. Replies are spoken in up to two parts (a short opening, then the rest) so playback can
  * start quickly; 204 means the reply has no such part.
  */

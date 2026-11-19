@@ -10,7 +10,7 @@ export type VoiceStatus =
   | "TRANSCRIBING"
   | "TRANSCRIPT_READY"
   | "GENERATING_RESPONSE"
-  | "SAKINA_SPEAKING"
+  | "SAKINAH_SPEAKING"
   | "ERROR";
 
 export interface VoiceState {
@@ -53,7 +53,7 @@ export const initialVoiceState: VoiceState = {
   replyId: null,
 };
 
-const speaking = (s: VoiceStatus) => s === "WELCOME_PLAYING" || s === "SAKINA_SPEAKING";
+const speaking = (s: VoiceStatus) => s === "WELCOME_PLAYING" || s === "SAKINAH_SPEAKING";
 
 export function voiceReducer(state: VoiceState, event: VoiceEvent): VoiceState {
   switch (event.type) {
@@ -64,9 +64,9 @@ export function voiceReducer(state: VoiceState, event: VoiceEvent): VoiceState {
     case "STOP_SPEAKING":
       return speaking(state.status) ? { ...state, status: "IDLE" } : state;
     case "MIC":
-      // Allowed when ready, while Sakina speaks (interrupts her), to re-record, or after an error.
+      // Allowed when ready, while Sakinah speaks (interrupts her), to re-record, or after an error.
       if (!state.started) return state;
-      if (["IDLE", "WELCOME_PLAYING", "SAKINA_SPEAKING", "TRANSCRIPT_READY", "ERROR"].includes(state.status)) {
+      if (["IDLE", "WELCOME_PLAYING", "SAKINAH_SPEAKING", "TRANSCRIPT_READY", "ERROR"].includes(state.status)) {
         return { ...state, status: "LISTENING", attempt: state.attempt + 1, transcript: "", error: null };
       }
       return state;
@@ -83,10 +83,10 @@ export function voiceReducer(state: VoiceState, event: VoiceEvent): VoiceState {
       return state.status === "TRANSCRIPT_READY" && state.transcript.trim() ? { ...state, status: "GENERATING_RESPONSE" } : state;
     case "REPLY":
       if (state.status !== "GENERATING_RESPONSE") return state;
-      return { ...state, transcript: "", replyId: event.replyId, status: event.speak && event.replyId && !state.muted ? "SAKINA_SPEAKING" : "IDLE" };
+      return { ...state, transcript: "", replyId: event.replyId, status: event.speak && event.replyId && !state.muted ? "SAKINAH_SPEAKING" : "IDLE" };
     case "REPLAY":
-      if (!state.started || !["IDLE", "ERROR", "SAKINA_SPEAKING", "WELCOME_PLAYING"].includes(state.status)) return state;
-      return { ...state, replyId: event.replyId, error: null, status: event.replyId === "welcome" ? "WELCOME_PLAYING" : "SAKINA_SPEAKING" };
+      if (!state.started || !["IDLE", "ERROR", "SAKINAH_SPEAKING", "WELCOME_PLAYING"].includes(state.status)) return state;
+      return { ...state, replyId: event.replyId, error: null, status: event.replyId === "welcome" ? "WELCOME_PLAYING" : "SAKINAH_SPEAKING" };
     case "TOGGLE_MUTE": {
       const muted = !state.muted;
       return { ...state, muted, status: muted && speaking(state.status) ? "IDLE" : state.status };
@@ -103,11 +103,11 @@ export function voiceReducer(state: VoiceState, event: VoiceEvent): VoiceState {
 /** Short, user-facing description of each state (also announced to screen readers). */
 export const STATUS_LABEL: Record<VoiceStatus, string> = {
   IDLE: "Ready when you are",
-  WELCOME_PLAYING: "Sakina is speaking…",
+  WELCOME_PLAYING: "Sakinah is speaking…",
   LISTENING: "Listening…",
   TRANSCRIBING: "Transcribing…",
   TRANSCRIPT_READY: "Check your message",
-  GENERATING_RESPONSE: "Sakina is thinking…",
-  SAKINA_SPEAKING: "Sakina is speaking…",
+  GENERATING_RESPONSE: "Sakinah is thinking…",
+  SAKINAH_SPEAKING: "Sakinah is speaking…",
   ERROR: "Something went wrong",
 };

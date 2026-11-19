@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { expect, test, type Page, type Request } from "@playwright/test";
 
 /**
- * Sakina Voice Mode in a real Chromium with a fake microphone (synthetic audio).
+ * Sakinah Voice Mode in a real Chromium with a fake microphone (synthetic audio).
  * The two OpenAI-backed endpoints (/api/voice/transcribe, /api/voice/speech) are stubbed here;
  * the chat itself runs through the real chat route, Safety Guardian and database.
  */
@@ -13,8 +13,8 @@ test.use({
 test.describe.configure({ mode: "serial" });
 
 const WELCOME =
-  "Hello, I'm Sakina, your AI wellbeing companion. I'm here to listen, support you, and help you through whatever is on your mind or whatever you're going through. You can share anything you're comfortable with, at your own pace. How are you feeling today?";
-const MP3 = readFileSync("public/audio/sakina-welcome.mp3");
+  "Hello, I'm Sakinah, your AI wellbeing companion. I'm here to listen, support you, and help you through whatever is on your mind or whatever you're going through. You can share anything you're comfortable with, at your own pace. How are you feeling today?";
+const MP3 = readFileSync("public/audio/sakinah-welcome.mp3");
 
 async function login(page: Page, key: string) {
   await page.goto("/login");
@@ -66,6 +66,7 @@ async function record(page: Page) {
 }
 
 test("voice mode falls back to text when no audio provider is configured", async ({ page }) => {
+  await page.route("**/api/voice/consent", (route) => route.fulfill({ json: { available: false, consented: false } }));
   await login(page, "layla");
   const res = await page.goto("/patient/companion");
   // Regression: the security header must allow the microphone for this origin only.
@@ -76,7 +77,7 @@ test("voice mode falls back to text when no audio provider is configured", async
   await expect(page.locator("#composer")).toBeVisible();
 });
 
-test("two-way voice conversation with Sakina: welcome, speak, review, reply, replay, mute, switch to text", async ({ page }) => {
+test("two-way voice conversation with Sakinah: welcome, speak, review, reply, replay, mute, switch to text", async ({ page }) => {
   await trackMicrophone(page);
   const seen = await stubVoice(page, ["Work has been really stressfull lately", "Never mind"]);
   await login(page, "layla");
@@ -84,19 +85,19 @@ test("two-way voice conversation with Sakina: welcome, speak, review, reply, rep
   await page.getByTestId("voice-toggle").click();
 
   // Consent is explicit; the microphone is not touched before the user taps it.
-  await expect(page.getByText("Sakina", { exact: true })).toBeVisible();
+  await expect(page.getByText("Sakinah", { exact: true })).toBeVisible();
   await expect(page.getByText(/Your AI Wellbeing Companion/)).toBeVisible();
   await expect(page.getByTestId("voice-start")).toBeDisabled();
   await page.getByTestId("voice-consent").locator("input").check();
-  const welcomeAudio = page.waitForRequest((r) => r.url().endsWith("/audio/sakina-welcome.mp3"));
+  const welcomeAudio = page.waitForRequest((r) => r.url().endsWith("/audio/sakinah-welcome.mp3"));
   await page.getByTestId("voice-start").click();
   await welcomeAudio;
   expect(await liveTracks(page)).toBe(0);
 
   // The exact welcome is shown as text and spoken; the user can stop it.
   await expect(page.getByText(WELCOME)).toBeVisible();
-  await expect(page.getByText("Sakina · pre-recorded AI voice welcome")).toBeVisible();
-  await expect(page.getByTestId("voice-status")).toHaveText("Sakina is speaking…");
+  await expect(page.getByText("Sakinah · pre-recorded AI voice welcome")).toBeVisible();
+  await expect(page.getByTestId("voice-status")).toHaveText("Sakinah is speaking…");
   await page.getByTestId("voice-stop-speaking").click();
   await expect(page.getByTestId("voice-status")).toHaveText("Ready when you are");
 
@@ -108,10 +109,11 @@ test("two-way voice conversation with Sakina: welcome, speak, review, reply, rep
   await page.getByTestId("voice-transcript").fill("Work has been really stressful, my manager keeps adding deadlines");
   await page.getByTestId("voice-send").click();
   await expect(page.getByText("Work has been really stressful, my manager keeps adding deadlines")).toBeVisible();
-  await expect(page.getByText(/pressure at work|stretched/)).toBeVisible();
+  // Demo build: pre-written reply. Live build: a real AI reply, labelled as AI-generated.
+  await expect(page.getByText(/pressure at work|stretched/).or(page.getByText("AI-generated · not medical advice")).first()).toBeVisible({ timeout: 45_000 });
 
-  // Sakina speaks the saved, safety-checked reply (by message id, never free text).
-  await expect(page.getByTestId("voice-status")).toHaveText("Sakina is speaking…");
+  // Sakinah speaks the saved, safety-checked reply (by message id, never free text).
+  await expect(page.getByTestId("voice-status")).toHaveText("Sakinah is speaking…");
   await expect.poll(() => seen.speech.length).toBe(2); // short opening + rest, requested together
   expect(seen.speech.sort()).toEqual([expect.stringMatching(/^c[a-z0-9]{20,}#0$/), expect.stringMatching(/^c[a-z0-9]{20,}#1$/)]);
   await page.getByTestId("voice-stop-speaking").click();
@@ -119,7 +121,7 @@ test("two-way voice conversation with Sakina: welcome, speak, review, reply, rep
 
   // Replay uses the cached audio (no second paid call); mute stops speech.
   await page.getByTestId("voice-replay").click();
-  await expect(page.getByTestId("voice-status")).toHaveText("Sakina is speaking…");
+  await expect(page.getByTestId("voice-status")).toHaveText("Sakinah is speaking…");
   expect(seen.speech).toHaveLength(2);
   await page.getByTestId("voice-mute").click();
   await expect(page.getByTestId("voice-status")).toHaveText("Ready when you are");

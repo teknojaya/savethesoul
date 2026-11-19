@@ -52,7 +52,7 @@ export function immediateDangerResponse(a: SafetyAssessment): string {
     "**If you might act on these thoughts, please call 998 (Ambulance) or 999 (Police) now.**",
     OUTSIDE_UAE_LINE,
     "",
-    "You can also talk to someone at **800-SAKINA (800 725462)** — free, confidential, 24/7, in Arabic and English.",
+    "You can also talk to a trained person at **800-SAKINA (800 725462)**, the official support line (a separate service, not this app) — free, confidential, 24/7, in Arabic and English.",
     "",
     "If you can, move away from anything you could use to hurt yourself, and go to a place where other people are around. Reaching out to someone you trust right now could help too.",
     "",

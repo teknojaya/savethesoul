@@ -73,9 +73,9 @@ The interface shows each resource's verification status, note, source link and c
 
 - Voice is an input and output layer only. Every transcript the user sends goes through the **same chat route**: Safety Guardian first, then consent, the AI rate limit, the model, and the output guard.
 - A spoken crisis disclosure gets the deterministic crisis response and the voice panel's emergency box (UAE numbers, plus the outside-UAE line) **as soon as the text arrives**, without waiting for speech. Verified live: the text was ready in 0.8 s and audio started at about 3 s.
-- Sakina can only speak saved assistant or safety messages, so the voice never says anything the guards have not checked. Crisis audio uses only the approved template wording.
+- Sakinah can only speak saved assistant or safety messages, so the voice never says anything the guards have not checked. Crisis audio uses only the approved template wording.
 - Transcription errors: the user reviews and can correct the transcript before sending. A transcript with no flags is never treated as evidence of safety, and **Help now** is visible throughout Voice Mode.
-- The microphone never turns on automatically, including after Sakina finishes speaking.
+- The microphone never turns on automatically, including after Sakinah finishes speaking.
 
 ## Known limitations
 

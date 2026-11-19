@@ -75,7 +75,7 @@ If the API rejects the model or key, replies become the labelled fallback messag
 
 - Migration `20261119091615_voice_processing_consent` adds one enum value (`ALTER TYPE ... ADD VALUE`). It is non-destructive and runs automatically in the pre-deploy step.
 - The security header must keep `microphone=(self)`. With `microphone=()` the browser blocks recording; the E2E suite checks this.
-- The welcome audio `public/audio/sakina-welcome.mp3` is generated once with `pnpm exec tsx scripts/generate-welcome-audio.ts`. Regenerate it if the welcome text, voice or model changes.
+- The welcome audio `public/audio/sakinah-welcome.mp3` is generated once with `pnpm exec tsx scripts/generate-welcome-audio.ts`. Regenerate it if the welcome text, voice or model changes.
 
 ## Rotating DATA_ENCRYPTION_KEY
 

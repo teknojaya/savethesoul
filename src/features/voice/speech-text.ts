@@ -27,7 +27,7 @@ export function toSpeakableText(markdown: string): string {
 
 /**
  * Splits a spoken reply into a short opening (1–2 sentences, synthesised and played first so
- * Sakina starts speaking quickly) and the remainder, played straight after. Deterministic, so
+ * Sakinah starts speaking quickly) and the remainder, played straight after. Deterministic, so
  * the server can serve either part by index.
  */
 export function splitForSpeech(text: string): string[] {

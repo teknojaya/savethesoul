@@ -66,18 +66,18 @@ OpenAI is the primary provider, called from the server through the official `ope
 
 The Safety Guardian runs before the model, before the AI rate limit and before the consent check, so a crisis message always gets emergency guidance, even when the AI is unavailable, rate-limited or not permitted.
 
-## Voice Mode: talk with Sakina
+## Voice Mode: talk with Sakinah
 
-In the companion, tap **Voice** to talk with **Sakina**, SaveTheSoul's AI wellbeing companion, using push-to-talk.
+In the companion, tap **Voice** to talk with **Sakinah**, SaveTheSoul's AI wellbeing companion, using push-to-talk.
 
-1. **Start Voice Conversation** plays Sakina's welcome (a pre-generated MP3, so no paid call on each visit) and shows it as text. The microphone stays off.
+1. **Start Voice Conversation** plays Sakinah's welcome (a pre-generated MP3, so no paid call on each visit) and shows it as text. The microphone stays off.
 2. Tap the microphone, speak, then tap stop (60 s at most). The recording is transcribed (`gpt-4o-mini-transcribe`), and you can review or edit the text, then **Send** it or record again.
 3. The text goes through the **normal chat route**, so the Safety Guardian, consent, rate limits, memory and encrypted history are the same as for typed messages. Spoken messages ask the model for shorter, list-free replies.
-4. Sakina reads the saved, safety-checked reply aloud (`gpt-4o-mini-tts`, voice `marin`) in two parts. A short opening is synthesised first, so speech starts sooner.
+4. Sakinah reads the saved, safety-checked reply aloud (`gpt-4o-mini-tts`, voice `marin`) in two parts. A short opening is synthesised first, so speech starts sooner.
 
 Controls: stop speaking, replay (cached, with no new paid call), mute, cancel, record again, switch to text (same conversation), and end the session. **Help now** is always visible. A crisis disclosure shows the emergency guidance as soon as the reply arrives, without waiting for audio.
 
-Privacy: voice needs a separate, revocable **Voice processing** consent. Audio is sent from the server to OpenAI and is never stored by SaveTheSoul, and transcripts are saved only if you send them. The speech endpoint accepts only the ID of one of your own saved replies, never free text. Sakina's name is provisional, and SaveTheSoul is **not affiliated with the 800-SAKINA helpline**.
+Privacy: voice needs a separate, revocable **Voice processing** consent. Audio is sent from the server to OpenAI and is never stored by SaveTheSoul, and transcripts are saved only if you send them. The speech endpoint accepts only the ID of one of your own saved replies, never free text. **Sakinah is SaveTheSoul's independent AI companion and is not affiliated with the official 800-SAKINA support line**, a separate service in Abu Dhabi that is answered by trained people. The app labels that line as separate wherever emergency help is shown.
 
 ## Scripts
 

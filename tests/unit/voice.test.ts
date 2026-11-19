@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import type { AddressInfo } from "node:net";
 import OpenAI from "openai";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
-import { SAKINA_NAME, SAKINA_SUBTITLE, SAKINA_WELCOME_AUDIO_PATH, SAKINA_WELCOME_TEXT } from "@/features/voice/sakina";
+import { SAKINAH_NAME, SAKINAH_SUBTITLE, SAKINAH_WELCOME_AUDIO_PATH, SAKINAH_WELCOME_TEXT } from "@/features/voice/sakinah";
 import { initialVoiceState, voiceReducer, type VoiceEvent, type VoiceState } from "@/features/voice/voice-state";
 import { checkAudio, MAX_AUDIO_BYTES, sniffContainer } from "@/features/voice/audio-validation";
 import { MAX_SPEECH_CHARS, splitForSpeech, toSpeakableText } from "@/features/voice/speech-text";
@@ -13,17 +13,17 @@ import { OpenAIVoiceProvider, VoiceError } from "@/features/voice/voice-provider
 
 const run = (events: VoiceEvent[], from: VoiceState = initialVoiceState) => events.reduce(voiceReducer, from);
 
-describe("Sakina identity and welcome", () => {
+describe("Sakinah identity and welcome", () => {
   it("uses the exact approved welcome text", () => {
-    expect(SAKINA_WELCOME_TEXT).toBe(
-      "Hello, I'm Sakina, your AI wellbeing companion. I'm here to listen, support you, and help you through whatever is on your mind or whatever you're going through. You can share anything you're comfortable with, at your own pace. How are you feeling today?",
+    expect(SAKINAH_WELCOME_TEXT).toBe(
+      "Hello, I'm Sakinah, your AI wellbeing companion. I'm here to listen, support you, and help you through whatever is on your mind or whatever you're going through. You can share anything you're comfortable with, at your own pace. How are you feeling today?",
     );
-    expect(SAKINA_NAME).toBe("Sakina");
-    expect(SAKINA_SUBTITLE).toBe("Your AI Wellbeing Companion");
+    expect(SAKINAH_NAME).toBe("Sakinah");
+    expect(SAKINAH_SUBTITLE).toBe("Your AI Wellbeing Companion");
   });
 
   it("ships the welcome as a pre-generated static MP3 (no paid call per page load)", () => {
-    const bytes = new Uint8Array(readFileSync(`public${SAKINA_WELCOME_AUDIO_PATH}`));
+    const bytes = new Uint8Array(readFileSync(`public${SAKINAH_WELCOME_AUDIO_PATH}`));
     expect(sniffContainer(bytes)).toBe("mp3");
     expect(bytes.length).toBeGreaterThan(50_000);
   });
@@ -72,7 +72,7 @@ describe("Voice state machine", () => {
   it("speaks the reply unless muted, then returns to mic-ready (not listening)", () => {
     const generating: VoiceState = { ...initialVoiceState, started: true, status: "GENERATING_RESPONSE", transcript: "hi" };
     const speaking = voiceReducer(generating, { type: "REPLY", replyId: "m1", speak: true });
-    expect(speaking).toMatchObject({ status: "SAKINA_SPEAKING", replyId: "m1", transcript: "" });
+    expect(speaking).toMatchObject({ status: "SAKINAH_SPEAKING", replyId: "m1", transcript: "" });
     expect(voiceReducer(speaking, { type: "PLAYBACK_ENDED" }).status).toBe("IDLE");
     expect(voiceReducer({ ...generating, muted: true }, { type: "REPLY", replyId: "m1", speak: true }).status).toBe("IDLE");
     expect(voiceReducer(generating, { type: "REPLY", replyId: null, speak: true }).status).toBe("IDLE");
@@ -80,9 +80,9 @@ describe("Voice state machine", () => {
 
   it("supports replay, mute while speaking, errors and ending the session", () => {
     const idle: VoiceState = { ...initialVoiceState, started: true, replyId: "m1" };
-    expect(voiceReducer(idle, { type: "REPLAY", replyId: "m1" }).status).toBe("SAKINA_SPEAKING");
+    expect(voiceReducer(idle, { type: "REPLAY", replyId: "m1" }).status).toBe("SAKINAH_SPEAKING");
     expect(voiceReducer(idle, { type: "REPLAY", replyId: "welcome" }).status).toBe("WELCOME_PLAYING");
-    const muted = voiceReducer({ ...idle, status: "SAKINA_SPEAKING" }, { type: "TOGGLE_MUTE" });
+    const muted = voiceReducer({ ...idle, status: "SAKINAH_SPEAKING" }, { type: "TOGGLE_MUTE" });
     expect(muted).toMatchObject({ muted: true, status: "IDLE" });
     expect(run([{ type: "START" }], { ...initialVoiceState, muted: true }).status).toBe("IDLE"); // muted: no welcome audio
     const err = voiceReducer(idle, { type: "ERROR", message: "Mic blocked" });
@@ -145,7 +145,7 @@ describe("Speech text", () => {
   it("asks for short, list-free replies only for spoken messages", () => {
     expect(buildCompanionSystem({ memories: [], safetyMode: false, spoken: true })).toContain(VOICE_REPLY_ADDENDUM);
     expect(buildCompanionSystem({ memories: [], safetyMode: false })).not.toContain(VOICE_REPLY_ADDENDUM);
-    expect(buildCompanionSystem({ memories: [], safetyMode: false })).toMatch(/You are Sakina.*not connected to the 800-SAKINA helpline/);
+    expect(buildCompanionSystem({ memories: [], safetyMode: false })).toMatch(/You are Sakinah.*independent AI companion.*not affiliated with the official 800-SAKINA/);
   });
 
   it("caps very long replies at a sentence boundary", () => {
@@ -225,7 +225,7 @@ describe("OpenAIVoiceProvider (real SDK against a local fake API)", () => {
     await expect(provider().transcribe(audio)).rejects.toMatchObject({ code: "EMPTY" });
   });
 
-  it("synthesises MP3 speech with Sakina's voice and calm delivery instructions", async () => {
+  it("synthesises MP3 speech with Sakinah's voice and calm delivery instructions", async () => {
     next = { body: Buffer.from("ID3fake-mp3") };
     const out = await provider().speak("Hello Sam.");
     expect(Buffer.from(out).toString()).toBe("ID3fake-mp3");

@@ -28,6 +28,10 @@ export function EmergencyContacts({ compact = false, className }: { compact?: bo
           your local emergency number instead, for example 112 in the EU, 911 in the US and Canada, or 999 in the UK.
         </span>
       </p>
+      <p data-testid="sakina-line-note" className="rounded-xl bg-surface px-3 py-2 text-xs text-ink-soft">
+        <strong className="font-semibold text-ink">800-SAKINA</strong> is the official Abu Dhabi mental health support line, answered by trained people. It is a separate service and is
+        not part of SaveTheSoul or its AI companion, Sakinah.
+      </p>
       <div className="grid grid-cols-2 gap-3">
         {emergency.map((r) => (
           <CallTile key={r.slug} r={r} tone="safety" compact={compact} />
