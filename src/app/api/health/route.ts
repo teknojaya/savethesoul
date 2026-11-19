@@ -12,10 +12,10 @@ export async function GET() {
   } catch {
     database = "error";
   }
-  let ai: { provider: string; generative: boolean } | { provider: "misconfigured" };
+  let ai: { provider: string; label: string; generative: boolean } | { provider: "misconfigured" };
   try {
     const p = describeProvider();
-    ai = { provider: p.id, generative: p.isGenerative };
+    ai = { provider: p.id, label: p.label, generative: p.isGenerative };
   } catch {
     ai = { provider: "misconfigured" };
   }

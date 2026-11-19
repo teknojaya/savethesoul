@@ -8,6 +8,9 @@ import {
 import { buildCompanionSystem } from "./prompts";
 import { ProviderError, type ChatProvider, type ChatTurn } from "./types";
 
+/** Cost control: a companion reply (including any reasoning tokens) never exceeds this. */
+export const CHAT_MAX_OUTPUT_TOKENS = 1500;
+
 export type ResponseMode = "crisis" | "safety-check" | "normal";
 
 export type PipelineEvent =
@@ -77,7 +80,7 @@ export async function* runCompanionTurn(input: PipelineInput): AsyncGenerator<Pi
   const timer = setTimeout(() => controller.abort(), input.timeoutMs);
   let text = "";
   try {
-    for await (const chunk of input.provider.stream({ system, messages, signal: controller.signal })) {
+    for await (const chunk of input.provider.stream({ system, messages, signal: controller.signal, maxTokens: CHAT_MAX_OUTPUT_TOKENS })) {
       if (controller.signal.aborted) throw new ProviderError("TIMEOUT", "Timed out");
       text += chunk;
       const violations = checkModelOutput(text);

@@ -11,10 +11,12 @@ const EnvSchema = z.object({
     .enum(["true", "false"])
     .default("false")
     .transform((v) => v === "true"),
-  LLM_PROVIDER: z.enum(["auto", "anthropic", "demo"]).default("auto"),
-  LLM_MODEL: z.string().default("claude-opus-5-5"),
+  LLM_PROVIDER: z.enum(["auto", "openai", "anthropic", "demo"]).default("auto"),
+  /** Model id for the selected provider; each provider has its own default when unset. */
+  LLM_MODEL: z.string().trim().optional().transform((v) => v || undefined),
   LLM_TIMEOUT_MS: z.coerce.number().int().positive().default(30000),
   ANTHROPIC_API_KEY: z.string().optional(),
+  OPENAI_API_KEY: z.string().optional(),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
 });
 

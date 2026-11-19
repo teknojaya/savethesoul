@@ -15,7 +15,7 @@ export interface GenerateInput {
  * the browser. Add new providers (e.g. a UAE-hosted model) by implementing this interface.
  */
 export interface ChatProvider {
-  /** Stable id stored with messages: "anthropic" | "demo" */
+  /** Stable id stored with messages: "openai" | "anthropic" | "demo" */
   readonly id: string;
   /** Human-readable label shown in the UI */
   readonly label: string;

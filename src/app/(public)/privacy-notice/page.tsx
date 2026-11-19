@@ -13,7 +13,7 @@ const SECTIONS: { title: string; body: string[] }[] = [
   {
     title: "How AI processes your messages",
     body: [
-      "When you chat with the companion, your message and recent conversation are sent from our server to a large language model provider (Anthropic's Claude, when configured) to generate a reply. API keys are held only on our server.",
+      "When you chat with the companion, your message and recent conversation are sent from our server to a large language model provider (OpenAI's GPT models in this demo deployment; Anthropic's Claude is also supported) to generate a reply. Requests are sent with storage disabled. API keys are held only on our server.",
       "Before any message reaches the AI, an independent rule-based safety check looks for language suggesting immediate danger. If it finds some, the AI is bypassed and you're shown real emergency contacts.",
       "If no AI provider is configured, an offline demo companion with pre-written responses is used and clearly labelled.",
       "If you share a summary with a clinician, the AI may draft a short summary from the structured data you approved (never from your conversations). It is labelled unverified until the clinician reviews it.",

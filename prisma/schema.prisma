@@ -159,7 +159,7 @@ model ChatMessage {
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   role           MessageRole
   contentEnc     String
-  // Which engine produced an assistant message: "anthropic", "demo", "safety-template", "fallback"
+  // Which engine produced an assistant message: "openai", "anthropic", "demo", "safety-template", "fallback"
   provider       String?
   createdAt      DateTime     @default(now())
 
