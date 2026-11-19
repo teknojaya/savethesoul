@@ -121,7 +121,7 @@ These messages are **test phrases**. They exercise the Safety Guardian and are n
 
 | # | Step | Expected result | Pass | Fail |
 |---|---|---|---|---|
-| V0 | Open **Companion** from the dashboard (a new chat) | Sakinah's illustrated avatar and *Sakinah · AI support · not a clinician* in the header. Her greeting is the first message. It is spoken automatically, or, if your browser blocks autoplay, a **Tap to hear Sakinah** button plays it. The microphone stays off. Refresh: the greeting text stays but is not spoken again. Open an existing conversation: no greeting | [ ] | [ ] |
+| V0 | Open **Companion** from the dashboard (a new chat) | Sakinah's illustrated avatar and *Sakinah · AI support · not a clinician* in the header. Her greeting is the first message. It is spoken automatically, or, if your browser blocks autoplay, a **Tap to hear Sakinah** button plays it. The microphone stays off. Refresh: the greeting text stays but is not spoken again. **New conversation**: greeted again, once. Open an existing conversation: no greeting | [ ] | [ ] |
 
 
 Use headphones or a quiet room. Speak only synthetic test content. Voice uses OpenAI for speech-to-text and text-to-speech.

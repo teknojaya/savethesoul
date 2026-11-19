@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { expect, test, type Page, type Request } from "@playwright/test";
+import { deleteIsolatedPatient, registerIsolatedPatient } from "./support";
 
 /**
  * Sakinah Voice Mode in a real Chromium with a fake microphone (synthetic audio).
@@ -11,16 +12,12 @@ test.use({
   launchOptions: { args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream", "--autoplay-policy=no-user-gesture-required"] },
 });
 test.describe.configure({ mode: "serial" });
+// Each test uses a fresh synthetic patient, deleted afterwards (safe to run against production).
+test.afterEach(({ page }) => deleteIsolatedPatient(page));
 
 const WELCOME =
   "Hello, I'm Sakinah, your AI wellbeing companion. I'm here to listen, support you, and help you through whatever is on your mind or whatever you're going through. You can share anything you're comfortable with, at your own pace. How are you feeling today?";
 const MP3 = readFileSync("public/audio/sakinah-welcome.mp3");
-
-async function login(page: Page, key: string) {
-  await page.goto("/login");
-  await page.getByTestId(`demo-${key}`).click();
-  await page.waitForURL(/\/patient/);
-}
 
 /** Stubs the audio provider endpoints; records what the page sends. */
 async function stubVoice(page: Page, transcripts: string[]) {
@@ -76,7 +73,7 @@ async function record(page: Page) {
 
 test("voice mode falls back to text when no audio provider is configured", async ({ page }) => {
   await page.route("**/api/voice/consent", (route) => route.fulfill({ json: { available: false, consented: false } }));
-  await login(page, "layla");
+  await registerIsolatedPatient(page);
   const res = await page.goto("/patient/companion");
   // Regression: the security header must allow the microphone for this origin only.
   expect(res?.headers()["permissions-policy"]).toContain("microphone=(self)");
@@ -89,7 +86,7 @@ test("voice mode falls back to text when no audio provider is configured", async
 test("two-way voice conversation with Sakinah: welcome, speak, review, reply, replay, mute, switch to text", async ({ page }) => {
   await trackMicrophone(page);
   const seen = await stubVoice(page, ["Work has been really stressfull lately", "Never mind"]);
-  await login(page, "layla");
+  await registerIsolatedPatient(page);
   const greetingAudio = page.waitForRequest((r) => r.url().endsWith("/audio/sakinah-welcome.mp3"));
   await page.goto("/patient/companion");
 
@@ -159,7 +156,7 @@ test("two-way voice conversation with Sakinah: welcome, speak, review, reply, re
 
 test("a spoken crisis disclosure shows emergency guidance at once and bypasses the AI", async ({ page }) => {
   const seen = await stubVoice(page, ["I'm going to kill myself tonight"]);
-  await login(page, "omar");
+  await registerIsolatedPatient(page);
   await page.goto("/patient/companion");
   await page.getByTestId("voice-toggle").click();
   await startVoice(page);
@@ -178,7 +175,7 @@ test("a blocked microphone gives a clear message and text chat keeps working", a
     navigator.mediaDevices.getUserMedia = () => Promise.reject(new DOMException("denied", "NotAllowedError"));
   });
   await stubVoice(page, []);
-  await login(page, "layla");
+  await registerIsolatedPatient(page);
   await page.goto("/patient/companion");
   await page.getByTestId("voice-toggle").click();
   await startVoice(page);
@@ -195,7 +192,7 @@ test("a browser without recording support is told so, never silently", async ({ 
     delete (window as unknown as { MediaRecorder?: unknown }).MediaRecorder;
   });
   await stubVoice(page, []);
-  await login(page, "layla");
+  await registerIsolatedPatient(page);
   await page.goto("/patient/companion");
   await page.getByTestId("voice-toggle").click();
   await startVoice(page);

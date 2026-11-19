@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   ArrowUp,
   BookmarkPlus,
@@ -30,8 +29,10 @@ import { VoiceMode, type VoiceSendResult } from "./voice-mode";
 import { SAKINAH_NAME, SAKINAH_WELCOME_AUDIO_PATH, SAKINAH_WELCOME_TEXT } from "@/features/voice/sakinah";
 import {
   classifyPlayError,
-  greetingHeardThisSession,
-  markGreetingHeard,
+  greetingAttempted,
+  isDraftChatId,
+  markGreetingAttempted,
+  newDraftChatId,
   shouldAutoplayGreeting,
   shouldShowGreeting,
   type GreetingAudio,
@@ -83,7 +84,6 @@ export function CompanionChat(props: {
   conversations: ConvoSummary[];
   initial: { id: string; messages: { id: string; role: string; content: string; provider: string | null }[] } | null;
 }) {
-  const router = useRouter();
   const [conversationId, setConversationId] = useState<string | null>(props.initial?.id ?? null);
   const [messages, setMessages] = useState<Msg[]>(() => {
     const existing = props.initial?.messages.map((m) => ({ id: m.id, role: mapRole(m.role), content: m.content, provider: m.provider })) ?? [];
@@ -92,6 +92,9 @@ export function CompanionChat(props: {
   });
   const [greetingAudio, setGreetingAudio] = useState<GreetingAudio>("idle");
   const greetingRef = useRef<HTMLAudioElement | null>(null);
+  /** Identity of the current new (not yet saved) chat, also kept in the URL as ?new=…. */
+  const draftChatId = useRef<string | null>(null);
+  const pauseOnUnmount = useRef<number | null>(null);
   const [conversations, setConversations] = useState(props.conversations);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -119,10 +122,7 @@ export function CompanionChat(props: {
     const a = greetingRef.current;
     a.currentTime = 0;
     a.play()
-      .then(() => {
-        setGreetingAudio("playing");
-        markGreetingHeard();
-      })
+      .then(() => setGreetingAudio("playing"))
       .catch((err) => setGreetingAudio(classifyPlayError(err) === "blocked" ? "blocked" : "stopped"));
   }
 
@@ -134,10 +134,30 @@ export function CompanionChat(props: {
     }
   }
 
-  // Try to greet aloud once per browser tab session when a new chat opens. The microphone is never touched.
+  /** Attempts the greeting once for this chat id; the attempt is recorded first, so it can never repeat. */
+  function greetChat(chatId: string) {
+    draftChatId.current = chatId;
+    if (!shouldAutoplayGreeting({ showGreeting: true, alreadyAttempted: greetingAttempted(chatId) })) return;
+    markGreetingAttempted(chatId);
+    playGreeting();
+  }
+
+  // A new chat opens: give it an identity (kept on refresh) and greet once. The microphone is never touched.
   useEffect(() => {
-    if (shouldAutoplayGreeting({ showGreeting: messages[0]?.id === GREETING_MESSAGE.id, heardThisSession: greetingHeardThisSession() })) playGreeting();
-    return () => greetingRef.current?.pause();
+    // React Strict Mode remounts immediately in development: cancel the deferred pause instead of cutting the greeting off.
+    if (pauseOnUnmount.current !== null) {
+      window.clearTimeout(pauseOnUnmount.current);
+      pauseOnUnmount.current = null;
+    }
+    if (messages[0]?.id === GREETING_MESSAGE.id && draftChatId.current === null) {
+      const fromUrl = new URLSearchParams(window.location.search).get("new");
+      const chatId = isDraftChatId(fromUrl) ? fromUrl : newDraftChatId();
+      if (chatId !== fromUrl) window.history.replaceState(null, "", `/patient/companion?new=${chatId}`);
+      greetChat(chatId);
+    }
+    return () => {
+      pauseOnUnmount.current = window.setTimeout(() => greetingRef.current?.pause(), 0);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- run once when the chat opens
   }, []);
 
@@ -278,13 +298,15 @@ export function CompanionChat(props: {
 
   function newConversation() {
     setConversationId(null);
+    stopGreeting();
     setMessages([GREETING_MESSAGE]);
     setGreetingAudio("idle");
-    // Opened by a tap, so playing is allowed; still only once per tab session.
-    if (!greetingHeardThisSession()) playGreeting();
+    // Every new conversation gets its own identity and one greeting (this runs from a tap, so playing is allowed).
+    const chatId = newDraftChatId();
+    window.history.replaceState(null, "", `/patient/companion?new=${chatId}`);
+    greetChat(chatId);
     setSafety({ kind: "none" });
     setShowHistory(false);
-    router.replace("/patient/companion");
   }
 
   const isDemoProvider = !props.provider.isGenerative;
@@ -460,7 +482,12 @@ export function CompanionChat(props: {
               setMessages((m) => (m.some((x) => x.provider === "voice-welcome") ? m : [...m, { id: `w-${Date.now()}`, role: "assistant", content: SAKINAH_WELCOME_TEXT, provider: "voice-welcome" }]))
             }
             onExit={() => setVoiceMode(false)}
-            welcomeAlreadyHeard={greetingAudio === "playing" || greetingAudio === "ended" || greetingAudio === "stopped" || greetingHeardThisSession()}
+            welcomeAlreadyHeard={
+              greetingAudio === "playing" ||
+              greetingAudio === "ended" ||
+              greetingAudio === "stopped" ||
+              (greetingAudio === "idle" && draftChatId.current !== null && greetingAttempted(draftChatId.current))
+            }
             onBeforeAudio={stopGreeting}
           />
         ) : (

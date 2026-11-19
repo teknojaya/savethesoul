@@ -10,7 +10,7 @@ import { MAX_SPEECH_CHARS, splitForSpeech, toSpeakableText } from "@/features/vo
 import { buildCompanionSystem, VOICE_REPLY_ADDENDUM } from "@/features/ai/prompts";
 import { microphoneErrorMessage, pickRecorderMimeType } from "@/features/voice/recorder";
 import { OpenAIVoiceProvider, VoiceError } from "@/features/voice/voice-provider";
-import { classifyPlayError, greetingHeardThisSession, markGreetingHeard, shouldAutoplayGreeting, shouldShowGreeting } from "@/features/voice/greeting";
+import { classifyPlayError, greetingAttempted, isDraftChatId, markGreetingAttempted, MAX_REMEMBERED_CHATS, newDraftChatId, shouldAutoplayGreeting, shouldShowGreeting } from "@/features/voice/greeting";
 
 const run = (events: VoiceEvent[], from: VoiceState = initialVoiceState) => events.reduce(voiceReducer, from);
 
@@ -37,19 +37,37 @@ describe("New-chat greeting", () => {
     expect(shouldShowGreeting({ openedExistingConversation: true, messageCount: 4 })).toBe(false);
   });
 
-  it("is spoken automatically at most once per browser tab session", () => {
-    expect(shouldAutoplayGreeting({ showGreeting: true, heardThisSession: false })).toBe(true);
-    expect(shouldAutoplayGreeting({ showGreeting: true, heardThisSession: true })).toBe(false);
-    expect(shouldAutoplayGreeting({ showGreeting: false, heardThisSession: false })).toBe(false);
-    expect(shouldAutoplayGreeting({ showGreeting: true, heardThisSession: false, muted: true })).toBe(false);
+  it("is attempted once per new chat conversation, tracked by the chat's identity", () => {
+    expect(shouldAutoplayGreeting({ showGreeting: true, alreadyAttempted: false })).toBe(true);
+    expect(shouldAutoplayGreeting({ showGreeting: true, alreadyAttempted: true })).toBe(false);
+    expect(shouldAutoplayGreeting({ showGreeting: false, alreadyAttempted: false })).toBe(false);
+    expect(shouldAutoplayGreeting({ showGreeting: true, alreadyAttempted: false, muted: true })).toBe(false);
+
     const store = new Map<string, string>();
     const storage = { getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => void store.set(k, v) };
-    expect(greetingHeardThisSession(storage)).toBe(false);
-    markGreetingHeard(storage);
-    expect(greetingHeardThisSession(storage)).toBe(true);
+    const chatA = newDraftChatId(() => "aaaaaaaa-1111");
+    const chatB = newDraftChatId(() => "bbbbbbbb-2222");
+    expect(isDraftChatId(chatA)).toBe(true);
+    expect(isDraftChatId("cmwndqmzu000612nwiii8uz6k")).toBe(false); // a saved conversation id is not a draft
+    expect(isDraftChatId("d-<script>")).toBe(false);
+    expect(greetingAttempted(chatA, storage)).toBe(false);
+    markGreetingAttempted(chatA, storage);
+    expect(greetingAttempted(chatA, storage)).toBe(true); // refresh / revisit: no replay
+    expect(greetingAttempted(chatB, storage)).toBe(false); // a new conversation greets again
+    markGreetingAttempted(chatA, storage);
+    expect(JSON.parse(store.values().next().value!)).toEqual([chatA]); // no duplicates
+  });
+
+  it("keeps the record small and never crashes when storage is unavailable", () => {
+    const store = new Map<string, string>();
+    const storage = { getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => void store.set(k, v) };
+    for (let i = 0; i < MAX_REMEMBERED_CHATS + 5; i++) markGreetingAttempted(`d-chat-${String(i).padStart(4, "0")}`, storage);
+    expect(greetingAttempted("d-chat-0000", storage)).toBe(false); // oldest forgotten
+    expect(greetingAttempted(`d-chat-${String(MAX_REMEMBERED_CHATS + 4).padStart(4, "0")}`, storage)).toBe(true);
     const broken = { getItem: () => { throw new Error("blocked"); }, setItem: () => { throw new Error("blocked"); } };
-    expect(greetingHeardThisSession(broken)).toBe(false); // storage unavailable: fail open, never crash
-    expect(() => markGreetingHeard(broken)).not.toThrow();
+    expect(greetingAttempted("d-x-12345678", broken)).toBe(false);
+    expect(() => markGreetingAttempted("d-x-12345678", broken)).not.toThrow();
+    expect(greetingAttempted("d-x-12345678", null)).toBe(false);
   });
 
   it("recognises a browser autoplay block, so the 'Tap to hear Sakinah' fallback is shown", () => {
