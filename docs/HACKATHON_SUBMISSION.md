@@ -62,7 +62,7 @@ Escalation is always **initiated by the user**. The care-team alert in this prot
 
 ## 6. Technology stack
 
-Next.js 16 (App Router, React 19, TypeScript), Tailwind CSS 4, Prisma ORM 7 with PostgreSQL, Zod validation, the Anthropic TypeScript SDK, Vitest and Playwright. Hosted on Railway: a Node web service plus a managed PostgreSQL database in an isolated project. The app is an installable PWA with an offline crisis page.
+Next.js 16 (App Router, React 19, TypeScript), Tailwind CSS 4, Prisma ORM 7 with PostgreSQL, Zod validation, the official OpenAI Node.js SDK (Responses API), Vitest and Playwright. Hosted on Railway: a Node web service plus a managed PostgreSQL database in an isolated project. The app is an installable PWA with an offline crisis page.
 
 ## 7. System architecture
 
@@ -73,7 +73,7 @@ Next.js 16 (App Router, React 19, TypeScript), Tailwind CSS 4, Prisma ORM 7 with
                             │      session auth, role and consent checks, audit log
                             │  services ▶ repositories (Prisma)
                             │  Safety Guardian (deterministic, runs first)
-                            └─▶ Anthropic API (only when the Guardian allows, and the user consented)
+                            └─▶ OpenAI Responses API (only when the Guardian allows, within the AI rate limit, and with AI-processing consent)
 ```
 
 Sessions are random tokens stored in the database as SHA-256 hashes, sent in `HttpOnly; Secure; SameSite=Lax` cookies. Sensitive free text is encrypted with AES-256-GCM before storage. Details: [ARCHITECTURE.md](ARCHITECTURE.md).
@@ -82,13 +82,16 @@ Sessions are random tokens stored in the database as SHA-256 hashes, sent in `Ht
 
 | | |
 |---|---|
-| Provider | Anthropic, through the official `@anthropic-ai/sdk`, called only from the server |
-| Model | `claude-opus-5-5` (set by `LLM_MODEL`), streaming responses, low effort for conversational speed, with server-side fallback to another model |
-| Selection | `LLM_PROVIDER=auto` uses Anthropic when `ANTHROPIC_API_KEY` is set. Otherwise the **offline demo companion** gives pre-written replies, each labelled *"Pre-written demo response"* |
-| Failures | Timeouts, outages and refusals produce a clearly labelled, pre-written supportive message. Emergency guidance is always available. Failures are logged as system events with no message content |
-| Key handling | Stored only in Railway variables; never sent to the browser or committed |
+| Provider | OpenAI, through the official `openai` Node.js SDK and the **Responses API**, called only from the server. The key is held in Railway variables and never reaches the browser |
+| Model | `gpt-5.4-mini` (set by `LLM_MODEL`), a small, low-cost model, used at low reasoning effort for conversational speed. The choice is provisional until an authenticated request confirms access |
+| Streaming | Text deltas are streamed to the browser as they arrive, and the output guard checks the reply while it streams |
+| Cost controls | 1,500 output tokens per reply; the last 20 turns of context; 30 AI replies per patient per minute; 30 s timeout with one retry |
+| Privacy | `store: false`, so responses are not kept by OpenAI for later retrieval. This does not switch off every provider-side retention. Messages are sent only with AI-processing consent, and memories only while memory is on |
+| Failures | Refusals, empty replies, timeouts and outages produce a clearly labelled, pre-written supportive message. Emergency guidance does not depend on the model |
+| Demo fallback | With `LLM_PROVIDER=demo`, or without a key, the **offline demo companion** gives pre-written replies labelled *"Pre-written demo response"* |
+| Status | `/api/health` reports the provider, the model and a status: `demo`, `missing_key`, `configured_untested`, `verified` or `unavailable` |
 
-**Current deployment status:** see the testing section below. Until a key is configured, the deployed demo uses the labelled offline companion.
+**Verification status (19 Nov 2026):** the OpenAI integration has been tested through the real SDK against a local mock of the Responses API (21 tests). **It has not yet been verified against the live OpenAI API, and the public deployment still runs the labelled demo companion.** This section will be updated once a live, authenticated request succeeds.
 
 ## 9. Privacy and data protection
 
@@ -159,7 +162,7 @@ Demo accounts have no administrator privileges. All data is synthetic. The demo 
 
 | Real and working | Simulated or synthetic (labelled in the interface) |
 |---|---|
-| AI conversation through the Anthropic API, when a key is configured | Offline demo companion when no key is set (labelled "Pre-written demo response") |
+| AI conversation through the OpenAI Responses API, when a key is configured | Offline demo companion when no key is set (labelled "Pre-written demo response") |
 | Safety Guardian, crisis routing, output guard, fallbacks | Care-team safety alerts and their acknowledgement |
 | WHO-5 scoring, check-ins, trends, goals | Provider acknowledgement of referrals (all clinicians are synthetic) |
 | Consent ledger, revocation, server-side enforcement | Messages to trusted contacts (recorded, **never sent**) |
@@ -171,16 +174,24 @@ Demo accounts have no administrator privileges. All data is synthetic. The demo 
 
 All of the following were run on **19 November 2026**.
 
+**Current code (OpenAI integration and safety-ordering fix, run locally):**
+
 | Check | Command | Result |
 |---|---|---|
 | TypeScript | `pnpm typecheck` | Pass, 0 errors |
 | ESLint | `pnpm lint` | Pass, 0 problems |
-| Unit (Vitest) | `pnpm test:unit` | **110 / 110 passed** |
-| Integration (Vitest + PostgreSQL) | `pnpm test:integration` | **40 / 40 passed** |
+| Unit (Vitest) | `pnpm test:unit` | **131 / 131 passed** (includes 21 OpenAI SDK tests against a local mock Responses API) |
+| Integration (Vitest + PostgreSQL) | `pnpm test:integration` | **53 / 53 passed** (includes 13 chat-safety ordering, consent and health tests) |
 | End-to-end, local (Playwright, mobile) | `pnpm test:e2e` | **8 / 8 passed** |
-| Production build | Railway build (`pnpm build`) | Pass |
-| **End-to-end against the live deployment** | Same 8 Playwright scenarios pointed at the production URL | **8 / 8 passed** |
-| Live security smoke tests | `curl` against production | Pass (details below) |
+| Production build | `pnpm build` | Pass |
+| Live OpenAI API | `pnpm ai:live-check` | **Not yet run** (no API key configured) |
+
+**Currently deployed build (`fe0ab5c`, demo companion):**
+
+| Check | Result |
+|---|---|
+| End-to-end against the live deployment (the same 8 Playwright scenarios) | **8 / 8 passed** |
+| Live security smoke tests (`curl`) | Pass (details below) |
 
 **Live smoke checks (production):**
 - `/api/health` reports the database as ok.
@@ -197,7 +208,7 @@ The unit and integration suites cover WHO-5 scoring, trend rules, the safety cla
 
 ## 18. Assumptions, dependencies and limitations
 
-- **Dependencies:** PostgreSQL 14+ and Node 22+. Generative replies need an Anthropic API key.
+- **Dependencies:** PostgreSQL 14+ and Node 22+. Generative replies need an OpenAI API key.
 - **Emergency numbers** were verified on 18 November 2026 (sources in [AI_SAFETY.md](AI_SAFETY.md)) and must be re-verified before any real use.
 - **Not clinically validated.** The safety detector is rule-based and has documented misses. The safety templates and prompts have not had clinical sign-off.
 - **Not regulatory-compliant yet.** Hosting (Railway, US region) and LLM data residency do not meet UAE health-data requirements, so the deployment is suitable for synthetic data only. No ADHICS, PDPL or DoH assessment has been carried out.

@@ -26,7 +26,8 @@ docker run -d --name savethesoul-db -e POSTGRES_USER=sts -e POSTGRES_PASSWORD=st
 cp .env.example .env
 #   set DATABASE_URL=postgresql://sts:sts_dev_password@localhost:5433/savethesoul?schema=public
 #   set DATA_ENCRYPTION_KEY=$(openssl rand -base64 32)
-#   optionally set ANTHROPIC_API_KEY to use Claude instead of the offline demo companion
+#   set OPENAI_API_KEY (project-scoped key) for real AI replies; without it the labelled
+#   offline demo companion is used
 
 # 3. Install, migrate, seed, run
 pnpm install
@@ -49,13 +50,21 @@ A guided walkthrough for judges is in **[docs/HACKATHON_SUBMISSION.md](docs/HACK
 
 ## AI provider
 
+OpenAI is the primary provider, called from the server through the official `openai` SDK and the **Responses API** with streaming.
+
 | `LLM_PROVIDER` | Behaviour |
 |---|---|
-| `auto` (default) | Claude via the Anthropic API if `ANTHROPIC_API_KEY` is set; otherwise the offline demo companion |
-| `anthropic` | Always Claude (model from `LLM_MODEL`, default `claude-opus-5-5`) |
+| `openai` (recommended) | OpenAI, model from `LLM_MODEL` (default `gpt-5.4-mini`). Without `OPENAI_API_KEY` the labelled demo companion is used; it never silently switches to another vendor |
 | `demo` | Offline, pre-written supportive responses selected by topic, **clearly labelled in the UI as not AI-generated** |
+| `anthropic` | Optional alternative adapter (`ANTHROPIC_API_KEY`) |
+| `auto` | OpenAI if its key is set, else Anthropic, else demo |
 
-The safety system runs identically in every mode, and emergency guidance never depends on the model.
+- **Cost controls:** at most 1,500 output tokens per reply (including reasoning), the last 20 turns of context, low reasoning effort, a 30 s timeout with one retry, and 30 AI replies per patient per minute.
+- **Privacy:** requests use `store: false`, so OpenAI does not keep responses for later retrieval. This does not switch off every provider-side retention; see the OpenAI data controls for your account. Messages reach the model only with the patient's AI-processing consent. Saved memories are included only while memory is switched on.
+- **Status:** `GET /api/health` reports the selected provider, the model and a status: `demo`, `missing_key`, `configured_untested`, `verified` (only after a real reply succeeded) or `unavailable` (error code only).
+- **Live check:** `pnpm ai:live-check` sends seven synthetic conversations and a timeout test to the real API. `pnpm ai:live-check --models` lists the models your key can use.
+
+The Safety Guardian runs before the model, before the AI rate limit and before the consent check, so a crisis message always gets emergency guidance, even when the AI is unavailable, rate-limited or not permitted.
 
 ## Scripts
 

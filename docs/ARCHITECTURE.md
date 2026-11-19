@@ -8,7 +8,7 @@ A single Next.js 16 (App Router) application serves the patient PWA, the clinici
 Browser (PWA)  ── HTTPS ──▶  Next.js Route Handlers (/api/*)  ──▶  Services  ──▶  Repositories / Prisma  ──▶  PostgreSQL
    │                              │                                    │
    │  Server Components ──────────┘ (call services directly)           ├──▶ Safety Guardian (pure rules)
-   │                                                                    └──▶ AI provider (Anthropic | demo)
+   │                                                                    └──▶ AI provider (OpenAI | demo; Anthropic optional)
    └── Service worker: caches ONLY /help and /offline
 ```
 
@@ -66,11 +66,14 @@ docs/
 ## AI chat data flow
 
 ```
+POST /messages ─▶ auth + role ─▶ Zod validation ─▶ conversation ownership
 user message ─▶ assessMessage() ─┬─ IMMEDIATE_DANGER ─▶ crisis template (no LLM) ─▶ crisis panel
                                   ├─ ELEVATED_CONCERN ─▶ LLM + SAFETY MODE prompt ─▶ output guard ─▶ safety check-in card
                                   └─ NO_FLAG ──────────▶ LLM ─────────────────────▶ output guard ─▶ reply
                          any provider error / timeout / refusal ─▶ safe fallback text (+ crisis line)
 ```
+
+The Safety Guardian (`assessMessage`) runs **before** the AI-consent check and the AI rate limit. Flagged messages are answered with deterministic templates through a non-generative `SafetyOnlyProvider` when the model may not be used. Unflagged messages without consent or over the limit are refused with the emergency numbers. The OpenAI provider uses the Responses API with `store: false`, a 1,500-token output cap and low reasoning effort.
 
 Replies stream to the browser as NDJSON events (`safety`, `delta`, `replace`, `done`, `saved`). Messages are stored encrypted. The pipeline (`features/ai/companion-pipeline.ts`) has no database dependency, so it is unit-tested with fake providers.
 

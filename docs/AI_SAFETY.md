@@ -8,7 +8,7 @@ SaveTheSoul's safety design assumes that **any single safeguard will sometimes f
 |---|---|---|
 | 1. Always-visible "Get help now" | Header button on every screen leads to `/help`: real numbers as `tel:` links, steps for the next few minutes, a breathing guide | No; static page, cached offline |
 | 2. Input Safety Guardian (`features/safety/classifier.ts`) | Rule-based detector run on every message **before** the model | No |
-| 3. Immediate-danger bypass | Explicit danger means the model is **not called**. A fixed crisis response and crisis panel are shown | No |
+| 3. Immediate-danger bypass | Explicit danger means the model is **not called**. A fixed crisis response and crisis panel are shown. Runs before the AI rate limit and the AI-consent check, so a rate-limited user, or one without AI consent, still gets it | No |
 | 4. Safety mode | Elevated or ambiguous language means the model gets a safety-mode instruction and the UI shows a safety check-in card | Partly; the card is deterministic |
 | 5. System prompt boundaries | AI identity, no diagnosis, no medication, no methods, encourage human support | Yes |
 | 6. Output guard | Scans streamed output for clinician impersonation, diagnosis, medication instructions, method information and discouraging help. A violation replaces the reply | No |
@@ -65,6 +65,8 @@ The interface shows each resource's verification status, note, source link and c
 - **3 documented false negatives**: indirect expressions rules-v1 misses ("I've given away all my things…"). These stay as tests so the limitation remains visible and future detectors are measured against them;
 - crisis bypass (the LLM is never called), safety mode, LLM outage before and mid-stream, timeout, refusal, empty reply, and output-guard replacement.
 
+`tests/integration/chat-safety.test.ts` checks the order of steps in the chat route. A crisis message gets guidance when the AI rate limit is reached, when AI consent is missing, and when the provider is down, and the model is never called in those cases. It also checks that memories are sent only with memory switched on and that context stays within 20 turns.
+
 `tests/integration/workflows.test.ts` covers the persisted crisis flow (no message text in safety events, nobody contacted), crisis templates during an LLM outage, failed hand-off with no care team, clinician acknowledgement, and demo-only simulation guards.
 
 ## Known limitations
@@ -72,4 +74,4 @@ The interface shows each resource's verification status, note, source link and c
 - A rule-based detector cannot understand context, sarcasm, indirect expressions or most Arabic dialects. It must be complemented, not replaced, by clinically validated models and human review.
 - The output guard is pattern-based and can be bypassed by unusual phrasing.
 - The crisis templates were drafted for the prototype and **have not been reviewed by a clinician**. They need clinical sign-off before real use.
-- The Anthropic provider path is implemented against the official SDK and type-checked, but was **not exercised against the live API** in this build environment (no key was available). Every test uses fake or offline providers.
+- The OpenAI provider (primary) is tested through the real `openai` SDK against a local mock Responses API: streaming, refusal, empty, failed, HTTP errors and timeout. **It has not yet been verified against the live OpenAI API**; run `pnpm ai:live-check` once a key is configured. The optional Anthropic adapter has also never been run against its live API.
