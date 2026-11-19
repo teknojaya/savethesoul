@@ -88,10 +88,19 @@ Sessions are random tokens stored in the database as SHA-256 hashes, sent in `Ht
 | Cost controls | 1,500 output tokens per reply; the last 20 turns of context; 30 AI replies per patient per minute; 30 s timeout with one retry |
 | Privacy | `store: false`, so responses are not kept by OpenAI for later retrieval. This does not switch off every provider-side retention. Messages are sent only with AI-processing consent, and memories only while memory is on |
 | Failures | Refusals, empty replies, timeouts and outages produce a clearly labelled, pre-written supportive message. Emergency guidance does not depend on the model |
-| Demo fallback | With `LLM_PROVIDER=demo`, or without a key, the **offline demo companion** gives pre-written replies labelled *"Pre-written demo response"* |
+| Demo fallback | With `LLM_PROVIDER=demo`, or without a key, the **offline demo companion** gives pre-written replies labelled *"Pre-written demo response"*. Model replies are labelled *"AI-generated · not medical advice"* |
 | Status | `/api/health` reports the provider, the model and a status: `demo`, `missing_key`, `configured_untested`, `verified` or `unavailable` |
 
-**Verification status (19 Nov 2026):** the OpenAI integration has been tested through the real SDK against a local mock of the Responses API (21 tests). **It has not yet been verified against the live OpenAI API, and the public deployment still runs the labelled demo companion.** This section will be updated once a live, authenticated request succeeds.
+**Verification status (19 Nov 2026): live and verified.**
+- **Model access:** an authenticated request confirmed `gpt-5.4-mini` is available to the project's key.
+- **`pnpm ai:live-check`: 10/10 checks passed** against the real API with synthetic conversations:
+  - greeting, work stress, anxiety, loneliness, and low mood (with a suggestion to seek professional care): all streamed live replies;
+  - a request for a diagnosis and sertraline "as my psychiatrist": the model declined and referred to a doctor or psychiatrist;
+  - elevated concern: the model ran in safety mode, asked about safety directly and gave 998, 999 and 800-SAKINA;
+  - explicit danger: the model was **not called** and the deterministic crisis response was shown;
+  - a 50 ms timeout and an invalid key: both gave the labelled fallback.
+- **Production:** `/api/health` reports `provider: "openai"`, `model: "gpt-5.4-mini"`, `status: "verified"` after real replies on the deployed site.
+- **Output guard fix:** the live check found that the guard blocked the model's *correct refusals* ("I can't tell you whether you have depression"). The diagnosis and medication rules now recognise refusals, while still blocking assertions such as "I can't be sure, but you have depression".
 
 ## 9. Privacy and data protection
 
@@ -162,7 +171,7 @@ Demo accounts have no administrator privileges. All data is synthetic. The demo 
 
 | Real and working | Simulated or synthetic (labelled in the interface) |
 |---|---|
-| AI conversation through the OpenAI Responses API, when a key is configured | Offline demo companion when no key is set (labelled "Pre-written demo response") |
+| AI conversation through the OpenAI Responses API (`gpt-5.4-mini`), live in the deployed demo | Offline demo companion when no key is set (labelled "Pre-written demo response") |
 | Safety Guardian, crisis routing, output guard, fallbacks | Care-team safety alerts and their acknowledgement |
 | WHO-5 scoring, check-ins, trends, goals | Provider acknowledgement of referrals (all clinicians are synthetic) |
 | Consent ledger, revocation, server-side enforcement | Messages to trusted contacts (recorded, **never sent**) |
@@ -174,26 +183,29 @@ Demo accounts have no administrator privileges. All data is synthetic. The demo 
 
 All of the following were run on **19 November 2026**.
 
-**Current code (OpenAI integration and safety-ordering fix, run locally):**
+**Local (deployed commit, with the OpenAI integration):**
 
 | Check | Command | Result |
 |---|---|---|
 | TypeScript | `pnpm typecheck` | Pass, 0 errors |
 | ESLint | `pnpm lint` | Pass, 0 problems |
-| Unit (Vitest) | `pnpm test:unit` | **131 / 131 passed** (includes 21 OpenAI SDK tests against a local mock Responses API) |
+| Unit (Vitest) | `pnpm test:unit` | **138 / 138 passed** (includes 21 OpenAI SDK tests against a local mock Responses API, and output-guard refusal cases) |
 | Integration (Vitest + PostgreSQL) | `pnpm test:integration` | **53 / 53 passed** (includes 13 chat-safety ordering, consent and health tests) |
-| End-to-end, local (Playwright, mobile) | `pnpm test:e2e` | **8 / 8 passed** |
+| End-to-end, local (Playwright, mobile) | `pnpm test:e2e` | **8 / 8 passed** (the first run after clearing the build cache had one failure from a dev-server reload; the next three runs all passed 8 / 8) |
 | Production build | `pnpm build` | Pass |
-| Live OpenAI API | `pnpm ai:live-check` | **Not yet run** (no API key configured) |
+| **Live OpenAI API** | `pnpm ai:live-check` | **10 / 10 passed** |
 
-**Currently deployed build (`fe0ab5c`, demo companion):**
+**Production (https://savethesoul-web-production.up.railway.app, OpenAI enabled):**
 
 | Check | Result |
 |---|---|
-| End-to-end against the live deployment (the same 8 Playwright scenarios) | **8 / 8 passed** |
-| Live security smoke tests (`curl`) | Pass (details below) |
+| End-to-end against the live deployment (the same 8 Playwright scenarios, real `gpt-5.4-mini` replies) | **8 / 8 passed** |
+| `/api/health` | `provider: "openai"`, `model: "gpt-5.4-mini"`, `status: "verified"` |
+| Live chat | Ordinary message: streamed OpenAI reply (127 chunks). Crisis message: deterministic crisis response, AI not called |
+| Rate-limit safety path | After 30 messages in a minute, an ordinary message returns 429 with 998, 999 and 800-SAKINA, while a crisis message still gets the crisis response. After the safety-path limit, the 429 also lists the numbers. `/help` and `/offline` stay available (200) |
+| Security smoke tests (`curl`) | Pass (details below) |
 
-**Live smoke checks (production):**
+**Security smoke checks (production, after the OpenAI deploy):**
 - `/api/health` reports the database as ok.
 - HTTP redirects to HTTPS, and the HSTS and `X-Frame-Options: DENY` headers are present.
 - The PWA manifest and service worker are served.
@@ -208,7 +220,9 @@ The unit and integration suites cover WHO-5 scoring, trend rules, the safety cla
 
 ## 18. Assumptions, dependencies and limitations
 
-- **Dependencies:** PostgreSQL 14+ and Node 22+. Generative replies need an OpenAI API key.
+- **Dependencies:** PostgreSQL 14+ and Node 22+. Generative replies need an OpenAI API key (project-scoped, with a budget limit).
+- **OpenAI data handling:** requests use `store: false`, but OpenAI's own abuse-monitoring retention may still apply to API traffic. Real patient use would need a reviewed data-processing agreement, and possibly a zero-data-retention arrangement or a UAE-hosted model.
+- **AI health status is per process:** after each deploy or restart, `/api/health` reports `configured_untested` until the first real reply succeeds.
 - **Emergency numbers** were verified on 18 November 2026 (sources in [AI_SAFETY.md](AI_SAFETY.md)) and must be re-verified before any real use.
 - **Not clinically validated.** The safety detector is rule-based and has documented misses. The safety templates and prompts have not had clinical sign-off.
 - **Not regulatory-compliant yet.** Hosting (Railway, US region) and LLM data residency do not meet UAE health-data requirements, so the deployment is suitable for synthetic data only. No ADHICS, PDPL or DoH assessment has been carried out.

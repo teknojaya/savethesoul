@@ -2,7 +2,7 @@
 
 `railway.json` documents the build, pre-deploy migrations, start command and health check. Railway no longer applies config-as-code to newly created services, so set the same values on the service (Settings, or `railway`/MCP `update-service`). The live demo was configured this way.
 
-**Live demo:** project `savethesoul` (separate from all other projects), services `savethesoul-web` and `Postgres`, URL https://savethesoul-web-production.up.railway.app. The database has no public TCP proxy; it is reachable only on Railway's private network.
+**Live demo:** project `savethesoul` (separate from all other projects), services `savethesoul-web` and `Postgres`, URL https://savethesoul-web-production.up.railway.app. The database has no public TCP proxy; it is reachable only on Railway's private network. AI: `LLM_PROVIDER=openai`, `LLM_MODEL=gpt-5.4-mini`, with `OPENAI_API_KEY` set as a service variable. Switched over and verified on 19 Nov 2026 following section 6.
 
 ## 1. Create services
 

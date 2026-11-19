@@ -62,7 +62,7 @@ OpenAI is the primary provider, called from the server through the official `ope
 - **Cost controls:** at most 1,500 output tokens per reply (including reasoning), the last 20 turns of context, low reasoning effort, a 30 s timeout with one retry, and 30 AI replies per patient per minute.
 - **Privacy:** requests use `store: false`, so OpenAI does not keep responses for later retrieval. This does not switch off every provider-side retention; see the OpenAI data controls for your account. Messages reach the model only with the patient's AI-processing consent. Saved memories are included only while memory is switched on.
 - **Status:** `GET /api/health` reports the selected provider, the model and a status: `demo`, `missing_key`, `configured_untested`, `verified` (only after a real reply succeeded) or `unavailable` (error code only).
-- **Live check:** `pnpm ai:live-check` sends seven synthetic conversations and a timeout test to the real API. `pnpm ai:live-check --models` lists the models your key can use.
+- **Live check:** `pnpm ai:live-check` sends eight synthetic conversations, plus a timeout test and an invalid-key test, to the real API. It passed 10/10 on 19 Nov 2026, and the deployed demo runs `gpt-5.4-mini`. `pnpm ai:live-check --models` lists the models your key can use.
 
 The Safety Guardian runs before the model, before the AI rate limit and before the consent check, so a crisis message always gets emergency guidance, even when the AI is unavailable, rate-limited or not permitted.
 
