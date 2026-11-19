@@ -68,6 +68,8 @@ The Safety Guardian runs before the model, before the AI rate limit and before t
 
 ## Voice Mode: talk with Sakinah
 
+Every **new chat** opens with Sakinah's greeting as the first message. It is spoken automatically once per browser tab session where the browser allows autoplay; otherwise a **Tap to hear Sakinah** button is shown. The greeting is a pre-recorded file, so it is never saved, never sent to the AI, and never turns on the microphone. Re-opening an existing conversation does not greet again.
+
 In the companion, tap **Voice** to talk with **Sakinah**, SaveTheSoul's AI wellbeing companion, using push-to-talk.
 
 1. **Start Voice Conversation** plays Sakinah's welcome (a pre-generated MP3, so no paid call on each visit) and shows it as text. The microphone stays off.

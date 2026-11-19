@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Bot, Stethoscope, ShieldCheck, LifeBuoy, Loader2, ArrowRight, ArrowLeft, Check } from "lucide-react";
+import { Stethoscope, ShieldCheck, LifeBuoy, Loader2, ArrowRight, ArrowLeft, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SakinahAvatar } from "@/components/companion/sakinah-avatar";
 import { Card, Callout } from "@/components/ui/primitives";
 import { api, ApiError } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
@@ -75,14 +76,18 @@ export function OnboardingWizard({ name }: { name: string }) {
           </p>
           <div className="mt-6 grid gap-3">
             {[
-              { icon: Bot, title: "I'm an AI companion", body: "I'm not a person, a psychiatrist or a doctor. I can listen, reflect and suggest general wellbeing ideas." },
+              { icon: null, title: "I'm Sakinah, your AI wellbeing companion", body: "I'm not a person, a psychiatrist or a doctor. I can listen, reflect and suggest general wellbeing ideas." },
               { icon: Stethoscope, title: "Real care stays with real professionals", body: "I can't diagnose, prescribe or make treatment decisions — but I can help you find people who can." },
               { icon: LifeBuoy, title: "Help is always one tap away", body: "If you're ever in danger, the Help button shows real emergency and crisis numbers — even if the AI is offline." },
             ].map((x) => (
               <Card key={x.title} className="flex gap-4 p-4">
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-700">
-                  <x.icon className="size-5" aria-hidden />
-                </span>
+                {x.icon ? (
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-700">
+                    <x.icon className="size-5" aria-hidden />
+                  </span>
+                ) : (
+                  <SakinahAvatar className="size-10" />
+                )}
                 <div>
                   <p className="font-semibold text-ink">{x.title}</p>
                   <p className="text-sm text-muted">{x.body}</p>

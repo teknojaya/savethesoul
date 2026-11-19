@@ -36,7 +36,7 @@ test("Help page works without signing in and shows real emergency numbers", asyn
 test("Scenario 1 — everyday support, then a non-diagnostic WHO-5 result", async ({ page }) => {
   await demoLogin(page, "omar");
   await page.goto("/patient/companion");
-  await expect(page.getByText(/AI · not a clinician/)).toBeVisible();
+  await expect(page.getByText(/AI support · not a clinician/)).toBeVisible();
   const demoCompanion = await page.getByText(/offline demo responses/).isVisible();
   await sendChat(page, "Work has been really stressful, my manager keeps adding deadlines");
   if (demoCompanion) {

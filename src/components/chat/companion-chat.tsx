@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowUp,
-  Bot,
   BookmarkPlus,
   History,
   Home,
@@ -20,13 +19,27 @@ import {
   Check,
   Mic,
   Keyboard,
+  Volume2,
+  Square,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge, Callout } from "@/components/ui/primitives";
 import { CrisisPanel } from "@/components/safety/crisis-panel";
 import { RichText } from "./rich-text";
 import { VoiceMode, type VoiceSendResult } from "./voice-mode";
-import { SAKINAH_NAME, SAKINAH_WELCOME_TEXT } from "@/features/voice/sakinah";
+import { SAKINAH_NAME, SAKINAH_WELCOME_AUDIO_PATH, SAKINAH_WELCOME_TEXT } from "@/features/voice/sakinah";
+import {
+  classifyPlayError,
+  greetingHeardThisSession,
+  markGreetingHeard,
+  shouldAutoplayGreeting,
+  shouldShowGreeting,
+  type GreetingAudio,
+} from "@/features/voice/greeting";
+import { SakinahAvatar } from "@/components/companion/sakinah-avatar";
+
+/** Sakinah's greeting for a new chat: shown locally, never saved or sent to the AI. */
+const GREETING_MESSAGE = { id: "sakinah-greeting", role: "assistant" as const, content: SAKINAH_WELCOME_TEXT, provider: "voice-welcome" };
 import { api } from "@/lib/api-client";
 import { cn, formatDateTime } from "@/lib/utils";
 
@@ -72,9 +85,13 @@ export function CompanionChat(props: {
 }) {
   const router = useRouter();
   const [conversationId, setConversationId] = useState<string | null>(props.initial?.id ?? null);
-  const [messages, setMessages] = useState<Msg[]>(
-    props.initial?.messages.map((m) => ({ id: m.id, role: mapRole(m.role), content: m.content, provider: m.provider })) ?? [],
-  );
+  const [messages, setMessages] = useState<Msg[]>(() => {
+    const existing = props.initial?.messages.map((m) => ({ id: m.id, role: mapRole(m.role), content: m.content, provider: m.provider })) ?? [];
+    // A new, empty chat opens with Sakinah's greeting (an existing conversation never does).
+    return shouldShowGreeting({ openedExistingConversation: props.initial !== null, messageCount: existing.length }) ? [GREETING_MESSAGE] : existing;
+  });
+  const [greetingAudio, setGreetingAudio] = useState<GreetingAudio>("idle");
+  const greetingRef = useRef<HTMLAudioElement | null>(null);
   const [conversations, setConversations] = useState(props.conversations);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -91,6 +108,39 @@ export function CompanionChat(props: {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, safety]);
 
+  /** Plays the pre-recorded greeting. Autoplay may be blocked; then a "Tap to hear Sakinah" button is shown. */
+  function playGreeting() {
+    if (!greetingRef.current) {
+      const a = new Audio(SAKINAH_WELCOME_AUDIO_PATH);
+      a.preload = "auto";
+      a.onended = () => setGreetingAudio("ended");
+      greetingRef.current = a;
+    }
+    const a = greetingRef.current;
+    a.currentTime = 0;
+    a.play()
+      .then(() => {
+        setGreetingAudio("playing");
+        markGreetingHeard();
+      })
+      .catch((err) => setGreetingAudio(classifyPlayError(err) === "blocked" ? "blocked" : "stopped"));
+  }
+
+  function stopGreeting() {
+    const a = greetingRef.current;
+    if (a && !a.paused) {
+      a.pause();
+      setGreetingAudio("stopped");
+    }
+  }
+
+  // Try to greet aloud once per browser tab session when a new chat opens. The microphone is never touched.
+  useEffect(() => {
+    if (shouldAutoplayGreeting({ showGreeting: messages[0]?.id === GREETING_MESSAGE.id, heardThisSession: greetingHeardThisSession() })) playGreeting();
+    return () => greetingRef.current?.pause();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once when the chat opens
+  }, []);
+
   async function ensureConversation(): Promise<string> {
     if (conversationId) return conversationId;
     const { conversation } = await api<{ conversation: { id: string } }>("/api/conversations", { method: "POST" });
@@ -106,6 +156,7 @@ export function CompanionChat(props: {
     setBusy(true);
     setInput("");
     setNotice(null);
+    stopGreeting();
     const tempUser = `u-${Date.now()}`;
     const tempAsst = `a-${Date.now()}`;
     setMessages((m) => [...m, { id: tempUser, role: "user", content }, { id: tempAsst, role: "assistant", content: "", pending: true }]);
@@ -227,7 +278,10 @@ export function CompanionChat(props: {
 
   function newConversation() {
     setConversationId(null);
-    setMessages([]);
+    setMessages([GREETING_MESSAGE]);
+    setGreetingAudio("idle");
+    // Opened by a tap, so playing is allowed; still only once per tab session.
+    if (!greetingHeardThisSession()) playGreeting();
     setSafety({ kind: "none" });
     setShowHistory(false);
     router.replace("/patient/companion");
@@ -295,12 +349,15 @@ export function CompanionChat(props: {
           <button className="rounded-lg p-2 text-ink-soft hover:bg-sand lg:hidden" onClick={() => setShowHistory(true)} aria-label="Show conversation history">
             <History className="size-5" />
           </button>
-          <span className="hidden size-9 items-center justify-center rounded-full bg-teal-600 text-white sm:flex">
-            <Bot className="size-5" aria-hidden />
-          </span>
+          <SakinahAvatar className="size-9 ring-2 ring-teal-100" />
           <div className="min-w-0 flex-1 leading-tight">
-            <p className="font-semibold text-ink">{SAKINAH_NAME} · wellbeing companion</p>
-            <p className="truncate text-xs text-muted">AI · not a clinician · {isDemoProvider ? "offline demo responses" : props.provider.label}</p>
+            <p className="truncate font-semibold text-ink">
+              {SAKINAH_NAME}
+              <span className="hidden sm:inline"> · Wellbeing Companion</span>
+            </p>
+            <p className="truncate text-xs text-muted" title={isDemoProvider ? undefined : `Replies generated by ${props.provider.label}`}>
+              AI<span className="hidden sm:inline"> support</span> · not a clinician{isDemoProvider ? " · offline demo responses" : ""}
+            </p>
           </div>
           <Button
             variant={voiceMode ? "soft" : "ghost"}
@@ -356,6 +413,16 @@ export function CompanionChat(props: {
                   remembered={remembered.has(m.id)}
                   onRemember={() => setRemembering({ id: m.id, text: m.content })}
                 />
+                {m.id === GREETING_MESSAGE.id && (
+                  <GreetingControls
+                    state={greetingAudio}
+                    onPlay={playGreeting}
+                    onStop={stopGreeting}
+                    showSuggestions={!messages.some((x) => x.role === "user")}
+                    onSuggestion={(t) => send(t)}
+                    preferredName={props.preferredName}
+                  />
+                )}
                 {remembering?.id === m.id && (
                   <div className="ms-auto flex w-full max-w-md flex-col gap-2 rounded-2xl border border-teal-100 bg-teal-50 p-3 text-sm">
                     <label htmlFor="mem" className="font-medium text-teal-900">Save to your wellbeing memory</label>
@@ -393,6 +460,8 @@ export function CompanionChat(props: {
               setMessages((m) => (m.some((x) => x.provider === "voice-welcome") ? m : [...m, { id: `w-${Date.now()}`, role: "assistant", content: SAKINAH_WELCOME_TEXT, provider: "voice-welcome" }]))
             }
             onExit={() => setVoiceMode(false)}
+            welcomeAlreadyHeard={greetingAudio === "playing" || greetingAudio === "ended" || greetingAudio === "stopped" || greetingHeardThisSession()}
+            onBeforeAudio={stopGreeting}
           />
         ) : (
         <footer className="border-t border-line/70 bg-surface/80 px-4 pb-safe pt-3 backdrop-blur">
@@ -458,9 +527,13 @@ function MessageBubble({ m, canRemember, remembered, onRemember }: { m: Msg; can
   const isSafety = m.role === "safety";
   return (
     <div className="flex max-w-[92%] gap-2.5">
-      <span className={cn("mt-1 flex size-7 shrink-0 items-center justify-center rounded-full", isSafety ? "bg-safety-500 text-white" : "bg-teal-50 text-teal-700")}>
-        {isSafety ? <ShieldAlert className="size-4" aria-hidden /> : <Bot className="size-4" aria-hidden />}
-      </span>
+      {isSafety ? (
+        <span className="mt-1 flex size-7 shrink-0 items-center justify-center rounded-full bg-safety-500 text-white">
+          <ShieldAlert className="size-4" aria-hidden />
+        </span>
+      ) : (
+        <SakinahAvatar className="mt-1 size-7" />
+      )}
       <div className="min-w-0">
         <div
           className={cn(
@@ -482,7 +555,7 @@ function MessageBubble({ m, canRemember, remembered, onRemember }: { m: Msg; can
           {isSafety && <Badge tone="safety">Safety response · pre-written, not AI-generated</Badge>}
           {m.provider === "fallback" && <Badge tone="neutral">Safe fallback response</Badge>}
           {m.provider === "demo" && <Badge tone="amber">Pre-written demo response</Badge>}
-          {m.provider === "voice-welcome" && <Badge tone="neutral">Sakinah · pre-recorded AI voice welcome</Badge>}
+          {m.provider === "voice-welcome" && <Badge tone="neutral">Sakinah · pre-recorded AI voice greeting</Badge>}
           {(m.provider === "openai" || m.provider === "anthropic") && <Badge tone="neutral">AI-generated · not medical advice</Badge>}
         </div>
       </div>
@@ -514,6 +587,69 @@ function StrugglingCard() {
         <li>• Consider <Link href="/patient/support" className="font-medium text-teal-700 underline-offset-2 hover:underline">connecting with a professional</Link>.</li>
         <li>• If things change and you feel in danger, call <a href="tel:998" className="font-semibold text-safety-700">998</a> or <a href="tel:999" className="font-semibold text-safety-700">999</a>.</li>
       </ul>
+    </div>
+  );
+}
+
+/** Under Sakinah's greeting: autoplay status, a deliberate "Tap to hear Sakinah" fallback, and starter prompts. */
+function GreetingControls({
+  state,
+  onPlay,
+  onStop,
+  showSuggestions,
+  onSuggestion,
+  preferredName,
+}: {
+  state: GreetingAudio;
+  onPlay: () => void;
+  onStop: () => void;
+  showSuggestions: boolean;
+  onSuggestion: (text: string) => void;
+  preferredName: string;
+}) {
+  return (
+    <div className="ms-9 flex flex-col gap-3" data-testid="greeting-audio" data-state={state}>
+      <div className="flex flex-wrap items-center gap-2" aria-live="polite">
+        {state === "playing" ? (
+          <>
+            <span className="inline-flex items-center gap-2 rounded-full bg-teal-50 px-3 py-1.5 text-xs font-medium text-teal-800">
+              <span className="flex h-3 items-end gap-[2px]" aria-hidden>
+                {[0, 1, 2, 3].map((i) => (
+                  <span key={i} className="h-3 w-[2px] rounded-full bg-teal-600 motion-safe:animate-[sts-wave_0.9s_ease-in-out_infinite]" style={{ animationDelay: `${i * 0.12}s` }} />
+                ))}
+              </span>
+              Sakinah is speaking…
+            </span>
+            <Button variant="ghost" size="sm" onClick={onStop} data-testid="greeting-stop">
+              <Square aria-hidden /> Stop
+            </Button>
+          </>
+        ) : state === "blocked" ? (
+          <Button variant="soft" size="sm" onClick={onPlay} data-testid="greeting-play" className="rounded-full">
+            <Volume2 aria-hidden /> Tap to hear Sakinah
+          </Button>
+        ) : (
+          <Button variant="ghost" size="sm" onClick={onPlay} data-testid="greeting-play" className="rounded-full text-muted">
+            <Volume2 aria-hidden /> {state === "idle" ? "Hear Sakinah's greeting" : "Hear it again"}
+          </Button>
+        )}
+      </div>
+      {showSuggestions && (
+        <div>
+          <p className="mb-2 text-xs text-muted">Reply by typing, tap Voice to speak, or start with one of these, {preferredName}:</p>
+          <div className="flex flex-wrap gap-2">
+            {SUGGESTIONS.map((t) => (
+              <button
+                key={t}
+                onClick={() => onSuggestion(t)}
+                className="rounded-full border border-line bg-surface px-3.5 py-2 text-sm text-ink-soft shadow-soft hover:border-teal-200 hover:bg-teal-50"
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

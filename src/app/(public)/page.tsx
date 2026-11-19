@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SakinahAvatar } from "@/components/companion/sakinah-avatar";
 import {
   MessageCircleHeart,
   LineChart,
@@ -81,12 +82,10 @@ export default function LandingPage() {
             <div className="mx-auto max-w-sm rounded-3xl border border-line/70 bg-surface p-4 shadow-lift">
               <div className="flex items-center justify-between border-b border-line/60 pb-3">
                 <div className="flex items-center gap-2">
-                  <span className="flex size-8 items-center justify-center rounded-full bg-teal-600 text-white">
-                    <MessageCircleHeart className="size-4" aria-hidden />
-                  </span>
+                  <SakinahAvatar className="size-8" />
                   <div className="leading-tight">
-                    <p className="text-sm font-semibold">Wellbeing companion</p>
-                    <p className="text-[11px] text-muted">AI · not a clinician</p>
+                    <p className="text-sm font-semibold">Sakinah · Wellbeing Companion</p>
+                    <p className="text-[11px] text-muted">AI support · not a clinician</p>
                   </div>
                 </div>
                 <span className="rounded-full bg-safety-50 px-2 py-0.5 text-[11px] font-semibold text-safety-700">Get help</span>

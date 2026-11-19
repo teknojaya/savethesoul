@@ -119,12 +119,17 @@ These messages are **test phrases**. They exercise the Safety Guardian and are n
 
 ## V. Voice Mode with Sakinah (phone recommended)
 
+| # | Step | Expected result | Pass | Fail |
+|---|---|---|---|---|
+| V0 | Open **Companion** from the dashboard (a new chat) | Sakinah's illustrated avatar and *Sakinah · AI support · not a clinician* in the header. Her greeting is the first message. It is spoken automatically, or, if your browser blocks autoplay, a **Tap to hear Sakinah** button plays it. The microphone stays off. Refresh: the greeting text stays but is not spoken again. Open an existing conversation: no greeting | [ ] | [ ] |
+
+
 Use headphones or a quiet room. Speak only synthetic test content. Voice uses OpenAI for speech-to-text and text-to-speech.
 
 | # | Step | Expected result | Pass | Fail |
 |---|---|---|---|---|
 | V1 | Companion → tap **Voice** (microphone icon, top bar) | The Sakinah panel shows *Your AI Wellbeing Companion · AI voice, not a clinician*, a note that she is not connected to the 800-SAKINA helpline, and the voice-processing consent box. **Start** stays disabled until you tick the box | [ ] | [ ] |
-| V2 | Tick the consent box, then tap **Start Voice Conversation** | Sakinah speaks the welcome (*"Hello, I'm Sakinah, your AI wellbeing companion…"*) and the same text appears in the chat, labelled *pre-recorded AI voice welcome*. The microphone is **not** turned on | [ ] | [ ] |
+| V2 | Tick the consent box, then tap **Start Voice Conversation** | If you already heard the greeting, Sakinah goes straight to *Ready when you are*. Otherwise she speaks it now. The text appears once, labelled *pre-recorded AI voice greeting*. The microphone is **not** turned on | [ ] | [ ] |
 | V3 | Tap **Stop speaking** while the welcome plays | Audio stops. The status shows *Ready when you are* | [ ] | [ ] |
 | V4 | Tap the microphone. Allow access when the browser asks. Say *"I've been really stressed at work and I can't switch off at night."* Tap stop | *Listening…* with a seconds counter, then *Transcribing…*, then your words in an editable box | [ ] | [ ] |
 | V5 | Fix any mistake in the text, then tap **Send** | Your message appears in the chat. Sakinah's reply appears as text (labelled AI-generated) and is then spoken. The reply is short and conversational | [ ] | [ ] |

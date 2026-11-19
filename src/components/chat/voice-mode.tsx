@@ -9,6 +9,7 @@ import { initialVoiceState, STATUS_LABEL, voiceReducer, type VoiceEvent, type Vo
 import { detectVoiceSupport, microphoneErrorMessage, PushToTalkRecorder } from "@/features/voice/recorder";
 import { SAKINAH_NAME, SAKINAH_NON_AFFILIATION, SAKINAH_SUBTITLE, SAKINAH_WELCOME_AUDIO_PATH } from "@/features/voice/sakinah";
 import { MAX_RECORDING_SECONDS, MIN_AUDIO_BYTES } from "@/features/voice/audio-validation";
+import { SakinahAvatar } from "@/components/companion/sakinah-avatar";
 
 export interface VoiceSendResult {
   assistantMessageId: string | null;
@@ -19,12 +20,16 @@ interface Props {
   onSend: (text: string) => Promise<VoiceSendResult | null>;
   onWelcome: () => void;
   onExit: () => void;
+  /** The new-chat greeting was already heard, so Start does not replay it. */
+  welcomeAlreadyHeard?: boolean;
+  /** Stops any other companion audio (the new-chat greeting) so sounds never overlap. */
+  onBeforeAudio?: () => void;
 }
 
 type VoiceStatusResponse = { available: boolean; consented: boolean };
 
 /** Push-to-talk Voice Mode. Every message goes through the same chat route as typed text. */
-export function VoiceMode({ onSend, onWelcome, onExit }: Props) {
+export function VoiceMode({ onSend, onWelcome, onExit, welcomeAlreadyHeard = false, onBeforeAudio }: Props) {
   const [state, dispatch] = useReducer(voiceReducer, initialVoiceState);
   const [server, setServer] = useState<VoiceStatusResponse | null>(null);
   const [consentTicked, setConsentTicked] = useState(false);
@@ -90,6 +95,7 @@ export function VoiceMode({ onSend, onWelcome, onExit }: Props) {
   const playClips = useCallback(
     async (clips: Promise<string | null>[]) => {
       const token = ++playToken.current;
+      onBeforeAudio?.();
       for (const clip of clips) {
         let url: string | null;
         try {
@@ -107,7 +113,7 @@ export function VoiceMode({ onSend, onWelcome, onExit }: Props) {
       }
       if (token === playToken.current) act({ type: "PLAYBACK_ENDED" });
     },
-    [playOne, act],
+    [playOne, act, onBeforeAudio],
   );
 
   /** Fetches both parts of a reply at once: the short opening plays while the rest is generated. */
@@ -168,8 +174,9 @@ export function VoiceMode({ onSend, onWelcome, onExit }: Props) {
   async function start() {
     setNotice(null);
     // Play inside the tap so mobile browsers allow audio (and unlock it for later replies).
-    if (!state.muted) void playClips([Promise.resolve(SAKINAH_WELCOME_AUDIO_PATH)]);
-    act({ type: "START" });
+    const skipWelcome = welcomeAlreadyHeard;
+    if (!state.muted && !skipWelcome) void playClips([Promise.resolve(SAKINAH_WELCOME_AUDIO_PATH)]);
+    act({ type: "START", skipWelcome });
     onWelcome();
     if (server && !server.consented) {
       const res = await fetch("/api/voice/consent", { method: "POST" }).catch(() => null);
@@ -215,6 +222,7 @@ export function VoiceMode({ onSend, onWelcome, onExit }: Props) {
       return;
     }
     stopAudio();
+    onBeforeAudio?.();
     cancelRecording();
     setSeconds(0);
     act({ type: "MIC" });
@@ -451,25 +459,28 @@ function BigButton({ label, onClick, disabled, testId, tone, children }: { label
   );
 }
 
-/** Glowing orb: pulses with the microphone level while listening, waveform while Sakinah speaks. */
+/** Sakinah's avatar in a glowing ring: pulses with the microphone level, waveform while she speaks. */
 function VoiceOrb({ status, level }: { status: VoiceStatus; level: number }) {
   const speaking = status === "WELCOME_PLAYING" || status === "SAKINAH_SPEAKING";
   const listening = status === "LISTENING";
   return (
     <div className="relative flex size-16 items-center justify-center" aria-hidden data-state={status}>
       <span
-        className={cn("absolute inset-0 rounded-full bg-teal-300/40 blur-md transition-transform duration-150", (speaking || status === "GENERATING_RESPONSE") && "motion-safe:animate-pulse")}
+        className={cn("absolute inset-0 rounded-full bg-teal-300/50 blur-md transition-transform duration-150", (speaking || status === "GENERATING_RESPONSE") && "motion-safe:animate-pulse")}
         style={{ transform: `scale(${1 + (listening ? level * 0.6 : speaking ? 0.25 : 0)})` }}
       />
-      <span className="relative flex size-14 items-center justify-center gap-[3px] rounded-full bg-gradient-to-br from-teal-500 to-teal-700 shadow-inner">
-        {[0, 1, 2, 3, 4].map((i) => (
-          <span
-            key={i}
-            className={cn("w-[3px] rounded-full bg-white/90", speaking && "motion-safe:animate-[sts-wave_0.9s_ease-in-out_infinite]")}
-            style={{ height: speaking ? 18 : listening ? 6 + level * 22 * (1 - Math.abs(i - 2) * 0.25) : 6, animationDelay: `${i * 0.12}s` }}
-          />
-        ))}
-      </span>
+      <SakinahAvatar className="relative size-14 ring-2 ring-white" />
+      {(speaking || listening) && (
+        <span className="absolute -bottom-1 flex h-4 items-end gap-[2px] rounded-full bg-teal-700 px-1.5 py-0.5">
+          {[0, 1, 2, 3, 4].map((i) => (
+            <span
+              key={i}
+              className={cn("w-[2px] rounded-full bg-white/90", speaking && "motion-safe:animate-[sts-wave_0.9s_ease-in-out_infinite]")}
+              style={{ height: speaking ? 10 : 3 + level * 9 * (1 - Math.abs(i - 2) * 0.25), animationDelay: `${i * 0.12}s` }}
+            />
+          ))}
+        </span>
+      )}
     </div>
   );
 }

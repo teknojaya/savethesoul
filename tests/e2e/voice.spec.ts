@@ -58,6 +58,15 @@ async function trackMicrophone(page: Page) {
 const liveTracks = (page: Page) =>
   page.evaluate(() => (window as unknown as { __streams: MediaStream[] }).__streams.flatMap((s) => s.getTracks()).filter((t) => t.readyState === "live").length);
 
+/** Starts Voice Mode; stops the welcome if it plays (it is skipped when the new-chat greeting was already heard). */
+async function startVoice(page: Page) {
+  await page.getByTestId("voice-consent").locator("input").check();
+  await page.getByTestId("voice-start").click();
+  const stop = page.getByTestId("voice-stop-speaking");
+  if (await stop.isVisible().catch(() => false)) await stop.click();
+  await expect(page.getByTestId("voice-status")).toHaveText("Ready when you are");
+}
+
 async function record(page: Page) {
   await page.getByTestId("voice-mic").click();
   await expect(page.getByTestId("voice-status")).toContainText("Listening");
@@ -81,7 +90,14 @@ test("two-way voice conversation with Sakinah: welcome, speak, review, reply, re
   await trackMicrophone(page);
   const seen = await stubVoice(page, ["Work has been really stressfull lately", "Never mind"]);
   await login(page, "layla");
+  const greetingAudio = page.waitForRequest((r) => r.url().endsWith("/audio/sakinah-welcome.mp3"));
   await page.goto("/patient/companion");
+
+  // A new chat opens with Sakinah's exact greeting, shown and spoken (autoplay allowed here).
+  await greetingAudio;
+  await expect(page.getByText(WELCOME)).toBeVisible();
+  await expect(page.getByText("Sakinah · pre-recorded AI voice greeting")).toBeVisible();
+  await expect(page.getByTestId("greeting-audio")).toHaveAttribute("data-state", "playing");
   await page.getByTestId("voice-toggle").click();
 
   // Consent is explicit; the microphone is not touched before the user taps it.
@@ -89,20 +105,14 @@ test("two-way voice conversation with Sakinah: welcome, speak, review, reply, re
   await expect(page.getByText(/Your AI Wellbeing Companion/)).toBeVisible();
   await expect(page.getByTestId("voice-start")).toBeDisabled();
   await page.getByTestId("voice-consent").locator("input").check();
-  const welcomeAudio = page.waitForRequest((r) => r.url().endsWith("/audio/sakinah-welcome.mp3"));
   await page.getByTestId("voice-start").click();
-  await welcomeAudio;
-  expect(await liveTracks(page)).toBe(0);
-
-  // The exact welcome is shown as text and spoken; the user can stop it.
-  await expect(page.getByText(WELCOME)).toBeVisible();
-  await expect(page.getByText("Sakinah · pre-recorded AI voice welcome")).toBeVisible();
-  await expect(page.getByTestId("voice-status")).toHaveText("Sakinah is speaking…");
-  await page.getByTestId("voice-stop-speaking").click();
+  // The greeting was already heard, so Voice Mode does not repeat it.
   await expect(page.getByTestId("voice-status")).toHaveText("Ready when you are");
+  expect(await liveTracks(page)).toBe(0);
 
   // Push to talk → transcript to review and correct → send through the normal chat.
   await record(page);
+  await expect(page.getByTestId("greeting-audio")).not.toHaveAttribute("data-state", "playing"); // no overlapping audio
   await expect(page.getByTestId("voice-transcript")).toHaveValue("Work has been really stressfull lately");
   expect(seen.transcribe[0].headers()["content-type"]).toMatch(/multipart\/form-data/);
   await expect.poll(() => liveTracks(page)).toBe(0); // microphone released after recording
@@ -152,9 +162,7 @@ test("a spoken crisis disclosure shows emergency guidance at once and bypasses t
   await login(page, "omar");
   await page.goto("/patient/companion");
   await page.getByTestId("voice-toggle").click();
-  await page.getByTestId("voice-consent").locator("input").check();
-  await page.getByTestId("voice-start").click();
-  await page.getByTestId("voice-stop-speaking").click();
+  await startVoice(page);
   await record(page);
   await page.getByTestId("voice-send").click();
   await expect(page.getByText("Safety response · pre-written, not AI-generated")).toBeVisible();
@@ -173,9 +181,7 @@ test("a blocked microphone gives a clear message and text chat keeps working", a
   await login(page, "layla");
   await page.goto("/patient/companion");
   await page.getByTestId("voice-toggle").click();
-  await page.getByTestId("voice-consent").locator("input").check();
-  await page.getByTestId("voice-start").click();
-  await page.getByTestId("voice-stop-speaking").click();
+  await startVoice(page);
   await page.getByTestId("voice-mic").click();
   await expect(page.getByTestId("voice-error")).toContainText("Microphone access is blocked");
   await page.getByTestId("voice-to-text").click();
@@ -192,9 +198,7 @@ test("a browser without recording support is told so, never silently", async ({ 
   await login(page, "layla");
   await page.goto("/patient/companion");
   await page.getByTestId("voice-toggle").click();
-  await page.getByTestId("voice-consent").locator("input").check();
-  await page.getByTestId("voice-start").click();
-  await page.getByTestId("voice-stop-speaking").click();
+  await startVoice(page);
   await page.getByTestId("voice-mic").click();
   await expect(page.getByTestId("voice-error")).toContainText("can't record audio");
 });

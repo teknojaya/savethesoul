@@ -27,7 +27,7 @@ export interface VoiceState {
 }
 
 export type VoiceEvent =
-  | { type: "START" }
+  | { type: "START"; skipWelcome?: boolean }
   | { type: "PLAYBACK_ENDED" }
   | { type: "STOP_SPEAKING" }
   | { type: "MIC" }
@@ -59,7 +59,7 @@ export function voiceReducer(state: VoiceState, event: VoiceEvent): VoiceState {
   switch (event.type) {
     case "START":
       if (state.started && state.status !== "IDLE") return state;
-      return { ...state, started: true, status: state.muted ? "IDLE" : "WELCOME_PLAYING", replyId: "welcome", error: null, transcript: "" };
+      return { ...state, started: true, status: state.muted || event.skipWelcome ? "IDLE" : "WELCOME_PLAYING", replyId: "welcome", error: null, transcript: "" };
     case "PLAYBACK_ENDED":
     case "STOP_SPEAKING":
       return speaking(state.status) ? { ...state, status: "IDLE" } : state;

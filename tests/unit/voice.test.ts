@@ -10,6 +10,7 @@ import { MAX_SPEECH_CHARS, splitForSpeech, toSpeakableText } from "@/features/vo
 import { buildCompanionSystem, VOICE_REPLY_ADDENDUM } from "@/features/ai/prompts";
 import { microphoneErrorMessage, pickRecorderMimeType } from "@/features/voice/recorder";
 import { OpenAIVoiceProvider, VoiceError } from "@/features/voice/voice-provider";
+import { classifyPlayError, greetingHeardThisSession, markGreetingHeard, shouldAutoplayGreeting, shouldShowGreeting } from "@/features/voice/greeting";
 
 const run = (events: VoiceEvent[], from: VoiceState = initialVoiceState) => events.reduce(voiceReducer, from);
 
@@ -26,6 +27,39 @@ describe("Sakinah identity and welcome", () => {
     const bytes = new Uint8Array(readFileSync(`public${SAKINAH_WELCOME_AUDIO_PATH}`));
     expect(sniffContainer(bytes)).toBe("mp3");
     expect(bytes.length).toBeGreaterThan(50_000);
+  });
+});
+
+describe("New-chat greeting", () => {
+  it("is shown only for a new, empty chat, never when an existing conversation is opened", () => {
+    expect(shouldShowGreeting({ openedExistingConversation: false, messageCount: 0 })).toBe(true);
+    expect(shouldShowGreeting({ openedExistingConversation: true, messageCount: 0 })).toBe(false);
+    expect(shouldShowGreeting({ openedExistingConversation: true, messageCount: 4 })).toBe(false);
+  });
+
+  it("is spoken automatically at most once per browser tab session", () => {
+    expect(shouldAutoplayGreeting({ showGreeting: true, heardThisSession: false })).toBe(true);
+    expect(shouldAutoplayGreeting({ showGreeting: true, heardThisSession: true })).toBe(false);
+    expect(shouldAutoplayGreeting({ showGreeting: false, heardThisSession: false })).toBe(false);
+    expect(shouldAutoplayGreeting({ showGreeting: true, heardThisSession: false, muted: true })).toBe(false);
+    const store = new Map<string, string>();
+    const storage = { getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => void store.set(k, v) };
+    expect(greetingHeardThisSession(storage)).toBe(false);
+    markGreetingHeard(storage);
+    expect(greetingHeardThisSession(storage)).toBe(true);
+    const broken = { getItem: () => { throw new Error("blocked"); }, setItem: () => { throw new Error("blocked"); } };
+    expect(greetingHeardThisSession(broken)).toBe(false); // storage unavailable: fail open, never crash
+    expect(() => markGreetingHeard(broken)).not.toThrow();
+  });
+
+  it("recognises a browser autoplay block, so the 'Tap to hear Sakinah' fallback is shown", () => {
+    expect(classifyPlayError(new DOMException("x", "NotAllowedError"))).toBe("blocked");
+    expect(classifyPlayError(new DOMException("x", "NotSupportedError"))).toBe("failed");
+  });
+
+  it("Voice Mode does not replay a greeting the user already heard", () => {
+    expect(voiceReducer(initialVoiceState, { type: "START", skipWelcome: true })).toMatchObject({ status: "IDLE", started: true });
+    expect(voiceReducer(initialVoiceState, { type: "START", skipWelcome: false }).status).toBe("WELCOME_PLAYING");
   });
 });
 
