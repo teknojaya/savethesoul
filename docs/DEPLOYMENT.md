@@ -78,6 +78,16 @@ If the API rejects the model or key, replies become the labelled fallback messag
 - **Rollback:** set `VOICE_ENABLED=false` on the web service. This turns Voice Mode off (the panel offers text chat) without touching code or data. Prefer it to redeploying an older build: that build's Prisma client does not know the `VOICE_PROCESSING` consent value, so a full code rollback would first need those consent rows revoked or removed.
 - The welcome audio `public/audio/sakinah-welcome.mp3` is generated once with `pnpm exec tsx scripts/generate-welcome-audio.ts`. Regenerate it if the welcome text, voice or model changes.
 
+## Clinical review release (migration `20261119133548_clinical_review_and_findings`)
+
+Additive only: three `DraftReviewStatus` values (APPROVED, CORRECTED, REJECTED), nullable columns `CareReferral.careType`, `ClinicalSummary.correctedDraftEnc` and `reviewNoteEnc`, and a new `ClinicianFinding` table. It was rehearsed on a restored copy of production on 19 Nov 2026: all existing row counts and encrypted-column checksums were unchanged.
+
+**Rollback to the previous build (`9f05231`):**
+1. Back up the database.
+2. Postgres cannot drop enum values safely, and the old Prisma client fails to read the new values. Before redeploying the old build, run `UPDATE "ClinicalSummary" SET "aiDraftStatus"='REVIEWED' WHERE "aiDraftStatus" IN ('APPROVED','CORRECTED','REJECTED');` (the exact decisions remain in the audit log).
+3. The new columns and the `ClinicianFinding` table can stay; the old build ignores them. Findings would simply not be shown until the release is restored.
+4. Redeploy `9f05231` from Railway's deployment list.
+
 ## Rotating DATA_ENCRYPTION_KEY
 
 `scripts/rotate-encryption-key.ts` re-encrypts every `*Enc` column in one transaction. Without `--apply` it is a dry run that proves the current key decrypts everything. Back up the database first, run the dry run, apply, then switch the variable. The local development key was rotated this way on 19 November 2026. Production uses a different key and was not rotated.
