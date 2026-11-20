@@ -88,7 +88,12 @@ export function ShareFlow({ clinicians, summaries }: { clinicians: Clinician[]; 
   const [concerns, setConcerns] = useState<Concerns>({ areas: [], duration: "", frequency: "", dailyLifeImpact: "", helpWanted: "" });
   // Answers from "Explore My Mental Wellbeing" (this tab only) prefill the concerns form.
   useEffect(() => {
-    if (!new URLSearchParams(window.location.search).has("from")) return;
+    const from = new URLSearchParams(window.location.search).get("from");
+    if (!from) return;
+    if (from === "insights") {
+      const id = requestAnimationFrame(() => setCats((cur) => (cur.includes("CLINICAL_INSIGHTS") ? cur : [...cur, "CLINICAL_INSIGHTS"])));
+      return () => cancelAnimationFrame(id);
+    }
     const id = requestAnimationFrame(() => {
       try {
         const raw = sessionStorage.getItem("sts:explore-concerns");

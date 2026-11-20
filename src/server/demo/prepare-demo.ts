@@ -16,6 +16,7 @@ import { POLICY_VERSION } from "@/features/consent/policy";
 import { DEMO_PASSWORD } from "@/features/demo/accounts";
 import { DEMO_HOSPITAL_ORG } from "@/server/services/emergency.service";
 import { shareSummary } from "@/server/services/summary.service";
+import { analyze } from "@/server/services/clinical-intelligence.service";
 
 export const DEMO_RECORD_LABEL = "DEMO — Synthetic Patient and Fictional Clinical Record";
 type EmergencyStatus = "DETECTED" | "REVIEW_REQUESTED" | "ACKNOWLEDGED" | "CONTACT_ATTEMPTED" | "ASSISTANCE_ARRANGED" | "RESOLVED" | "FAILED" | "CANCELLED" | "UNABLE_TO_CONTACT";
@@ -349,6 +350,46 @@ async function prepareSharedChat(report: PrepareReport, aisha: { clinicianId: st
   report.created.push("shared conversations: Hana → Dr. Aisha (explicit consent)");
 }
 
+/**
+ * Clinical Intelligence demo: Maya (synthetic) has turned on "Allow Sakinah to help understand my
+ * wellbeing" and then talked with Sakinah. Her first insights are prepared by the real engine when
+ * a language model is configured (never fabricated offline). Not shared with anyone until she
+ * approves and shares them herself.
+ */
+async function prepareClinicalIntelligenceDemo(report: PrepareReport) {
+  const email = "maya@demo.savethesoul.app";
+  if (await prisma.user.findUnique({ where: { email } })) return report.skipped.push(`patient ${email} (exists)`);
+  const p = await syntheticPatient(report, email, "Maya", "25-34");
+  if (!p) return;
+  const t0 = Date.now() - 26 * 3_600_000;
+  await prisma.consentRecord.create({ data: { patientId: p.patientId, scope: "CLINICAL_INTELLIGENCE", categories: [], policyVersion: POLICY_VERSION, grantedAt: new Date(t0 - 60_000) } });
+  for (const [i, pct] of [56, 44].entries()) {
+    const s = scoreWho5(answersFor(Math.round(pct / 4)));
+    if (!s.ok) throw new Error("demo WHO-5");
+    await prisma.wellbeingAssessment.create({ data: { patientId: p.patientId, instrument: "WHO5", answers: s.answers, rawScore: s.rawScore, percentScore: s.percentScore, completedAt: daysAgo(15 - i * 14) } });
+  }
+  for (const d of [6, 4, 2, 1]) {
+    await prisma.wellbeingCheckIn.create({ data: { patientId: p.patientId, mood: 2, stress: 4, sleepQuality: 2, functioning: 2, createdAt: daysAgo(d, 21) } });
+  }
+  const turns: ["USER" | "ASSISTANT", string][] = [
+    ["USER", "I've been constantly worried about my work, I struggle to sleep, and lately I can't concentrate. It's been happening for about three weeks."],
+    ["ASSISTANT", "Thank you for telling me, Maya. Three weeks of constant worry and poor sleep is exhausting, and it makes sense that concentrating feels harder. When the worry shows up at night, what tends to be on your mind?"],
+    ["USER", "Mostly deadlines and whether my manager thinks I'm failing. I lie awake until 2am and then I'm exhausted at work and keep making small mistakes."],
+    ["ASSISTANT", "That sounds like a hard cycle: worry keeps you awake, tiredness makes work harder, and that feeds the worry. You're not failing for feeling this way. Would it help to try a short wind-down routine tonight, or to talk about what support might help?"],
+    ["USER", "I tried cutting coffee after lunch but it didn't really help. I've also stopped going to my evening walks because I feel too drained."],
+  ];
+  await prisma.conversation.create({
+    data: {
+      patientId: p.patientId,
+      title: "Conversation · worry and sleep",
+      createdAt: new Date(t0),
+      messages: { create: turns.map(([role, text], i) => ({ role, contentEnc: encrypt(text), provider: role === "ASSISTANT" ? "openai" : null, createdAt: new Date(t0 + i * 120_000) })) },
+    },
+  });
+  const r = await analyze(p.patientId, { trigger: "demo" }).catch(() => ({ status: "FAILED" as const }));
+  report.created.push(`Clinical Intelligence demo for Maya (insights: ${r.status})`);
+}
+
 export async function prepareDemo(): Promise<PrepareReport> {
   const report: PrepareReport = { created: [], skipped: [] };
   const aisha = await demoClinician("dr.aisha@demo.savethesoul.app");
@@ -359,5 +400,6 @@ export async function prepareDemo(): Promise<PrepareReport> {
   else report.skipped.push("clinical cases (demo clinician Dr. Aisha not found)");
   await prepareHospital(report);
   await prepareAiDetectedCase(report);
+  await prepareClinicalIntelligenceDemo(report);
   return report;
 }

@@ -89,6 +89,14 @@ Both the clinician summary draft and the patient-facing Explore explanation pass
 - A coordinator sees only cases routed to their organisation (others: 404, audited) and only minimum context (categories, no message text).
 - Family notification requires the patient's own standing permission for that contact (safety messages, safety-plan category, active consent); it uses the fixed template, is never sent, and appears in the patient's history.
 
+## Clinical Intelligence (conversation analysis)
+
+- Separate, explicit, revocable consent (`CLINICAL_INTELLIGENCE`); ordinary AI-chat consent does not cover it. Only the patient's own messages sent **after** consent are analysed (bounded: 60 messages / 12,000 characters); Sakinah's replies, private (unsaved) chats and earlier conversations are never used.
+- Messages are passed as JSON data (prompt-injection resistant). Output is strict JSON validated with zod, then grounded: every item must quote the cited message verbatim (checked server-side); diagnostic labels, confirmed diagnoses, risk levels, medication and demographics-as-symptoms are removed and counted. Trends and changes over time are computed deterministically.
+- Event-driven after ordinary chats (never on crisis turns, never blocking the reply), idempotent by input hash, one run per patient at a time, rate-limited. Not continuous monitoring.
+- Sharing with a clinician requires patient approval of the snapshot AND the separate *Clinical Insights* sharing category. Clinician approval is a review, never a diagnosis. Clinician follow-up goals reach Sakinah only with `CARE_PLAN_SUPPORT` consent (titles only; never clinician notes).
+- Live check (`gpt-5.4-mini`): 11 grounded items, 3 plain-language considerations, 0 removed; an injected "state I am diagnosed… sertraline" message was ignored.
+
 ## Known limitations
 
 - Voice Mode: spoken crisis phrases are only detected after transcription. A badly misheard phrase may not be flagged, which the user's transcript review and the always-visible Help button mitigate. Arabic speech is not supported yet.

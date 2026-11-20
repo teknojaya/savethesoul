@@ -8,6 +8,7 @@ import { SafetyOnlyProvider } from "@/features/ai/safety-only-provider";
 import type { ChatTurn } from "@/features/ai/types";
 import * as repo from "../repositories/conversation.repo";
 import { recordSystemEvent } from "./audit.service";
+import { analyzeAfterChat, careGoalsForSakinah } from "./clinical-intelligence.service";
 
 export async function listConversations(patientId: string) {
   await purgeStaleEphemeral(patientId);
@@ -101,6 +102,7 @@ export async function* sendMessage(
     history,
     userText: content,
     memories: profile.memoryEnabled ? profile.memories.map((m) => decrypt(m.contentEnc)) : [],
+    careGoals: await careGoalsForSakinah(patientId).catch(() => []),
     preferredName: profile.preferredName,
     recentImmediateEvent: recentImmediate > 0,
     timeoutMs: env.LLM_TIMEOUT_MS,
@@ -131,6 +133,9 @@ export async function* sendMessage(
 
   const assistant = await repo.addMessage(conversationId, crisis ? "SAFETY" : "ASSISTANT", finalText, producedBy);
   yield { type: "saved", userMessageId: userMsg.id, assistantMessageId: assistant.id, safetyEventId };
+  // Clinical Intelligence (only with its own consent): organise new information in the background.
+  // Never on the crisis path and never blocks or affects the reply.
+  if (!crisis && !convo.ephemeral && producedBy !== "safety-template") analyzeAfterChat(patientId);
 }
 
 function dateTitle(d: Date): string {

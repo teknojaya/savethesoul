@@ -22,6 +22,8 @@ const EnvSchema = z.object({
   /** Sign-ups allowed per IP per hour (abuse control). Raised only for automated test servers. */
   REGISTER_RATE_LIMIT_PER_HOUR: z.coerce.number().int().positive().default(10),
   VOICE_ENABLED: z.enum(["true", "false"]).default("true"),
+  // Rollback switch for Clinical Intelligence (conversation analysis, insights, care-goal support). Chat, voice, clinicians and safety are unaffected.
+  CLINICAL_INTELLIGENCE_ENABLED: z.enum(["true", "false"]).default("true"),
   VOICE_STT_MODEL: z.string().trim().min(1).default("gpt-4o-mini-transcribe"),
   VOICE_TTS_MODEL: z.string().trim().min(1).default("gpt-4o-mini-tts"),
   VOICE_TTS_VOICE: z.string().trim().min(1).default("marin"),

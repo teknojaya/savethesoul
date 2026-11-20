@@ -202,6 +202,14 @@ Demo accounts have no administrator privileges. All data is synthetic. The demo 
 4. Under **Trusted-contact coordination**, record a simulated notification to Mariam. It is allowed only because Sara authorised Mariam for safety messages; it uses the fixed safety-plan message, nothing is sent, and it appears in Sara's own notification history.
 5. When a synthetic demo patient (for example Yousef) sends the in-app simulated alert, a new SIM-ER case appears here. Real accounts never create hospital cases.
 
+**Scenario 9: Clinical Intelligence: conversation → insights → clinician → follow-up (Maya, then Dr. Aisha)**
+1. Sign in as **Maya** (Patient Demo). She has turned on *"Allow Sakinah to help understand my wellbeing"* and talked with Sakinah about constant work worry, poor sleep and poor concentration for about three weeks.
+2. **My Wellbeing → My Clinical Insights.** Sakinah organised what she said into patient-reported concerns, symptoms, duration, effect on daily life and context, each with Maya's exact words, date and a link to the conversation, plus measured WHO-5/check-in trends (not AI) and plain-language areas a professional might explore. Labelled *"Preliminary AI-generated clinical impression — not a confirmed diagnosis. Requires professional assessment."* Chat with Sakinah, then **Update my insights** to see changes over time.
+3. Remove an item or add a correction, then **These look right · approve** → **Share with my clinician** → choose Dr. Aisha (the *Clinical Insights* option is preselected; sharing is a separate permission) → preview → share.
+4. Sign in as **Dr. Aisha** → **Assigned patients → Maya**. The *Sakinah Clinical Intelligence report* shows the patient-approved evidence, AI considerations (unconfirmed), gaps and questions; **Approve as reviewed / Save correction / Reject**. Add a **follow-up goal** (e.g. *Keep a regular evening wind-down routine*).
+5. Back as Maya: **My Clinical Insights** shows the goal; allow *"Let Sakinah support my clinician's follow-up goals"*; start a new chat. Sakinah may gently check in on the goal, without changing the plan or giving medication advice.
+6. Typing an explicit danger phrase still gets the deterministic crisis response immediately; analysis never runs on that turn.
+
 **Access restriction check:** sign in as **Dr. James**. He sees only Daniel. Opening another patient's URL shows *"You don't have access…"* and the attempt is audited.
 
 **Offline safety:** in the installed PWA, switch off the network. `/help` and `/offline` still show the emergency numbers.

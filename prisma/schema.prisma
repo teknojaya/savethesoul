@@ -88,6 +88,7 @@ model PatientProfile {
   summaries       ClinicalSummary[]
   clinicianNotes  ClinicianNote[]
   findings        ClinicianFinding[]
+  clinicalInsights ClinicalInsight[]
   safetyEvents    SafetyEvent[]
   emergencyCases  EmergencyCase[]
   safetyPlan      SafetyPlan?
@@ -229,6 +230,10 @@ model WellbeingGoal {
   patient   PatientProfile @relation(fields: [patientId], references: [id], onDelete: Cascade)
   title     String
   status    GoalStatus     @default(ACTIVE)
+  // "PATIENT" (set by the patient) or "CLINICIAN" (a follow-up goal from their clinician).
+  source    String         @default("PATIENT")
+  clinicianId String?
+  authorName  String?
   createdAt DateTime       @default(now())
   updatedAt DateTime       @updatedAt
 
@@ -245,6 +250,10 @@ enum ConsentScope {
   AGGREGATE_ANALYTICS
   // Voice Mode: recordings sent to the AI provider for transcription; replies synthesised as speech.
   VOICE_PROCESSING
+  // Clinical Intelligence: Sakinah may analyse conversations (from consent onwards) for the patient's own insights.
+  CLINICAL_INTELLIGENCE
+  // Sakinah may use clinician-set follow-up goals in conversations.
+  CARE_PLAN_SUPPORT
 }
 
 enum GranteeType {
@@ -679,3 +688,33 @@ model SystemEvent {
 
   @@index([kind, createdAt])
 }
+
+/// Clinical Intelligence snapshot: Sakinah's grounded, preliminary organisation of what the
+/// patient reported (from consent onwards), validated server-side before storage. Encrypted.
+/// Never a diagnosis. Shared with a clinician only after patient approval AND sharing consent.
+model ClinicalInsight {
+  id                String         @id @default(cuid())
+  patientId         String
+  patient           PatientProfile @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  consentId         String
+  // Hash of the exact inputs (message ids, assessments, check-ins): identical inputs are never re-analysed.
+  inputHash         String
+  contentEnc        String
+  model             String
+  processingVersion String
+  // DRAFT -> APPROVED (patient reviewed and approved it for sharing).
+  patientStatus     String         @default("DRAFT")
+  removedItemIds    String[]
+  patientNoteEnc    String?
+  approvedAt        DateTime?
+  // UNREVIEWED | APPROVED | CORRECTED | REJECTED (clinician decision; never a diagnosis)
+  clinicianStatus   String         @default("UNREVIEWED")
+  clinicianNoteEnc  String?
+  reviewedByUserId  String?
+  reviewedAt        DateTime?
+  createdAt         DateTime       @default(now())
+
+  @@unique([patientId, inputHash])
+  @@index([patientId, createdAt])
+}
+

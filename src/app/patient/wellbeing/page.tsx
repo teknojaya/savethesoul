@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ClipboardCheck, Smile, TrendingDown, TrendingUp, Minus, Info, Compass } from "lucide-react";
+import { ClipboardCheck, Smile, TrendingDown, TrendingUp, Minus, Info, Compass, Brain } from "lucide-react";
 import { requirePatientPage } from "@/lib/auth/current-user";
 import { getWellbeingOverview } from "@/server/services/wellbeing.service";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Callout, PageHeader, Stat, EmptyState } from "@/components/ui/primitives";
@@ -80,6 +80,9 @@ export default async function WellbeingPage() {
           <div className="flex flex-wrap gap-2 pt-1">
             <Link href="/patient/wellbeing/explore" className={buttonVariants({ size: "sm" })} data-testid="explore-entry">
               <Sparkles aria-hidden /> Explore My Mental Wellbeing
+            </Link>
+            <Link href="/patient/wellbeing/insights" className={buttonVariants({ size: "sm", variant: "soft" })} data-testid="insights-entry">
+              <Brain aria-hidden /> My Clinical Insights
             </Link>
             <Link href="/patient/companion" className={buttonVariants({ size: "sm", variant: "secondary" })}>
               <MessageCircleHeart aria-hidden /> Continue talking with Sakinah

@@ -15,6 +15,8 @@ const SCOPE_LABEL: Record<string, string> = {
   SHARE_SUMMARY_WITH_CLINICIAN: "Share summary with clinician",
   TRUSTED_CONTACT_SHARING: "Share with trusted contact",
   AGGREGATE_ANALYTICS: "Anonymous service statistics",
+  CLINICAL_INTELLIGENCE: "Sakinah Clinical Intelligence: analyse my conversations for my own insights",
+  CARE_PLAN_SUPPORT: "Sakinah may use my clinician's follow-up goals",
 };
 
 interface Props {

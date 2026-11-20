@@ -12,6 +12,9 @@ import { ClinicianReferralCard } from "@/components/clinician/referral-actions";
 import { CLINICIAN_SHARE_CATEGORIES, type ClinicianShareCategory } from "@/features/consent/policy";
 import type { ReferralStatus } from "@/features/referrals/state-machine";
 import { formatDate, formatDateTime } from "@/lib/utils";
+import { getSharedInsightForClinician } from "@/server/services/clinical-intelligence.service";
+import { ClinicianGoalForm, ClinicianInsightsPanel, type SharedInsight } from "@/components/clinician/insights-panel";
+import { prisma } from "@/lib/db/prisma";
 
 export const metadata = { title: "Patient details" };
 
@@ -41,6 +44,8 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
 
   const has = (c: ClinicianShareCategory) => d.sharedCategories.includes(c);
   const findings = await listFindings(actor, id);
+  const insight = await getSharedInsightForClinician(actor, id).catch(() => null);
+  const clinicianGoals = await prisma.wellbeingGoal.findMany({ where: { patientId: id, source: "CLINICIAN" }, orderBy: { createdAt: "desc" }, take: 10 });
 
   return (
     <div className="space-y-6">
@@ -159,12 +164,20 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
         ))}
       </section>
 
+      {insight && (
+        <section className="space-y-3">
+          <h2 className="font-display text-xl text-ink">Clinical Intelligence (shared by the patient)</h2>
+          <ClinicianInsightsPanel insight={JSON.parse(JSON.stringify(insight)) as SharedInsight} />
+        </section>
+      )}
+
       <section className="space-y-3">
         <div>
           <h2 className="font-display text-xl text-ink">C · Clinician-confirmed findings</h2>
           <p className="text-sm text-muted">Diagnoses and care plans are recorded only by clinicians, separately from patient reports and AI observations. Entries are never edited: add a new one to update.</p>
         </div>
         <FindingsPanel patientId={id} findings={findings.map((f) => ({ ...f, createdAt: f.createdAt.toISOString() }))} />
+        <ClinicianGoalForm patientId={id} goals={clinicianGoals.map((g) => ({ id: g.id, title: g.title, status: g.status, authorName: g.authorName }))} />
       </section>
       {d.conversations && (
         <section className="space-y-3" data-testid="shared-conversations">

@@ -31,6 +31,8 @@ export interface PipelineInput {
   history: ChatTurn[];
   userText: string;
   memories: string[];
+  /** Clinician follow-up goals the patient allowed Sakinah to use (titles only). */
+  careGoals?: string[];
   preferredName?: string;
   /** True if this conversation had an IMMEDIATE event recently — keeps safety mode on. */
   recentImmediateEvent: boolean;
@@ -73,6 +75,7 @@ export async function* runCompanionTurn(input: PipelineInput): AsyncGenerator<Pi
 
   const system = buildCompanionSystem({
     memories: input.memories,
+    careGoals: safetyMode ? [] : input.careGoals,
     safetyMode,
     spoken: input.spoken,
     preferredName: input.preferredName,

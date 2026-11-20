@@ -15,6 +15,7 @@ export async function exportPatientData(actor: Actor & { patientId: string }) {
       assessments: true,
       goals: true,
       memories: true,
+      clinicalInsights: { orderBy: { createdAt: "asc" } },
       consents: true,
       trustedContacts: true,
       notifications: true,
@@ -49,6 +50,15 @@ export async function exportPatientData(actor: Actor & { patientId: string }) {
     who5Assessments: p.assessments,
     goals: p.goals,
     memories: p.memories.map((m) => ({ id: m.id, content: decrypt(m.contentEnc), createdAt: m.createdAt })),
+    clinicalInsights: p.clinicalInsights.map((c) => ({
+      id: c.id,
+      createdAt: c.createdAt,
+      label: "Preliminary AI-generated clinical impression — not a confirmed diagnosis.",
+      content: JSON.parse(decrypt(c.contentEnc)),
+      patientStatus: c.patientStatus,
+      removedItemIds: c.removedItemIds,
+      clinicianStatus: c.clinicianStatus,
+    })),
     consents: p.consents,
     trustedContacts: p.trustedContacts.map((c) => ({
       ...c,

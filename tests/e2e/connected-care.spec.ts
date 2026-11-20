@@ -120,3 +120,46 @@ test.describe("Explore My Mental Wellbeing", () => {
     await expect(page.getByTestId("explore-result")).toHaveCount(0);
   });
 });
+
+test.describe("Clinical Intelligence (consent-gated)", () => {
+  test.afterEach(async ({ page }) => deleteIsolatedPatient(page));
+  test.afterAll(async ({ browser }, info) => deleteSharedPatient(browser, info.project.use.baseURL));
+
+  test("a new patient sees the explicit permission, can decline and keep chatting, or allow and withdraw", async ({ page }) => {
+    await registerIsolatedPatient(page, "Rania");
+    await page.goto("/patient/wellbeing");
+    await page.getByTestId("insights-entry").click();
+    await expect(page.getByTestId("ci-consent")).toContainText("Allow Sakinah to help understand my wellbeing");
+    await expect(page.getByTestId("ci-consent")).toContainText("These insights are not a medical diagnosis");
+    await expect(page.getByTestId("ci-insights")).toHaveCount(0);
+    await page.getByTestId("ci-decline").click();
+    await expect(page).toHaveURL(/\/patient\/companion/);
+    await page.goto("/patient/wellbeing/insights");
+    await page.getByTestId("ci-enable").click();
+    await expect(page.getByTestId("ci-consent")).toContainText("Only messages you send from that moment are analysed");
+    await page.getByTestId("ci-withdraw").click();
+    await expect(page.getByTestId("ci-enable")).toBeVisible();
+  });
+});
+
+test("Clinician sets a follow-up goal; the patient chooses whether Sakinah may use it", async ({ page, browser }) => {
+  await demoLogin(page, "dr.aisha", /\/clinician/);
+  await page.goto("/clinician/patients");
+  await page.getByTestId("patient-row").filter({ hasText: "Hana" }).click();
+  await page.getByTestId("clinician-goal-input").fill("Keep a regular evening wind-down routine");
+  await page.getByTestId("clinician-goal-add").click();
+  await expect(page.getByTestId("clinician-goal").first()).toContainText("Keep a regular evening wind-down routine");
+
+  const ctx = await browser.newContext();
+  const hana = await ctx.newPage();
+  await hana.goto("/login");
+  await hana.locator("#email").fill("hana@demo.savethesoul.app");
+  await hana.locator("#password").fill("SaveTheSoul-demo-2026");
+  await hana.getByRole("button", { name: "Sign in", exact: true }).click();
+  await hana.waitForURL(/\/patient/);
+  await hana.goto("/patient/wellbeing/insights");
+  await expect(hana.getByTestId("ci-clinician-goal").first()).toContainText("from Dr. Aisha Al Mansoori");
+  await hana.getByTestId("ci-careplan-on").click();
+  await expect(hana.getByTestId("ci-careplan-off")).toBeVisible();
+  await ctx.close();
+});

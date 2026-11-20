@@ -80,14 +80,14 @@ export function allowedTags(c: DraftSource): Set<string> {
   return t;
 }
 
-const DEMOGRAPHIC = /\b(age band|aged?\b|years? old|\d{2}\s?[-–]\s?\d{2}\b|\d{2}\+|region|nationality|expat(riate)?|gender|male|female)\b/i;
+export const DEMOGRAPHIC = /\b(age band|aged?\b|years? old|\d{2}\s?[-–]\s?\d{2}\b|\d{2}\+|region|nationality|expat(riate)?|gender|male|female)\b/i;
 /** Diagnostic labels: allowed ONLY as "consider assessing for…" in the clinician-only considerations section. */
-const DIAGNOSTIC_LABEL =
+export const DIAGNOSTIC_LABEL =
   /\b(major depressi\w*|depressive (episode|disorder)|dysthymi\w*|persistent depressive|(generali[sz]ed )?anxiety disorder|panic disorder|social anxiety|bipolar|ptsd|post-traumatic|ocd|obsessive|adhd|schizophren\w*|psychosis|psychotic|personality disorder|eating disorder|insomnia disorder|adjustment disorder|substance use disorder|f\d{2}(\.\d)?|6[a-z]\d{2})\b/i;
 /** Never allowed anywhere: definitive diagnosis, risk levels/scores, medication or prescribing. */
-const DEFINITIVE_RISK_OR_TREATMENT =
+export const DEFINITIVE_RISK_OR_TREATMENT =
   /\b(meets? (the )?(dsm|icd|diagnostic )?criteria|consistent with (an? )?(diagnosis|disorder)|diagnos(is|ed|e)\s+(of|with|is)|confirms?|confirmed|(suicid\w*|self-harm) risk (is|level|score)|risk (level|score|rating)|(high|moderate|low|elevated)[- ]risk|ssri|snri|antidepressant|sertraline|fluoxetine|escitalopram|benzodiazepine|antipsychotic|medication (should|change|increase|decrease|start)|prescri\w+|dose|dosage|mg\b)\b/i;
-const CONSIDERATION = /\b(consider|assess|screen|rule out|differential|evaluat\w*|explore|warrant)\b/i;
+export const CONSIDERATION = /\b(consider|assess|screen|rule out|differential|evaluat\w*|explore|warrant)\b/i;
 export const CONSIDERATIONS_SECTION = "Diagnostic considerations for clinician assessment (AI, unconfirmed):";
 const TAG = /\[[^\]]+\]/g;
 

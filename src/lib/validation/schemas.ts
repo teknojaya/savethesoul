@@ -167,3 +167,13 @@ export const FollowUpUpdateSchema = z.object({
 export const DeleteAccountSchema = z.object({
   confirmation: z.literal("DELETE", { message: 'Type "DELETE" to confirm' }),
 });
+
+export const CiConsentSchema = z.object({ scope: z.enum(["CLINICAL_INTELLIGENCE", "CARE_PLAN_SUPPORT"]), on: z.boolean() });
+export const CiPatientReviewSchema = z.object({
+  removeItemIds: z.array(z.string().regex(/^[ic]\d{1,3}$/)).max(50).optional(),
+  note: z.string().trim().max(1000).nullable().optional(),
+  approve: z.boolean().optional(),
+});
+export const CiClinicianReviewSchema = z.object({ decision: z.enum(["APPROVED", "CORRECTED", "REJECTED"]), note: z.string().trim().max(2000).nullable().optional() });
+export const ClinicianGoalSchema = z.object({ title: z.string().trim().min(3, "Describe the goal").max(140) });
+

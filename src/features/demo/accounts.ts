@@ -2,7 +2,7 @@
 export const DEMO_PASSWORD = "SaveTheSoul-demo-2026";
 
 /** One-click demo sign-in keys (local part of the @demo.savethesoul.app email). Server-validated. */
-export const DEMO_LOGIN_KEYS = ["omar", "layla", "dr.aisha", "dr.james", "coordinator"] as const;
+export const DEMO_LOGIN_KEYS = ["omar", "layla", "maya", "dr.aisha", "dr.james", "coordinator"] as const;
 export type DemoLoginKey = (typeof DEMO_LOGIN_KEYS)[number];
 
 export const DEMO_GROUPS: { title: string; description: string; accounts: { key: DemoLoginKey; label: string; role: string; scenario: string }[] }[] = [
@@ -12,6 +12,7 @@ export const DEMO_GROUPS: { title: string; description: string; accounts: { key:
     accounts: [
       { key: "omar", label: "Omar", role: "Patient", scenario: "Everyday support · urgent safety · family support" },
       { key: "layla", label: "Layla", role: "Patient", scenario: "Declining wellbeing · share with clinician" },
+      { key: "maya", label: "Maya", role: "Patient", scenario: "Clinical Intelligence · insights → clinician → follow-up" },
     ],
   },
   {

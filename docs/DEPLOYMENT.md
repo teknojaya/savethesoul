@@ -106,6 +106,20 @@ Additive only: three `DraftReviewStatus` values (APPROVED, CORRECTED, REJECTED),
 3. The new tables and enum can stay; the old build ignores them. The synthetic Hana, Khalid and Sara records are ordinary patient rows and can stay or be removed by email (`*@demo.savethesoul.app`).
 4. Redeploy `f05630e` from Railway's deployment list.
 
+## Clinical Intelligence release (migration `20261120111726_clinical_intelligence`)
+
+**Additive:** two `ConsentScope` values (`CLINICAL_INTELLIGENCE`, `CARE_PLAN_SUPPORT`), three defaulted/nullable `WellbeingGoal` columns (`source`, `clinicianId`, `authorName`) and a new encrypted `ClinicalInsight` table.
+
+**Rehearsal (20 Nov 2026) on a restored production copy:** 27 of 28 tables byte-identical after migrating; `WellbeingGoal` changed only by the new default columns (same 7 rows; original columns' checksum identical). `pnpm demo:prepare` then added only Maya's synthetic records (one real `gpt-5.4-mini` insight); 0 existing rows changed; second run created nothing.
+
+**Feature flag (preferred rollback):** set `CLINICAL_INTELLIGENCE_ENABLED=false` on the web service. Conversation analysis, insights, sharing of insights and care-goal support stop; chat, voice, clinician and hospital portals and the Safety Guardian are unaffected (tested). No code rollback or data change needed.
+
+**Code rollback to `bce9436` (only if unavoidable):** the old Prisma client cannot read consent rows with the new scopes (rehearsed: it fails on `ConsentRecord` only). Non-destructive procedure, rehearsed on the copy:
+1. Back up the database.
+2. Run `docs/rollback-clinical-intelligence-archive.sql` (moves the new-scope consent rows into `ConsentRecord_ci_archive`; nothing is dropped). The old client then reads all 28 tables without errors.
+3. Redeploy `bce9436`. The `ClinicalInsight` table and the new `WellbeingGoal` columns are ignored by the old build.
+4. To roll forward again: deploy the new build, then run `docs/rollback-clinical-intelligence-restore.sql`.
+
 ## Rotating DATA_ENCRYPTION_KEY
 
 `scripts/rotate-encryption-key.ts` re-encrypts every `*Enc` column in one transaction. Without `--apply` it is a dry run that proves the current key decrypts everything. Back up the database first, run the dry run, apply, then switch the variable. The local development key was rotated this way on 19 November 2026. Production uses a different key and was not rotated.
